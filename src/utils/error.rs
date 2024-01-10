@@ -1,6 +1,8 @@
+use std::sync::atomic::AtomicU32;
 pub use crate::log_handle;
 
 pub struct Data {
+    pub poise_mentions: AtomicU32,
     pub client: reqwest::Client,
 }
 
@@ -11,7 +13,7 @@ pub type Context<'a> = poise::Context<'a, Data, Error>;
 pub async fn err_handler(error: poise::FrameworkError<'_, Data, Error>) {
     match error {
         poise::FrameworkError::Setup { error, .. } => panic!("Error al iniciar el Bot: {error:?}"),
-        poise::FrameworkError::Command { error, ctx} => {
+        poise::FrameworkError::Command { error, ctx, ..} => {
             log_handle!("Error en comando `{}` : {:?}", ctx.command().name, error);
         }
         error => {

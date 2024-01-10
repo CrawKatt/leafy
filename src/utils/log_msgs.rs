@@ -5,7 +5,7 @@
 //use crate::utils::error::{CommandResult, Context};
 
 // ID del canal al que enviar los mensajes eliminados
-const LOG_CHANNEL_ID: u64 = 1193595925503942688;
+//const LOG_CHANNEL_ID: u64 = 1193595925503942688;
 
 /*
 #[poise::event]
