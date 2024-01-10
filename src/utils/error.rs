@@ -1,8 +1,7 @@
-use std::sync::atomic::AtomicU32;
 pub use crate::log_handle;
 
 pub struct Data {
-    pub poise_mentions: AtomicU32,
+    pub poise_mentions: String,
     pub client: reqwest::Client,
 }
 

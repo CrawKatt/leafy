@@ -1,4 +1,6 @@
 use std::env;
+use std::thread::sleep;
+use std::time::Duration;
 use once_cell::sync::Lazy;
 
 use surrealdb::engine::local::{Db, File};
@@ -12,7 +14,7 @@ mod events;
 use poise::serenity_prelude as serenity;
 
 use crate::commands::ping::ping;
-use crate::events::event_handler;
+use crate::events::{event_handler, MessageData};
 use crate::utils::error::{Data, err_handler};
 
 #[tokio::main]
@@ -22,15 +24,33 @@ async fn main() {
         panic!("Could not connect to database: {why}");
     });
 
+    // Borrar mensajes de la Base de Datos cada 24 horas
+    tokio::spawn(async {
+        loop {
+            sleep(Duration::from_secs(60 * 60 * 24)); // 24 horas (60 * 60 * 24)
+
+            DB.use_ns("discord-namespace").use_db("discord").await.unwrap_or_else(|why| {
+                panic!("Could not use database: {why}");
+            });
+
+            DB.delete("messages").await.unwrap_or_else(|why| -> Vec<MessageData> {
+                panic!("Could not delete messages: {why}");
+            });
+        }
+    });
+
     let token = dotenvy::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN");
-    let intents = serenity::GatewayIntents::non_privileged();
+    let intents = serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT;
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![ping()],
+            commands: vec![
+                ping(),
+
+            ],
             on_error: |error| Box::pin(err_handler(error)),
-            event_handler: |ctx, event, framework, data| {
-                Box::pin(event_handler(ctx, event, framework, data))
+            event_handler: |ctx, event, framework, _data| {
+                Box::pin(event_handler(ctx, event, framework))
             },
             ..Default::default()
         })
