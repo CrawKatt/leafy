@@ -2,6 +2,7 @@ use serenity::all::{ChannelId, CreateMessage, GuildId, Message, MessageId, User,
 use serenity::builder::CreateEmbed;
 use poise::serenity_prelude as serenity;
 use serde::{Deserialize, Serialize};
+use crate::commands::set_log_channel::GuildData;
 use crate::DB;
 use crate::utils::error::{Data, Error};
 
@@ -41,11 +42,12 @@ pub async fn event_handler(
                 return Ok(());
             }
 
-            let _created: Vec<MessageData> = DB.create("messages").content(data).await.unwrap_or_else(|why| {
-                panic!("Could not create message: {why}");
-            });
-
-            println!("Saved: {:#?}", _created);
+            let _created: Vec<MessageData> = DB.create("messages")
+                .content(data)
+                .await
+                .unwrap_or_else(|why| {
+                    panic!("Could not create message: {why}");
+                });
         }
 
         serenity::FullEvent::MessageDelete { channel_id, deleted_message_id, .. } => {
@@ -59,7 +61,6 @@ pub async fn event_handler(
                 .take(0).unwrap_or_else(|_| {
                     panic!("Could not get message data");
                 });
-            //println!("Message data: {:?}", database_info);
 
             let Some(database_message) = database_info else {
                 return Ok(())
@@ -69,7 +70,18 @@ pub async fn event_handler(
             let message_channel_id = database_message.channel_id;
             let author_id = database_message.author_id;
 
-            let log_channel = ChannelId::new(1193595925503942688);
+            let log_channel_database = "SELECT * FROM guilds WHERE guild_id = $guild_id";
+            let log_channel_id: Option<GuildData> = DB
+                .query(log_channel_database)
+                .bind(("guild_id", database_message.guild_id)) // pasar el valor
+                .await.unwrap_or_else(|why| {
+                    panic!("Could not query database: {why}");
+                })
+                .take(0).unwrap_or_else(|why| {
+                    panic!("Could not get message data {why}");
+                });
+
+            let log_channel = log_channel_id.unwrap().log_channel_id;
             if channel_id == &log_channel {
                 return Ok(());
             }

@@ -1,4 +1,5 @@
 use std::env;
+use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
 use once_cell::sync::Lazy;
@@ -14,6 +15,7 @@ mod events;
 use poise::serenity_prelude as serenity;
 
 use crate::commands::ping::ping;
+use crate::commands::set_log_channel::{get_log_channel, set_log_channel};
 use crate::events::{event_handler, MessageData};
 use crate::utils::error::{Data, err_handler};
 
@@ -46,8 +48,14 @@ async fn main() {
         .options(poise::FrameworkOptions {
             commands: vec![
                 ping(),
-
+                set_log_channel(),
+                get_log_channel(),
             ],
+            prefix_options: poise::PrefixFrameworkOptions {
+                prefix: Some("$".into()),
+                edit_tracker: Some(Arc::from(poise::EditTracker::for_timespan(Duration::from_secs(3600)))),
+                ..Default::default()
+            },
             on_error: |error| Box::pin(err_handler(error)),
             event_handler: |ctx, event, framework, _data| {
                 Box::pin(event_handler(ctx, event, framework))
