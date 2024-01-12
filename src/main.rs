@@ -1,23 +1,25 @@
 use std::env;
 use std::sync::Arc;
+use surrealdb::Surreal;
 use std::thread::sleep;
 use std::time::Duration;
 use once_cell::sync::Lazy;
-
+use poise::serenity_prelude as serenity;
 use surrealdb::engine::local::{Db, File};
-use surrealdb::Surreal;
+
 pub static DB: Lazy<Surreal<Db>> = Lazy::new(Surreal::init);
 
 mod commands;
 mod utils;
 mod events;
 
-use poise::serenity_prelude as serenity;
-
 use crate::commands::ping::ping;
+use crate::commands::set_forbidden_user::set_forbidden_user;
+use crate::commands::set_timeout_role::set_time_out_role;
+use crate::events::{Data, event_handler};
 use crate::commands::set_log_channel::{get_log_channel, set_log_channel};
-use crate::events::{event_handler, MessageData};
-use crate::utils::error::{Data, err_handler};
+use crate::utils::handlers::error::err_handler;
+use crate::utils::MessageData;
 
 #[tokio::main]
 async fn main() {
@@ -27,22 +29,10 @@ async fn main() {
     });
 
     // Borrar mensajes de la Base de Datos cada 24 horas
-    tokio::spawn(async {
-        loop {
-            sleep(Duration::from_secs(60 * 60 * 24)); // 24 horas (60 * 60 * 24)
-
-            DB.use_ns("discord-namespace").use_db("discord").await.unwrap_or_else(|why| {
-                panic!("Could not use database: {why}");
-            });
-
-            DB.delete("messages").await.unwrap_or_else(|why| -> Vec<MessageData> {
-                panic!("Could not delete messages: {why}");
-            });
-        }
-    });
+    clean_database_loop().await;
 
     let token = dotenvy::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN");
-    let intents = serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT;
+    let intents = serenity::GatewayIntents::all() | serenity::GatewayIntents::MESSAGE_CONTENT;
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
@@ -50,6 +40,8 @@ async fn main() {
                 ping(),
                 set_log_channel(),
                 get_log_channel(),
+                set_time_out_role(),
+                set_forbidden_user(),
             ],
             prefix_options: poise::PrefixFrameworkOptions {
                 prefix: Some("$".into()),
@@ -76,6 +68,22 @@ async fn main() {
     let client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
         .await;
+
     client.unwrap().start().await.unwrap();
 }
 
+async fn clean_database_loop() {
+    tokio::spawn(async {
+        loop {
+            sleep(Duration::from_secs(60 * 60 * 24)); // 24 horas (60 * 60 * 24)
+
+            DB.use_ns("discord-namespace").use_db("discord").await.unwrap_or_else(|why| {
+                panic!("Could not use namespace: {why}");
+            });
+
+            DB.delete("messages").await.unwrap_or_else(|why| -> Vec<MessageData> {
+                panic!("Could not delete messages: {why}");
+            });
+        }
+    });
+}
