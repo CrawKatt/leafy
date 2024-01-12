@@ -1,9 +1,4 @@
-//use crate::utils::error::{Context, CommandResult};
-
-//use std::time::Instant;
-//use ::serenity::builder::{CreateAllowedMentions, CreateEmbed};
-//use poise::CreateReply;
-use crate::utils::error::{CommandResult, Context};
+use crate::utils::{CommandResult, Context};
 
 /// Pong!
 #[poise::command(slash_command)]

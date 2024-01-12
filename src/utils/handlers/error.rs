@@ -1,20 +1,15 @@
-pub use crate::log_handle;
-
-pub struct Data {
-    pub poise_mentions: String,
-    pub client: reqwest::Client,
-}
-
-pub type CommandResult = Result<(), Error>;
-pub(crate) type Error = Box<dyn std::error::Error + Send + Sync>;
-pub type Context<'a> = poise::Context<'a, Data, Error>;
-
+use crate::utils::Data;
+use crate::events::Error;
 pub async fn err_handler(error: poise::FrameworkError<'_, Data, Error>) {
     match error {
-        poise::FrameworkError::Setup { error, .. } => panic!("Error al iniciar el Bot: {error:?}"),
+        poise::FrameworkError::Setup { error, .. } => {
+            panic!("Error al iniciar el Bot: {error:?}")
+        },
+
         poise::FrameworkError::Command { error, ctx, ..} => {
-            log_handle!("Error en comando `{}` : {:?}", ctx.command().name, error);
-        }
+            crate::log_handle!("Error en comando `{}` : {:?}", ctx.command().name, error);
+        },
+
         error => {
             if let Err(e) = poise::builtins::on_error(error).await {
                 println!("Error al manejar el error: {e}")
@@ -42,6 +37,7 @@ macro_rules! log_handle {
             .append(true)
             .open("log.txt");
 
+            // Si no se pudo abrir el archivo de log, imprimir el error en la consola
             if let Err(err) = &log_result {
                 eprintln!("Error al abrir el archivo de logs: {err}");
             }
