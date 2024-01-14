@@ -1,8 +1,11 @@
 use serenity::all::{ChannelId, GuildId, Message, MessageId, MessageUpdateEvent, UserId};
 use poise::serenity_prelude as serenity;
 use serde::{Deserialize, Serialize};
+use crate::commands::set_log_channel::GuildData;
 use crate::DB;
 use crate::events::Error;
+use crate::utils::embeds::edit_message_embed;
+use crate::utils::MessageData;
 
 // Definir la estructura EditedMessageData
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -35,59 +38,48 @@ impl EditedMessageData {
     }
 }
 
-pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpdateEvent, new: &Option<Message>, old_if_available: &Option<Message>) -> Result<(), Error> {
+pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> Result<(), Error> {
     if event.author.clone().unwrap().bot {
         println!("Message author is a bot");
         return Ok(());
     }
 
     let sql_query = "SELECT * FROM messages WHERE message_id = $message_id";
-    let edited_message: Option<EditedMessageData> = DB
+    let old_message: Option<MessageData> = DB
         .query(sql_query)
         .bind(("message_id", event.id)) // pasar el valor
         .await?
         .take(0)?;
-    println!("edited_message: {:?}", edited_message);
 
-    // Obtener el mensaje anterior
-    let old_message = match old_if_available {
-        Some(message) => message,
-        None => {
-            println!("Failed to get old message");
-            return Ok(())
-        }
+    let Some(database_message) = old_message else {
+        println!("Failed to get database message");
+        return Ok(())
     };
 
-    // Obtener el mensaje nuevo
-    let new_message = match new {
-        Some(message) => message,
-        None => {
-            println!("Failed to get new message");
-            return Ok(())
-        }
-    };
+    let old_content = database_message.message_content;
 
-    // Si el mensaje anterior es igual al nuevo, no hacer nada
-    if old_message.content == new_message.content {
+    let new_content = event.content.clone().unwrap_or_default();
+
+    if old_content == new_content {
         println!("Message content is the same");
         return Ok(());
     }
 
-    // Crear una instancia de EditedMessageData con los datos del mensaje editado
-    let data = EditedMessageData::new(
-        new_message.id,
-        old_message.content.clone(),
-        new_message.content.clone(),
-        new_message.author.id,
-        new_message.channel_id,
-        new_message.guild_id,
-    );
+    let log_channel_database = "SELECT * FROM guilds WHERE guild_id = $guild_id";
+    let log_channel_id: Option<GuildData> = DB
+        .query(log_channel_database)
+        .bind(("guild_id", database_message.guild_id)) // pasar el valor
+        .await?
+        .take(0)?;
 
-    // Guardar el mensaje editado en la base de datos
-    let _created: Vec<EditedMessageData> = DB.create("edited_messages").content(data).await?;
+    let log_channel = log_channel_id.unwrap_or_default().log_channel_id;
+    println!("Log channel: {}", log_channel);
 
-    // Imprimir en la consola el contenido anterior y el nuevo del mensaje editado
-    println!("Mensaje editado:\nAnterior: {}\nNuevo: {}", old_message.content, new_message.content);
+    let message_content = format!("\n**Antes:** {}\n**Después:** {}", old_content, new_content);
+
+    println!("Message edited: {}", message_content);
+
+    edit_message_embed(ctx, log_channel, &database_message.channel_id, database_message.author_id, &message_content).await;
 
     Ok(())
 }

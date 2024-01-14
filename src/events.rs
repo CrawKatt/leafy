@@ -30,7 +30,9 @@ pub async fn event_handler(
 
         serenity::FullEvent::MessageUpdate { event, new, old_if_available } => {
             println!("Event Message updated: {:?}", event.content);
-            edited_message_handler(ctx, event, new, old_if_available).await?;
+            println!("New Message: {:?}", new);
+            println!("Old Message: {:?}", old_if_available);
+            edited_message_handler(ctx, event).await?;
         }
 
         _ => println!("Unhandled event: {:?}", event.snake_case_name())
