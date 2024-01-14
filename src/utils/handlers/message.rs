@@ -84,6 +84,7 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     }
 
     let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
+    println!("Message created: {:?}", _created);
 
     Ok(())
 }
