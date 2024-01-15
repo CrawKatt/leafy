@@ -20,7 +20,7 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     );
 
     // variable que busca la mención en el menssage_content si existe
-    let message_content = new_message.content.clone();
+    let message_content = &new_message.content;
     // Si el mensaje no contiene una mención, guardar el mensaje en la base de datos
     // (NECESARIO PARA EVITAR EL PANIC)
     if !message_content.contains("<@") {

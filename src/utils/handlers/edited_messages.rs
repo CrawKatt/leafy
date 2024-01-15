@@ -7,8 +7,7 @@ use crate::utils::embeds::edit_message_embed;
 use crate::utils::MessageData;
 
 pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> Result<(), Error> {
-    if event.author.clone().unwrap().bot {
-        println!("Message author is a bot");
+    if event.author.as_ref().map_or(false, |author| author.bot) {
         return Ok(());
     }
 
@@ -20,16 +19,13 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
         .take(0)?;
 
     let Some(database_message) = old_message else {
-        println!("Failed to get database message");
         return Ok(())
     };
 
-    let old_content = database_message.message_content;
-
-    let new_content = event.content.clone().unwrap_or_default();
+    let old_content = &database_message.message_content;
+    let new_content = event.content.as_deref().unwrap_or_default();
 
     if old_content == new_content {
-        println!("Message content is the same");
         return Ok(());
     }
 
@@ -41,11 +37,7 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
         .take(0)?;
 
     let log_channel = log_channel_id.unwrap_or_default().log_channel_id;
-    println!("Log channel: {}", log_channel);
-
     let message_content = format!("\n**Antes:** {}\n**Después:** {}", old_content, new_content);
-
-    println!("Message edited: {}", message_content);
 
     edit_message_embed(ctx, log_channel, &database_message.channel_id, database_message.author_id, &message_content).await;
 

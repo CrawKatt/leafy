@@ -27,7 +27,6 @@ pub async fn send_embed(
         println!("Could not get author user: {why}");
         return User::default();
     });
-    //let author_username = author_user.name.clone();
     let author_mention = format!("<@{}>", author_id);
     let description = format!("Autor del mensaje: {}\nCanal de origen: <#{delete_channel_id}>\nContenido del mensaje: {}", author_mention, message_content);
     let footer = "Nota: si hay una parte del mensaje que está en \"Negrita\" significa que es una mención con \"@\" a esa persona.";
@@ -41,8 +40,8 @@ fn create_embed(author_user: &User, description: &str, footer: &str) -> CreateEm
         .title("Mensaje eliminado")
         .description(description)
         .author((|a: CreateEmbedAuthor| {
-            a.name(author_user.name.clone())
-                .icon_url(author_user.avatar_url().unwrap_or_default())
+            a.name(&author_user.name)
+                .icon_url(author_user.avatar_url().as_deref().unwrap_or_default())
         })(CreateEmbedAuthor::new(&author_user.name)))
         .color(0x00ff00)
         .footer((|f: CreateEmbedFooter| {
@@ -58,22 +57,18 @@ pub async fn send_embed_if_mention(
     message_content: &String,
     user: User,
 ) -> Message {
-    let author_user = author_id.to_user(&ctx.http).await.unwrap_or_else(|why| {
-        println!("Could not get author user: {why}");
-        return User::default();
-    });
-    let author_username = author_user.name.clone();
     let author_mention = format!("<@{}>", author_id);
     let user_mention = format!("<@{}>", user.id);
     let user_mention_bold = format!("**{}**", user.name);
     let message_content = message_content.replace(&user_mention,&user_mention_bold);
+    let author_user = author_id.to_user(&ctx.http).await.unwrap_or_default();
 
     let embed = CreateEmbed::default()
         .title("Mensaje eliminado")
         .description(format!("Autor del mensaje: {}\nCanal de origen: <#{delete_channel_id}>\nContenido del mensaje: {}", author_mention, &message_content))
         .author((|a: CreateEmbedAuthor| {
-            a.name(author_username)
-                .icon_url(author_user.avatar_url().unwrap_or_default())
+            a.name(&author_user.name)
+                .icon_url(author_user.avatar_url().as_deref().unwrap_or_default())
         })(CreateEmbedAuthor::new(&author_user.name)))
         .color(0x00ff00)
         .footer((|f: CreateEmbedFooter| {
