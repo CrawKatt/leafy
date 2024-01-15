@@ -1,7 +1,7 @@
 use poise::serenity_prelude as serenity;
 use serenity::all::{ChannelId, MessageId, UserId};
 use crate::DB;
-use crate::events::Error;
+use crate::utils::Error;
 use crate::utils::MessageData;
 use crate::commands::set_log_channel::GuildData;
 pub async fn delete_message_handler(ctx: &serenity::Context, channel_id: &ChannelId, deleted_message_id: &MessageId) -> Result<(), Error> {

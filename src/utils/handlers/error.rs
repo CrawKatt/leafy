@@ -1,5 +1,5 @@
 use crate::utils::Data;
-use crate::events::Error;
+use crate::utils::Error;
 pub async fn err_handler(error: poise::FrameworkError<'_, Data, Error>) {
     match error {
         poise::FrameworkError::Setup { error, .. } => {

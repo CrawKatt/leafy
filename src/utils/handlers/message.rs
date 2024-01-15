@@ -1,7 +1,7 @@
 use serenity::all::Message;
 use poise::serenity_prelude as serenity;
 use crate::DB;
-use crate::events::Error;
+use crate::utils::Error;
 use crate::utils::MessageData;
 use crate::commands::set_timeout_role::RoleData;
 use crate::commands::set_forbidden_user::ForbiddenUserData;

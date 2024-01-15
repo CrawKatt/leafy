@@ -11,12 +11,12 @@ pub static DB: Lazy<Surreal<Db>> = Lazy::new(Surreal::init);
 
 mod commands;
 mod utils;
-mod events;
 
 use crate::commands::ping::ping;
 use crate::commands::set_forbidden_user::set_forbidden_user;
 use crate::commands::set_timeout_role::set_time_out_role;
-use crate::events::{Data, event_handler};
+use crate::utils::Data;
+use crate::utils::events::event_handler;
 use crate::commands::set_log_channel::{get_log_channel, set_log_channel};
 use crate::utils::handlers::error::err_handler;
 use crate::utils::MessageData;

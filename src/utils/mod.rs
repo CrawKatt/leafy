@@ -4,6 +4,7 @@ use serenity::all::{ChannelId, GuildId, MessageId, UserId};
 pub mod autocomplete;
 pub mod embeds;
 pub mod handlers;
+pub mod events;
 
 pub struct Data {
     pub poise_mentions: String,
