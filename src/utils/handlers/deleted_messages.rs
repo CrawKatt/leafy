@@ -45,7 +45,7 @@ pub async fn delete_message_handler(ctx: &serenity::Context, channel_id: &Channe
     let user_id = message_content
         .split("<@")
         .collect::<Vec<&str>>()[1]
-        .split(">")
+        .split('>')
         .collect::<Vec<&str>>()[0]
         .parse::<u64>()?;
 

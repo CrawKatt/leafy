@@ -1,7 +1,7 @@
 # Tareas Pendientes
 
 ---
-- [ ] Crear un comando para establecer el ID del rol prohíbido (prohíbido de mencionar)
+- [x] Crear un comando para establecer el ID del rol prohíbido (prohíbido de mencionar)
 - [ ] Crear una función que establezca `TimeOut` al usuario que mencione a un usuario perteneciente al rol prohibido
 ---
 

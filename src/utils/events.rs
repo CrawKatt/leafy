@@ -4,7 +4,7 @@ pub use crate::utils::Data;
 pub use crate::utils::Error;
 use crate::utils::handlers::deleted_messages::delete_message_handler;
 use crate::utils::handlers::edited_messages::edited_message_handler;
-use crate::utils::handlers::message::message_handler;
+use crate::utils::handlers::sent_messages::message_handler;
 
 pub async fn event_handler(
     ctx: &serenity::Context,
@@ -24,14 +24,14 @@ pub async fn event_handler(
         }
 
         serenity::FullEvent::MessageDelete { channel_id, deleted_message_id, .. } => {
-            println!("Event Message deleted: {:?}", deleted_message_id);
+            println!("Event Message deleted: {deleted_message_id:?}");
             delete_message_handler(ctx, channel_id, deleted_message_id).await?;
         }
 
         serenity::FullEvent::MessageUpdate { event, new, old_if_available } => {
             println!("Event Message updated: {:?}", event.content);
-            println!("New Message: {:?}", new);
-            println!("Old Message: {:?}", old_if_available);
+            println!("New Message: {new:?}");
+            println!("Old Message: {old_if_available:?}");
             edited_message_handler(ctx, event).await?;
         }
 

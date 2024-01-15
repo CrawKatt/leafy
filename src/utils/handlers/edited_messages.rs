@@ -37,7 +37,7 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
         .take(0)?;
 
     let log_channel = log_channel_id.unwrap_or_default().log_channel_id;
-    let message_content = format!("\n**Antes:** {}\n**Después:** {}", old_content, new_content);
+    let message_content = format!("\n**Antes:** {old_content}\n**Después:** {new_content}");
 
     edit_message_embed(ctx, log_channel, &database_message.channel_id, database_message.author_id, &message_content).await;
 

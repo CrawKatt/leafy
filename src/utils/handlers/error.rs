@@ -12,7 +12,7 @@ pub async fn err_handler(error: poise::FrameworkError<'_, Data, Error>) {
 
         error => {
             if let Err(e) = poise::builtins::on_error(error).await {
-                println!("Error al manejar el error: {e}")
+                println!("Error al manejar el error: {e}");
             }
         }
     }
