@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serenity::all::{GuildId, RoleId};
 use crate::DB;
-use crate::utils::autocomplete::autocomplete_set_role;
+use crate::utils::autocomplete::args_set_role;
 use surrealdb::Result as SurrealResult;
 use crate::utils::{CommandResult, Context};
 
@@ -18,7 +18,7 @@ impl RoleData {
     }
     async fn save_to_db(&self) -> SurrealResult<()> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
-        let _created: Vec<RoleData> = DB
+        let _created: Vec<Self> = DB
             .create("time_out_roles")
             .content(self)
             .await?;
@@ -28,7 +28,7 @@ impl RoleData {
     async fn update_in_db(&self) -> SurrealResult<()> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
         let sql_query = "UPDATE time_out_roles SET guild_id = $guild_id WHERE role_id = $role_id";
-        let _updated: Vec<RoleData> = DB
+        let _updated: Vec<Self> = DB
             .query(sql_query)
             .bind(("guild_id", self.guild_id))
             .bind(("user_id", self.role_id))
@@ -37,10 +37,10 @@ impl RoleData {
 
         Ok(())
     }
-    async fn verify_data(&self) -> SurrealResult<Option<RoleData>> {
+    async fn verify_data(&self) -> SurrealResult<Option<Self>> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
         let sql_query = "SELECT * FROM time_out_roles WHERE role_id = $role_id";
-        let existing_data: Option<RoleData> = DB
+        let existing_data: Option<Self> = DB
             .query(sql_query)
             .bind(("user_id", self.role_id))
             .await?
@@ -54,7 +54,7 @@ impl RoleData {
 #[poise::command(prefix_command, slash_command)]
 pub async fn set_time_out_role(
     ctx: Context<'_>,
-    #[autocomplete = "autocomplete_set_role"]
+    #[autocomplete = "args_set_role"]
     #[description = "The user to set as the time out role"] role_id: RoleId,
 ) -> CommandResult {
 
@@ -69,14 +69,14 @@ pub async fn set_time_out_role(
     let Some(_) = existing_data else {
         // Si el dato no existe, créalo
         data.save_to_db().await?;
-        ctx.say(format!("Time out role establecido: <@&{}>", role_id)).await?;
+        ctx.say(format!("Time out role establecido: <@&{role_id}>")).await?;
         return Ok(());
     };
 
     // Si el dato ya existe, actualízalo
     data.update_in_db().await?;
 
-    ctx.say(format!("Time out role establecido: <@&{}>", role_id)).await?;
+    ctx.say(format!("Time out role establecido: <@&{role_id}>")).await?;
 
     Ok(())
 }

@@ -1,24 +1,24 @@
-use serenity::all::User;
+use serenity::all::{User, UserId};
 use serde::{Deserialize, Serialize};
 use surrealdb::Result as SurrealResult;
 
 use crate::DB;
-use crate::utils::autocomplete::autocomplete_set_forbidden_user;
+use crate::utils::autocomplete::args_set_forbidden_user;
 use crate::utils::{CommandResult, Context};
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct ForbiddenUserData {
     pub user: User,
-    pub user_id: u64,
+    pub user_id: UserId,
 }
 
 impl ForbiddenUserData {
-    pub const fn new(user: User, user_id: u64) -> Self {
+    pub const fn new(user: User, user_id: UserId) -> Self {
         Self { user, user_id }
     }
     pub async fn save_to_db(&self) -> SurrealResult<()> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
-        let _created: Vec<ForbiddenUserData> = DB
+        let _created: Vec<Self> = DB
             .create("forbidden_users")
             .content(self)
             .await?;
@@ -30,7 +30,7 @@ impl ForbiddenUserData {
     pub async fn update_in_db(&self) -> SurrealResult<()> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
         let sql_query = "UPDATE forbidden_users SET user_id = $user_id";
-        let _updated: Vec<ForbiddenUserData> = DB
+        let _updated: Vec<Self> = DB
             .query(sql_query)
             .bind(("user_id", &self.user_id))
             .await?
@@ -40,10 +40,10 @@ impl ForbiddenUserData {
 
         Ok(())
     }
-    pub async fn verify_data(&self) -> SurrealResult<Option<ForbiddenUserData>> {
+    pub async fn verify_data(&self) -> SurrealResult<Option<Self>> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
         let sql_query = "SELECT * FROM forbidden_users WHERE user_id = $user_id";
-        let existing_data: Option<ForbiddenUserData> = DB
+        let existing_data: Option<Self> = DB
             .query(sql_query)
             .bind(("user_id", &self.user_id))
             .await?
@@ -59,11 +59,11 @@ impl ForbiddenUserData {
 #[poise::command(prefix_command, slash_command)]
 pub async fn set_forbidden_user(
     ctx: Context<'_>,
-    #[autocomplete = "autocomplete_set_forbidden_user"]
+    #[autocomplete = "args_set_forbidden_user"]
     #[description = "The user to set as the forbidden user"] user: User,
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
-    let data = ForbiddenUserData::new(user.clone(), u64::from(user.id));
+    let data = ForbiddenUserData::new(user.clone(), user.id);
 
     let existing_data = data.verify_data().await?;
 

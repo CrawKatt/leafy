@@ -5,19 +5,25 @@ use std::thread::sleep;
 use std::time::Duration;
 use once_cell::sync::Lazy;
 use poise::serenity_prelude as serenity;
+use reqwest::Client;
 use surrealdb::engine::local::{Db, File};
+use crate::commands::get_forbidden_role::get_forbidden_role;
+use crate::commands::get_forbidden_user::get_forbidden_user;
+use crate::commands::get_log_channel::get_log_channel;
+use crate::commands::get_timeout_role::get_timeout_role;
 
 pub static DB: Lazy<Surreal<Db>> = Lazy::new(Surreal::init);
 
 mod commands;
 mod utils;
-mod events;
 
 use crate::commands::ping::ping;
+use crate::commands::set_forbidden_role::set_forbidden_role;
 use crate::commands::set_forbidden_user::set_forbidden_user;
 use crate::commands::set_timeout_role::set_time_out_role;
-use crate::events::{Data, event_handler};
-use crate::commands::set_log_channel::{get_log_channel, set_log_channel};
+use crate::utils::Data;
+use crate::utils::events::event_handler;
+use crate::commands::set_log_channel::set_log_channel;
 use crate::utils::handlers::error::err_handler;
 use crate::utils::MessageData;
 
@@ -29,7 +35,7 @@ async fn main() {
     });
 
     // Borrar mensajes de la Base de Datos cada 24 horas
-    clean_database_loop().await;
+    clean_database_loop();
 
     let token = dotenvy::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN");
     let intents = serenity::GatewayIntents::all() | serenity::GatewayIntents::MESSAGE_CONTENT;
@@ -39,9 +45,13 @@ async fn main() {
             commands: vec![
                 ping(),
                 set_log_channel(),
-                get_log_channel(),
                 set_time_out_role(),
                 set_forbidden_user(),
+                set_forbidden_role(),
+                get_log_channel(),
+                get_timeout_role(),
+                get_forbidden_user(),
+                get_forbidden_role(),
             ],
             prefix_options: poise::PrefixFrameworkOptions {
                 prefix: Some("$".into()),
@@ -58,8 +68,8 @@ async fn main() {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 Ok(Data {
-                    poise_mentions: Default::default(),
-                    client: Default::default(),
+                    poise_mentions: String::default(),
+                    client: Client::default(),
                 })
             })
         })
@@ -72,7 +82,7 @@ async fn main() {
     client.unwrap().start().await.unwrap();
 }
 
-async fn clean_database_loop() {
+fn clean_database_loop() {
     tokio::spawn(async {
         loop {
             sleep(Duration::from_secs(60 * 60 * 24)); // 24 horas (60 * 60 * 24)
