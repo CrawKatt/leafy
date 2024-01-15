@@ -3,3 +3,7 @@ pub mod set_log_channel;
 pub mod set_timeout_role;
 pub mod set_forbidden_user;
 pub mod set_forbidden_role;
+pub mod get_log_channel;
+pub mod get_forbidden_role;
+pub mod get_forbidden_user;
+pub mod get_timeout_role;

@@ -6,9 +6,9 @@ use surrealdb::Result as SurrealResult;
 use crate::utils::autocomplete::args_set_forbidden_role;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
-struct ForbiddenRoleData {
-    role: Role,
-    role_id: RoleId,
+pub struct ForbiddenRoleData {
+    pub role: Role,
+    pub role_id: RoleId,
 }
 
 impl ForbiddenRoleData {
@@ -29,7 +29,7 @@ impl ForbiddenRoleData {
     pub async fn update_in_db(&self) -> SurrealResult<()> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
         let sql_query = "UPDATE forbidden_roles SET role_id = $role_id";
-        let _updated: Vec<Self> = DB
+        let _updated: Option<Self> = DB
             .query(sql_query)
             .bind(("role_id", &self.role_id))
             .await?
@@ -54,6 +54,7 @@ impl ForbiddenRoleData {
     }
 }
 
+/// Establece el rol de usuario prohibido de mencionar
 #[poise::command(prefix_command, slash_command)]
 pub async fn set_forbidden_role(
     ctx: Context<'_>,

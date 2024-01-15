@@ -7,6 +7,10 @@ use once_cell::sync::Lazy;
 use poise::serenity_prelude as serenity;
 use reqwest::Client;
 use surrealdb::engine::local::{Db, File};
+use crate::commands::get_forbidden_role::get_forbidden_role;
+use crate::commands::get_forbidden_user::get_forbidden_user;
+use crate::commands::get_log_channel::get_log_channel;
+use crate::commands::get_timeout_role::get_timeout_role;
 
 pub static DB: Lazy<Surreal<Db>> = Lazy::new(Surreal::init);
 
@@ -19,7 +23,7 @@ use crate::commands::set_forbidden_user::set_forbidden_user;
 use crate::commands::set_timeout_role::set_time_out_role;
 use crate::utils::Data;
 use crate::utils::events::event_handler;
-use crate::commands::set_log_channel::{get_log_channel, set_log_channel};
+use crate::commands::set_log_channel::set_log_channel;
 use crate::utils::handlers::error::err_handler;
 use crate::utils::MessageData;
 
@@ -41,10 +45,13 @@ async fn main() {
             commands: vec![
                 ping(),
                 set_log_channel(),
-                get_log_channel(),
                 set_time_out_role(),
                 set_forbidden_user(),
                 set_forbidden_role(),
+                get_log_channel(),
+                get_timeout_role(),
+                get_forbidden_user(),
+                get_forbidden_role(),
             ],
             prefix_options: poise::PrefixFrameworkOptions {
                 prefix: Some("$".into()),
