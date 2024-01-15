@@ -1,42 +1,10 @@
-use serenity::all::{ChannelId, GuildId, Message, MessageId, MessageUpdateEvent, UserId};
+use serenity::all::MessageUpdateEvent;
 use poise::serenity_prelude as serenity;
-use serde::{Deserialize, Serialize};
 use crate::commands::set_log_channel::GuildData;
 use crate::DB;
 use crate::events::Error;
 use crate::utils::embeds::edit_message_embed;
 use crate::utils::MessageData;
-
-// Definir la estructura EditedMessageData
-#[derive(Serialize, Deserialize, Debug, Default)]
-pub struct EditedMessageData {
-    message_id: MessageId,
-    old_content: String,
-    new_content: String,
-    author_id: UserId,
-    channel_id: ChannelId,
-    guild_id: Option<GuildId>,
-}
-
-impl EditedMessageData {
-    pub fn new(
-        message_id: MessageId,
-        old_content: String,
-        new_content: String,
-        author_id: UserId,
-        channel_id: ChannelId,
-        guild_id: Option<GuildId>
-    ) -> Self {
-        Self {
-            message_id,
-            old_content,
-            new_content,
-            author_id,
-            channel_id,
-            guild_id,
-        }
-    }
-}
 
 pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> Result<(), Error> {
     if event.author.clone().unwrap().bot {

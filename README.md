@@ -1,7 +1,6 @@
 # Tareas Pendientes
 
 ---
-- [ ] Obtener los mensajes editados desde la Base de Datos
 - [ ] Crear un comando para establecer el ID del rol prohíbido (prohíbido de mencionar)
 - [ ] Crear una función que establezca `TimeOut` al usuario que mencione a un usuario perteneciente al rol prohibido
 ---
@@ -16,6 +15,8 @@
 - [x] Crear un comando para obtener el canal de Logs establecido
 - [x] Crear una función que establezca `TimeOut` al usuario que mencione a un usuario prohibido
 - [x] Crear un comando para establecer el ID del rol de `TimeOut`
+- [x] Crear un sistema de logs para los mensajes editados
 - [x] Crear un comando para establecer el ID del usuario prohibido (prohibido de mencionar)
 - [x] Refactorizar el código para que sea más legible
+- [x] Obtener los mensajes editados desde el `edited_message_handler`
 ---
