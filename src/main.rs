@@ -13,23 +13,23 @@ pub static DB: Lazy<Surreal<Db>> = Lazy::new(Surreal::init);
 mod commands;
 mod utils;
 
-use crate::commands::ping::ping;
-use crate::commands::set_forbidden_role::set_forbidden_role;
-use crate::commands::set_forbidden_user::set_forbidden_user;
-use crate::commands::set_timeout_role::set_time_out_role;
-use crate::commands::set_log_channel::set_log_channel;
-use crate::commands::set_timeout_timer::set_timeout_timer;
+use commands::ping::ping;
+use commands::setters::set_forbidden_role::set_forbidden_role;
+use commands::setters::set_forbidden_user::set_forbidden_user;
+use commands::setters::set_timeout_role::set_time_out_role;
+use commands::setters::set_log_channel::set_log_channel;
+use commands::setters::set_timeout_timer::set_timeout_timer;
 
-use crate::commands::get_forbidden_role::get_forbidden_role;
-use crate::commands::get_forbidden_user::get_forbidden_user;
-use crate::commands::get_log_channel::get_log_channel;
-use crate::commands::get_timeout_role::get_timeout_role;
-use crate::commands::get_timeout_timer::get_timeout_timer;
+use commands::getters::get_forbidden_role::get_forbidden_role;
+use commands::getters::get_forbidden_user::get_forbidden_user;
+use commands::getters::get_log_channel::get_log_channel;
+use commands::getters::get_timeout_role::get_timeout_role;
+use commands::getters::get_timeout_timer::get_timeout_timer;
 
-use crate::utils::handlers::error::err_handler;
-use crate::utils::MessageData;
-use crate::utils::Data;
-use crate::utils::events::event_handler;
+use utils::handlers::error::err_handler;
+use utils::MessageData;
+use utils::Data;
+use utils::events::event_handler;
 
 #[tokio::main]
 async fn main() {

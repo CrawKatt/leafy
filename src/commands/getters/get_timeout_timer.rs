@@ -1,6 +1,6 @@
-use crate::commands::set_timeout_timer::SetTimeoutTimer;
 use crate::DB;
 use crate::utils::{Context, Error};
+use crate::commands::setters::set_timeout_timer::SetTimeoutTimer;
 
 #[poise::command(prefix_command, slash_command)]
 pub async fn get_timeout_timer(

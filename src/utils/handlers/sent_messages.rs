@@ -3,12 +3,12 @@ use std::collections::HashMap;
 use serenity::all::{GuildId, Http, Member, Message, Role, RoleId, UserId};
 use poise::serenity_prelude as serenity;
 use serde::{Deserialize, Serialize};
-use crate::commands::set_forbidden_role::ForbiddenRoleData;
+use crate::commands::setters::set_forbidden_role::ForbiddenRoleData;
 use crate::DB;
 use crate::utils::CommandResult;
 use crate::utils::MessageData;
-use crate::commands::set_timeout_role::RoleData;
-use crate::commands::set_forbidden_user::ForbiddenUserData;
+use crate::commands::setters::set_timeout_role::RoleData;
+use crate::commands::setters::set_forbidden_user::ForbiddenUserData;
 use surrealdb::Result as SurrealResult;
 pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> CommandResult {
     if new_message.author.bot {

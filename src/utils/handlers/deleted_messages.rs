@@ -3,7 +3,7 @@ use serenity::all::{ChannelId, MessageId, UserId};
 use crate::DB;
 use crate::utils::Error;
 use crate::utils::MessageData;
-use crate::commands::set_log_channel::GuildData;
+use crate::commands::setters::set_log_channel::GuildData;
 pub async fn delete_message_handler(ctx: &serenity::Context, channel_id: &ChannelId, deleted_message_id: &MessageId) -> Result<(), Error> {
     let sql_query = "SELECT * FROM messages WHERE message_id = $message_id";
     let database_info: Option<MessageData> = DB

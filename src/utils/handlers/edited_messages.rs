@@ -1,6 +1,6 @@
 use serenity::all::MessageUpdateEvent;
 use poise::serenity_prelude as serenity;
-use crate::commands::set_log_channel::GuildData;
+use crate::commands::setters::set_log_channel::GuildData;
 use crate::DB;
 use crate::utils::Error;
 use crate::utils::embeds::edit_message_embed;

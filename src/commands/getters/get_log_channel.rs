@@ -1,4 +1,4 @@
-use crate::commands::set_log_channel::GuildData;
+use crate::commands::setters::set_log_channel::GuildData;
 use crate::DB;
 use crate::utils::{CommandResult, Context};
 
