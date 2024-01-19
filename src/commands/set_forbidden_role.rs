@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use serenity::all::{Role, RoleId};
+use serenity::all::{GuildId, Role, RoleId};
 use crate::DB;
 use crate::utils::{CommandResult, Context};
 use surrealdb::Result as SurrealResult;
@@ -9,11 +9,16 @@ use crate::utils::autocomplete::args_set_forbidden_role;
 pub struct ForbiddenRoleData {
     pub role: Role,
     pub role_id: RoleId,
+    pub guild_id: GuildId,
 }
 
 impl ForbiddenRoleData {
-    pub const fn new(role: Role, role_id: RoleId) -> Self {
-        Self { role, role_id }
+    pub const fn new(role: Role, role_id: RoleId, guild_id: GuildId) -> Self {
+        Self {
+            role,
+            role_id,
+            guild_id
+        }
     }
     pub async fn save_to_db(&self) -> SurrealResult<()> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
@@ -52,6 +57,21 @@ impl ForbiddenRoleData {
 
         Ok(existing_data)
     }
+
+    pub async fn get_role_id(&self) -> SurrealResult<Option<RoleId>> {
+        DB.use_ns("discord-namespace").use_db("discord").await?;
+
+        // Obtener el rol prphíbido de mencionar desde la base de datos
+        // role.id porque `guild_id` es objeto de `role`
+        let sql_query = "SELECT * FROM forbidden_roles WHERE role.guild_id = $guild_id";
+        let existing_data: Option<Self> = DB
+            .query(sql_query)
+            .bind(("guild_id", &self.guild_id))
+            .await?
+            .take(0)?;
+
+        Ok(existing_data.map(|data| data.role_id))
+    }
 }
 
 /// Establece el rol de usuario prohibido de mencionar
@@ -62,8 +82,7 @@ pub async fn set_forbidden_role(
     #[description = "The role to set as the forbidden role"] role: Role,
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
-    let data = ForbiddenRoleData::new(role.clone(), role.id);
-
+    let data = ForbiddenRoleData::new(role.clone(), role.id, GuildId::default());
     let existing_data = data.verify_data().await?;
 
     match existing_data {
@@ -75,7 +94,7 @@ pub async fn set_forbidden_role(
         }
     }
 
-    let message = format!("Set forbidden role to: {}", role.name);
+    let message = format!("Set forbidden role to: **{}**", role.name);
     ctx.say(message).await?;
 
     Ok(())

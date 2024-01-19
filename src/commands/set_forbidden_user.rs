@@ -1,4 +1,4 @@
-use serenity::all::{User, UserId};
+use serenity::all::{GuildId, User, UserId};
 use serde::{Deserialize, Serialize};
 use surrealdb::Result as SurrealResult;
 
@@ -10,11 +10,12 @@ use crate::utils::{CommandResult, Context};
 pub struct ForbiddenUserData {
     pub user: User,
     pub user_id: UserId,
+    pub guild_id: GuildId,
 }
 
 impl ForbiddenUserData {
-    pub const fn new(user: User, user_id: UserId) -> Self {
-        Self { user, user_id }
+    pub const fn new(user: User, user_id: UserId, guild_id: GuildId) -> Self {
+        Self { user, user_id, guild_id }
     }
     pub async fn save_to_db(&self) -> SurrealResult<()> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
@@ -63,7 +64,7 @@ pub async fn set_forbidden_user(
     #[description = "The user to set as the forbidden user"] user: User,
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
-    let data = ForbiddenUserData::new(user.clone(), user.id);
+    let data = ForbiddenUserData::new(user.clone(), user.id, ctx.guild_id().unwrap());
 
     let existing_data = data.verify_data().await?;
 

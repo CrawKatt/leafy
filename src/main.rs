@@ -7,10 +7,6 @@ use once_cell::sync::Lazy;
 use poise::serenity_prelude as serenity;
 use reqwest::Client;
 use surrealdb::engine::local::{Db, File};
-use crate::commands::get_forbidden_role::get_forbidden_role;
-use crate::commands::get_forbidden_user::get_forbidden_user;
-use crate::commands::get_log_channel::get_log_channel;
-use crate::commands::get_timeout_role::get_timeout_role;
 
 pub static DB: Lazy<Surreal<Db>> = Lazy::new(Surreal::init);
 
@@ -21,11 +17,19 @@ use crate::commands::ping::ping;
 use crate::commands::set_forbidden_role::set_forbidden_role;
 use crate::commands::set_forbidden_user::set_forbidden_user;
 use crate::commands::set_timeout_role::set_time_out_role;
-use crate::utils::Data;
-use crate::utils::events::event_handler;
 use crate::commands::set_log_channel::set_log_channel;
+use crate::commands::set_timeout_timer::set_timeout_timer;
+
+use crate::commands::get_forbidden_role::get_forbidden_role;
+use crate::commands::get_forbidden_user::get_forbidden_user;
+use crate::commands::get_log_channel::get_log_channel;
+use crate::commands::get_timeout_role::get_timeout_role;
+use crate::commands::get_timeout_timer::get_timeout_timer;
+
 use crate::utils::handlers::error::err_handler;
 use crate::utils::MessageData;
+use crate::utils::Data;
+use crate::utils::events::event_handler;
 
 #[tokio::main]
 async fn main() {
@@ -46,10 +50,12 @@ async fn main() {
                 ping(),
                 set_log_channel(),
                 set_time_out_role(),
+                set_timeout_timer(),
                 set_forbidden_user(),
                 set_forbidden_role(),
                 get_log_channel(),
                 get_timeout_role(),
+                get_timeout_timer(),
                 get_forbidden_user(),
                 get_forbidden_role(),
             ],

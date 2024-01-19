@@ -17,7 +17,7 @@ pub async fn get_forbidden_user(
         .take(0)?;
 
     let forbidden_user_id = database_info.unwrap_or_default().user_id;
-    ctx.say(format!("Forbidden user is <@{}>", forbidden_user_id)).await?;
+    ctx.say(format!("Forbidden user is <@{forbidden_user_id}>")).await?;
 
     Ok(())
 }

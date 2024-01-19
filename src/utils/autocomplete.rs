@@ -38,3 +38,12 @@ pub async fn args_set_forbidden_role<'a>(
         .filter(move |name| futures::future::ready(name.starts_with(partial)))
         .map(std::string::ToString::to_string)
 }
+
+pub async fn args_set_timeout_timer<'a>(
+    _ctx: Context<'_>,
+    partial: &'a str,
+) -> impl Stream<Item = String> + 'a {
+    futures::stream::iter(["time"])
+        .filter(move |name| futures::future::ready(name.starts_with(partial)))
+        .map(std::string::ToString::to_string)
+}
