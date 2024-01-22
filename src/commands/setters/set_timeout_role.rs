@@ -18,10 +18,12 @@ impl RoleData {
     }
     async fn save_to_db(&self) -> SurrealResult<()> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
-        let _created: Vec<Self> = DB
+        let created: Vec<Self> = DB
             .create("time_out_roles")
             .content(self)
             .await?;
+
+        println!("Time Out Role Set Created: {created:?}");
 
         Ok(())
     }
@@ -31,7 +33,7 @@ impl RoleData {
         let _updated: Vec<Self> = DB
             .query(sql_query)
             .bind(("guild_id", self.guild_id))
-            .bind(("user_id", self.role_id))
+            .bind(("role_id", self.role_id))
             .await?
             .take(0)?;
 
@@ -42,7 +44,7 @@ impl RoleData {
         let sql_query = "SELECT * FROM time_out_roles WHERE role_id = $role_id";
         let existing_data: Option<Self> = DB
             .query(sql_query)
-            .bind(("user_id", self.role_id))
+            .bind(("role_id", self.role_id))
             .await?
             .take(0)?;
 
@@ -76,7 +78,7 @@ pub async fn set_time_out_role(
     // Si el dato ya existe, actualízalo
     data.update_in_db().await?;
 
-    ctx.say(format!("Time out role establecido: <@&{role_id}>")).await?;
+    ctx.say(format!("Time out role actualizado: <@&{role_id}>")).await?;
 
     Ok(())
 }

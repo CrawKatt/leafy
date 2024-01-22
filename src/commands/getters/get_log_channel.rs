@@ -1,6 +1,6 @@
-use crate::commands::setters::set_log_channel::GuildData;
 use crate::DB;
 use crate::utils::{CommandResult, Context};
+use crate::commands::setters::set_log_channel::GuildData;
 
 /// Obtiene el canal de logs establecido en el servidor
 #[poise::command(prefix_command, slash_command)]

@@ -13,23 +13,11 @@ pub static DB: Lazy<Surreal<Db>> = Lazy::new(Surreal::init);
 mod commands;
 mod utils;
 
-use commands::ping::ping;
-use commands::setters::set_forbidden_role::set_forbidden_role;
-use commands::setters::set_forbidden_user::set_forbidden_user;
-use commands::setters::set_timeout_role::set_time_out_role;
-use commands::setters::set_log_channel::set_log_channel;
-use commands::setters::set_timeout_timer::set_timeout_timer;
-
-use commands::getters::get_forbidden_role::get_forbidden_role;
-use commands::getters::get_forbidden_user::get_forbidden_user;
-use commands::getters::get_log_channel::get_log_channel;
-use commands::getters::get_timeout_role::get_timeout_role;
-use commands::getters::get_timeout_timer::get_timeout_timer;
-
-use utils::handlers::error::err_handler;
-use utils::MessageData;
 use utils::Data;
+use utils::MessageData;
 use utils::events::event_handler;
+use utils::handlers::error::err_handler;
+use crate::utils::load_commands;
 
 #[tokio::main]
 async fn main() {
@@ -46,19 +34,7 @@ async fn main() {
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![
-                ping(),
-                set_log_channel(),
-                set_time_out_role(),
-                set_timeout_timer(),
-                set_forbidden_user(),
-                set_forbidden_role(),
-                get_log_channel(),
-                get_timeout_role(),
-                get_timeout_timer(),
-                get_forbidden_user(),
-                get_forbidden_role(),
-            ],
+            commands: load_commands(),
             prefix_options: poise::PrefixFrameworkOptions {
                 prefix: Some("$".into()),
                 edit_tracker: Some(Arc::from(poise::EditTracker::for_timespan(Duration::from_secs(3600)))),
@@ -68,6 +44,10 @@ async fn main() {
             event_handler: |ctx, event, framework, _data| {
                 Box::pin(event_handler(ctx, event, framework))
             },
+            allowed_mentions: Some(serenity::CreateAllowedMentions::default()
+                .all_users(true)
+                .replied_user(true)),
+
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {
