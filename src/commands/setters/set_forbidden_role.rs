@@ -3,7 +3,9 @@ use serenity::all::{GuildId, Role, RoleId};
 use crate::DB;
 use crate::utils::{CommandResult, Context};
 use surrealdb::Result as SurrealResult;
+use crate::commands::setters::set_admins::AdminData;
 use crate::utils::autocomplete::args_set_forbidden_role;
+use crate::utils::debug::UnwrapLog;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct ForbiddenRoleData {
@@ -82,8 +84,22 @@ pub async fn set_forbidden_role(
     #[description = "The role to set as the forbidden role"] role: Role,
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
+    let guild_id = ctx.guild_id().unwrap_log("Could not get the guild_id: `set_forbidden_role.rs` Line 87")?;
     let data = ForbiddenRoleData::new(role.clone(), role.id, GuildId::default());
     let existing_data = data.verify_data().await?;
+    let author = ctx.author();
+    let owner = ctx.guild().unwrap().owner_id;
+    let admin_role = AdminData::get_admin_role(guild_id).await?;
+
+    let Some(admin_role) = admin_role else {
+        ctx.say("No admin role has been set").await?;
+        return Ok(())
+    };
+
+    if !author.has_role(&ctx.serenity_context().http, guild_id, admin_role).await? && author.id != owner {
+        ctx.say("No tienes permisos para usar este comando").await?;
+        return Ok(())
+    }
 
     match existing_data {
         Some(_) => {

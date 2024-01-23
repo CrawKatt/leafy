@@ -23,7 +23,7 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     let message_content = &new_message.content;
 
     // variable que obtiene el id del servidor
-    let guild_id = new_message.guild_id.unwrap_log("Could not get guild id: `sent_message.rs` line 25");
+    let guild_id = new_message.guild_id.unwrap_log("Could not get guild id: `sent_message.rs` line 25")?;
 
     // Obtener el canal de logs de la base de datos
     let data = MessageData::new(
@@ -61,9 +61,15 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     // El primer RoleId(1) es un Default es por la creación del objeto, es innecesario y da igual
     let forbiden_role_data = ForbiddenRoleData::new(Role::default(), RoleId::default(), guild_id);
     let result = forbiden_role_data.get_role_id().await?;
-    let forbidden_role_id = result.unwrap_log("Could not get forbidden role: `sent_message.rs` line 63");
+
+    let Some(result) = result else {
+        println!("No hay un rol prohibido de mencionar: `sent_message.rs` line 66");
+        return Ok(())
+    };
+
+    let forbidden_role_id = result;
     let mentioned_user = guild_id.member(&ctx.http, user_id).await?;
-    let mentioned_user_roles = mentioned_user.roles(&ctx.cache).unwrap_log("Could not get mentioned user roles: `sent_message.rs` line 65");
+    let mentioned_user_roles = mentioned_user.roles(&ctx.cache).unwrap_log("Could not get mentioned user roles: `sent_message.rs` line 65")?;
 
     // Si el usuario mencionado tiene el rol de prohibido de mencionar, silenciar al autor del mensaje
     if mentioned_user_roles.iter().any(|role| role.id == forbidden_role_id) {
@@ -112,19 +118,45 @@ pub async fn handle_forbidden_role(
         .await?
         .take(0)?;
 
-    let time_out_message = time_out_message.unwrap_log("Could not get time out message: `sent_message.rs` line 115").warn_message;
-    let time_out_timer = time_out_timer.unwrap_log("Could not get time out timer: `sent_message.rs` line 108").time;
-    let admin_role_id = admin_role.unwrap_log("Could not get admin role: `sent_message.rs` line 109").role_id;
-    let admin_exception = member.roles(&ctx.cache)
-        .unwrap_log("Could not get member roles: `sent_message.rs` line 119")
-        .iter()
-        .any(|role| role.id == admin_role_id);
+    let Some(time_out_message) = time_out_message else {
+        println!("No hay un mensaje de silencio: `sent_message.rs` line 122");
+        return Ok(())
+    };
+
+    let time_out_message = time_out_message.warn_message;
+
+    let Some(time_out_timer) = time_out_timer else {
+        println!("No hay un tiempo de silencio establecido: `sent_message.rs` line 129");
+        return Ok(())
+    };
+
+    let time_out_timer = time_out_timer.time;
+
+    let Some(admin_role) = admin_role else {
+        println!("No hay un admin establecido: `sent_message.rs` line 136");
+        return Ok(())
+    };
+
+    let admin_role_id = admin_role.role_id;
+    let admin_exception = admin_role_id.map_or(false, |admin_role_id| {
+        member.roles(&ctx.cache)
+            .unwrap_log("Could not get member roles: `sent_message.rs` line 112")
+            .iter()
+            .flat_map(|roles| roles.iter())
+            .any(|role| role.id == admin_role_id)
+    });
 
     if admin_exception {
+        println!("Admin exception");
         return Ok(())
     }
 
-    let time_out_role_id = time_out_role.unwrap_log("Could not get time out role: `sent_message.rs` line 119").role_id;
+    let Some(time_out_role) = time_out_role else {
+        println!("No hay un rol de silencio establecido: `sent_message.rs` line 152");
+        return Ok(())
+    };
+
+    let time_out_role_id = time_out_role.role_id;
     let mut warns = Warns::new(author_user_id);
     let existing_warns = warns.get_warns().await?;
 
@@ -202,32 +234,38 @@ pub async fn handle_forbidden_user(
         .await?
         .take(0)?;
 
-    let time_out_message = time_out_message.unwrap_log("Could not get time out message: `sent_message.rs` line 115").warn_message;
-    let time_out_timer = time_out_timer.unwrap_log("Could not get time out timer: `sent_message.rs` line 190").time;
-    let admin_role_id = admin_role.clone().unwrap_log("Could not get admin role: `sent_message.rs` line 191").role_id;
-    let admin_role_id_2 = admin_role.unwrap_log("Could not get admin role: `sent_message.rs` line 192").role_2_id;
+    let time_out_message = time_out_message.unwrap_log("No se ha establecido un mensaje de silencio")?.warn_message;
+    let time_out_timer = time_out_timer.unwrap_log("No se ha establecido un tiempo de silencio")?.time;
+    let admin_role_id = admin_role.clone().unwrap_log("No se ha establecido un rol de administrador")?.role_id;
+    let admin_role_id_2 = admin_role.unwrap_log("No se ha establecido un rol de administrador")?.role_2_id;
 
     // Salir de la función si no hay un admin establecido
-    if admin_role_id == 1 {
+    if admin_role_id.is_none() {
         log_handle!("No hay un admin establecido: `sent_message.rs` line 196");
         return Ok(())
     }
 
-    let admin_exception = member.roles(&ctx.cache)
-        .unwrap_log("Could not get member roles: `sent_message.rs` line 201")
-        .iter()
-        .any(|role| role.id == admin_role_id);
+    let admin_exception = admin_role_id.map_or(false, |admin_role_id| {
+        member.roles(&ctx.cache)
+            .unwrap_log("Could not get member roles: `sent_message.rs` line 112")
+            .iter()
+            .flat_map(|roles| roles.iter())
+            .any(|role| role.id == admin_role_id)
+    });
 
-    let admin_exception_2 = member.roles(&ctx.cache)
-        .unwrap_log("Could not get member roles: `sent_message.rs` line 206")
-        .iter()
-        .any(|role| role.id == admin_role_id_2);
+    let admin_exception_2 = admin_role_id_2.map_or(false, |admin_role_id_2| {
+        member.roles(&ctx.cache)
+            .unwrap_log("Could not get member roles: `sent_message.rs` line 206")
+            .iter()
+            .flat_map(|roles| roles.iter())
+            .any(|role| role.id == admin_role_id_2)
+    });
 
     if admin_exception || admin_exception_2 {
         return Ok(())
     }
 
-    let time_out_role_id = time_out_role.unwrap_log("Could not get time out role: `sent_message.rs` line 222").role_id;
+    let time_out_role_id = time_out_role.unwrap_log("No se ha establecido un rol de timeout")?.role_id;
     let mut warns = Warns::new(author_user_id);
     let existing_warns = warns.get_warns().await?;
 
@@ -240,8 +278,7 @@ pub async fn handle_forbidden_user(
         warns.save_to_db().await?;
     }
 
-    let warn_message = warn_message.unwrap_log("Could not get warn message: `sent_message.rs` line 235").warn_message;
-
+    let warn_message = warn_message.unwrap_log("No se ha establecido un mensaje de advertencia")?.warn_message;
     let mut message_map = HashMap::new();
     message_map.insert("content", format!("{warn_message}\nAdvertencia {}/3", warns.warns));
     let http = ctx.http.clone();
@@ -265,7 +302,7 @@ pub async fn handle_forbidden_user(
 fn handle_time(member: Member, http: Arc<Http>, time_out_role_id: RoleId, time_out_timer: u64) {
     tokio::spawn(async move {
         tokio::time::sleep(tokio::time::Duration::from_secs(time_out_timer)).await;
-        member.remove_role(&http, time_out_role_id).await.unwrap_log("Could not remove role: `sent_message.rs` line 260");
+        member.remove_role(&http, time_out_role_id).await.unwrap_or_default();
         println!("Desilenciado");
     });
 }

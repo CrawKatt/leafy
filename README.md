@@ -4,8 +4,8 @@
 
 - (**POST PRODUCCIÓN**)
 - [ ] Refactorizar el código para que sea más legible
-- [ ] Añadir un comando que desactive la función de usuario prohíbido si este está de acuerdo (el comando solo debe poder usarlo el usuario prohíbido)
-- [ ] Restringir el uso de comandos de administración a los usuarios con el rol de `Administrador`
+- [ ] Añadir un comando que desactive y reactive la función de usuario prohíbido si este está de acuerdo (el comando solo debe poder usarlo el usuario prohíbido)
+- [x] Restringir el uso de comandos de administración a los usuarios con el rol de `Administrador`
 
 ---
 

@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use serenity::all::GuildId;
 use crate::DB;
 use surrealdb::Result as SurrealResult;
+use crate::commands::setters::set_admins::AdminData;
 use crate::utils::{CommandResult, Context};
 use crate::utils::debug::UnwrapLog;
 
@@ -63,7 +64,21 @@ pub async fn set_time_out_message(
     ctx: Context<'_>,
     #[description = "The message to set as the time out message"] time_out_message: String,
 ) -> CommandResult {
-    let guild_id = ctx.guild_id().unwrap_log("Failed to get guild id: `set_time_out_message` Line 66");
+    let guild_id = ctx.guild_id().unwrap_log("Failed to get guild id: `set_time_out_message` Line 67")?;
+    let author = ctx.author();
+    let owner = ctx.guild().unwrap().owner_id;
+    let admin_role = AdminData::get_admin_role(guild_id).await?;
+
+    let Some(admin_role) = admin_role else {
+        ctx.say("No se ha establecido el rol de administrador").await?;
+        return Ok(())
+    };
+
+    if !author.has_role(&ctx.serenity_context().http, guild_id, admin_role).await? && author.id != owner {
+        ctx.say("No tienes permisos para usar este comando").await?;
+        return Ok(())
+    }
+
     let time_out_message_data = TimeOutMessageData::new(guild_id, time_out_message.clone());
     let existing_data = time_out_message_data.verify_data().await?;
 

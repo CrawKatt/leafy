@@ -3,6 +3,7 @@ use serenity::all::{GuildId, RoleId};
 use crate::DB;
 use crate::utils::autocomplete::args_set_role;
 use surrealdb::Result as SurrealResult;
+use crate::commands::setters::set_admins::AdminData;
 use crate::utils::{CommandResult, Context};
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -62,6 +63,20 @@ pub async fn set_time_out_role(
 
     DB.use_ns("discord-namespace").use_db("discord").await?;
     let guild_id = ctx.guild_id().unwrap_or_default();
+    let author = ctx.author();
+    let owner = ctx.guild().unwrap().owner_id;
+    let admin_role = AdminData::get_admin_role(guild_id).await?;
+
+    let Some(role_id_result) = admin_role else {
+        ctx.say("No admin role has been set").await?;
+        return Ok(())
+    };
+
+    if !author.has_role(&ctx.serenity_context().http, guild_id, role_id_result).await? && author.id != owner {
+        ctx.say("No tienes permisos para usar este comando").await?;
+        return Ok(())
+    }
+
     let data = RoleData::new(role_id, guild_id);
 
     // Consulta para verificar si el dato ya existe
