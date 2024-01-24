@@ -1,4 +1,4 @@
-use crate::commands::set_timeout_role::RoleData;
+use crate::commands::setters::set_timeout_role::RoleData;
 use crate::DB;
 use crate::utils::{CommandResult, Context};
 

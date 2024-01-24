@@ -1,6 +1,6 @@
-use crate::commands::set_forbidden_user::ForbiddenUserData;
 use crate::DB;
 use crate::utils::{CommandResult, Context};
+use crate::commands::setters::set_forbidden_user::ForbiddenUserData;
 
 #[poise::command(prefix_command, slash_command)]
 pub async fn get_forbidden_user(

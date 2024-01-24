@@ -1,6 +1,6 @@
-use crate::commands::set_forbidden_role::ForbiddenRoleData;
 use crate::DB;
 use crate::utils::{CommandResult, Context};
+use crate::commands::setters::set_forbidden_role::ForbiddenRoleData;
 
 #[poise::command(prefix_command, slash_command)]
 pub async fn get_forbidden_role(

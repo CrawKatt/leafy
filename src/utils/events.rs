@@ -1,5 +1,5 @@
 use poise::serenity_prelude as serenity;
-use crate::DB;
+use crate::{DB, log_handle};
 use crate::utils::CommandResult;
 pub use crate::utils::Data;
 pub use crate::utils::Error;
@@ -22,19 +22,15 @@ pub async fn event_handler(
         serenity::FullEvent::Message { new_message } => {
             println!("Event Message: {:?}", new_message.content);
             message_handler(ctx, new_message).await.unwrap_or_else(|why| {
-                println!("Could not handle message: {why}");
+                log_handle!("Could not handle message: {why}");
             });
         }
 
         serenity::FullEvent::MessageDelete { channel_id, deleted_message_id, .. } => {
-            println!("Event Message deleted: {deleted_message_id:?}");
             delete_message_handler(ctx, channel_id, deleted_message_id).await?;
         }
 
-        serenity::FullEvent::MessageUpdate { event, new, old_if_available } => {
-            println!("Event Message updated: {:?}", event.content);
-            println!("New Message: {new:?}");
-            println!("Old Message: {old_if_available:?}");
+        serenity::FullEvent::MessageUpdate { event, .. } => {
             edited_message_handler(ctx, event).await?;
         }
 

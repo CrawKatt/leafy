@@ -10,6 +10,10 @@ pub async fn err_handler(error: poise::FrameworkError<'_, Data, Error>) {
             crate::log_handle!("Error en comando `{}` : {:?}", ctx.command().name, error);
         },
 
+        poise::FrameworkError::EventHandler { error, .. } => {
+            crate::log_handle!("Error en el evento: {error:?} Causa del error: {:?}", error.source());
+        },
+
         error => {
             if let Err(e) = poise::builtins::on_error(error).await {
                 println!("Error al manejar el error: {e}");

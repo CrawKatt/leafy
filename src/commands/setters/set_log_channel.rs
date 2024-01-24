@@ -3,7 +3,9 @@ use serenity::all::{Channel, ChannelId, GuildId};
 use crate::DB;
 use crate::utils::autocomplete::args_log_command;
 use surrealdb::Result as SurrealResult;
+use crate::commands::setters::set_admins::AdminData;
 use crate::utils::{CommandResult, Context};
+use crate::utils::debug::UnwrapLog;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct GuildData {
@@ -58,8 +60,23 @@ pub async fn set_log_channel(
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
 
+    let guild_id = ctx.guild_id().unwrap_log("Could not get guild_id: `set_log_channel.rs` Line 63")?;
+    let author = ctx.author();
+    let owner = ctx.guild().unwrap().owner_id;
+    let admin_role = AdminData::get_admin_role(guild_id).await?;
+
+    let Some(admin_role) = admin_role else {
+        ctx.say("No se ha establecido el rol de administrador").await?;
+        return Ok(())
+    };
+
+    if !author.has_role(&ctx.serenity_context().http, guild_id, admin_role).await? && author.id != owner {
+        ctx.say("No tienes permisos para usar este comando").await?;
+        return Ok(())
+    }
+
     let channel_id = channel.id();
-    let data = GuildData::new(ctx.guild_id().unwrap_or_default(), channel_id);
+    let data = GuildData::new(guild_id, channel_id);
     let existing_data = data.verify_data().await?;
 
     let Some(_) = existing_data else {
