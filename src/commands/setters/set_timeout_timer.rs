@@ -60,7 +60,7 @@ pub async fn set_timeout_timer(
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
 
-    let guild_id = ctx.guild_id().unwrap_log("Failed to get guild id: `set_timeout_timer` Line 63")?;
+    let guild_id = ctx.guild_id().unwrap_log("Failed to get guild id", line!(), module_path!())?;
     let author = ctx.author();
     let owner = ctx.guild().unwrap().owner_id;
     let admin_role = AdminData::get_admin_role(guild_id).await?;
@@ -76,10 +76,10 @@ pub async fn set_timeout_timer(
     }
 
     let time_out_timer = match set_time.as_str() {
-        "5 Minutos" => SetTimeoutTimer::new(300, ctx.guild_id().unwrap_log("Failed to get guild id: `set_timeout_timer` Line 79")?),
-        "30 Minutos" => SetTimeoutTimer::new(1800, ctx.guild_id().unwrap_log("Failed to get guild id: `set_timeout_timer` Line 80")?),
-        "60 Minutos" => SetTimeoutTimer::new(3600, ctx.guild_id().unwrap_log("Failed to get guild id: `set_timeout_timer` Line 81")?),
-        _ => SetTimeoutTimer::new(60, ctx.guild_id().unwrap_log("Failed to get guild id: `set_timeout_timer` Line 82")?),
+        "5 Minutos" => SetTimeoutTimer::new(300, ctx.guild_id().unwrap_log("Failed to get guild id", line!(), module_path!())?),
+        "30 Minutos" => SetTimeoutTimer::new(1800, ctx.guild_id().unwrap_log("Failed to get guild id", line!(), module_path!())?),
+        "60 Minutos" => SetTimeoutTimer::new(3600, ctx.guild_id().unwrap_log("Failed to get guild id", line!(), module_path!())?),
+        _ => SetTimeoutTimer::new(60, ctx.guild_id().unwrap_log("Failed to get guild id", line!(), module_path!())?),
     };
 
     //let time_out_timer = SetTimeoutTimer::new(tiempo_de_time_out, ctx.guild_id().unwrap_or_default());

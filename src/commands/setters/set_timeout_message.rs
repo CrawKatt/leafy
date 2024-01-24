@@ -64,7 +64,7 @@ pub async fn set_time_out_message(
     ctx: Context<'_>,
     #[description = "The message to set as the time out message"] time_out_message: String,
 ) -> CommandResult {
-    let guild_id = ctx.guild_id().unwrap_log("Failed to get guild id: `set_time_out_message` Line 67")?;
+    let guild_id = ctx.guild_id().unwrap_log("Failed to get guild id", line!(), module_path!())?;
     let author = ctx.author();
     let owner = ctx.guild().unwrap().owner_id;
     let admin_role = AdminData::get_admin_role(guild_id).await?;
