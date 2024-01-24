@@ -17,24 +17,24 @@ impl fmt::Display for UnwrapLogError<'_> {
 impl Error for UnwrapLogError<'_> {}
 
 pub trait UnwrapLog<T> {
-    fn unwrap_log(self, msg: &str) -> Result<T, UnwrapLogError>;
+    fn unwrap_log<'a>(self, msg: &'a str, line: u32, module: &str) -> Result<T, UnwrapLogError<'a>>;
 }
 
 impl<T: Default> UnwrapLog<T> for Option<T> {
-    fn unwrap_log(self, msg: &str) -> Result<T, UnwrapLogError> {
+    fn unwrap_log<'a>(self, msg: &'a str, line: u32, module: &str) -> Result<T, UnwrapLogError<'a>> {
         self.map_or_else(|| {
-            log_handle!("{msg}");
+            log_handle!("{msg} : `{module}` Line {line}");
             Err(UnwrapLogError { msg })
         }, |t| Ok(t))
     }
 }
 
 impl<T: Default, E: StdError> UnwrapLog<T> for Result<T, E> {
-    fn unwrap_log(self, msg: &str) -> Result<T, UnwrapLogError> {
+    fn unwrap_log<'a>(self, msg: &'a str, line: u32, module: &str) -> Result<T, UnwrapLogError<'a>> {
         match self {
             Ok(t) => Ok(t),
             Err(why) => {
-                log_handle!("{msg}: {why}");
+                log_handle!("{msg}: {why} Line {line}: `{module}`");
                 Err(UnwrapLogError { msg })
             }
         }

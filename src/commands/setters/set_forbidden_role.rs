@@ -84,7 +84,7 @@ pub async fn set_forbidden_role(
     #[description = "The role to set as the forbidden role"] role: Role,
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
-    let guild_id = ctx.guild_id().unwrap_log("Could not get the guild_id: `set_forbidden_role.rs` Line 87")?;
+    let guild_id = ctx.guild_id().unwrap_log("Could not get the guild_id", line!(), module_path!())?;
     let data = ForbiddenRoleData::new(role.clone(), role.id, GuildId::default());
     let existing_data = data.verify_data().await?;
     let author = ctx.author();

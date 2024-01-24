@@ -24,7 +24,7 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     let message_content = &new_message.content;
 
     // variable que obtiene el id del servidor
-    let guild_id = new_message.guild_id.unwrap_log("Could not get guild id: `sent_message.rs` line 25")?;
+    let guild_id = new_message.guild_id.unwrap_log("Could not get guild id", line!(), module_path!())?;
 
     // Obtener el canal de logs de la base de datos
     let data = MessageData::new(
@@ -70,7 +70,7 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
 
     let forbidden_role_id = result;
     let mentioned_user = guild_id.member(&ctx.http, user_id).await?;
-    let mentioned_user_roles = mentioned_user.roles(&ctx.cache).unwrap_log("Could not get mentioned user roles: `sent_message.rs` line 65")?;
+    let mentioned_user_roles = mentioned_user.roles(&ctx.cache).unwrap_log("Could not get mentioned user roles", line!(), module_path!())?;
 
     // Si el usuario mencionado tiene el rol de prohibido de mencionar, silenciar al autor del mensaje
     if mentioned_user_roles.iter().any(|role| role.id == forbidden_role_id) {
@@ -141,7 +141,7 @@ pub async fn handle_forbidden_role(
     let admin_role_id = admin_role.role_id;
     let admin_exception = admin_role_id.map_or(false, |admin_role_id| {
         member.roles(&ctx.cache)
-            .unwrap_log("Could not get member roles: `sent_message.rs` line 112")
+            .unwrap_log("Could not get member roles", line!(), module_path!())
             .iter()
             .flat_map(|roles| roles.iter())
             .any(|role| role.id == admin_role_id)
@@ -235,10 +235,10 @@ pub async fn handle_forbidden_user(
         .await?
         .take(0)?;
 
-    let time_out_message = time_out_message.unwrap_log("No se ha establecido un mensaje de silencio")?.time_out_message;
-    let time_out_timer = time_out_timer.unwrap_log("No se ha establecido un tiempo de silencio")?.time;
-    let admin_role_id = admin_role.clone().unwrap_log("No se ha establecido un rol de administrador")?.role_id;
-    let admin_role_id_2 = admin_role.unwrap_log("No se ha establecido un rol de administrador")?.role_2_id;
+    let time_out_message = time_out_message.unwrap_log("No se ha establecido un mensaje de silencio", line!(), module_path!())?.time_out_message;
+    let time_out_timer = time_out_timer.unwrap_log("No se ha establecido un tiempo de silencio", line!(), module_path!())?.time;
+    let admin_role_id = admin_role.clone().unwrap_log("No se ha establecido un rol de administrador", line!(), module_path!())?.role_id;
+    let admin_role_id_2 = admin_role.unwrap_log("No se ha establecido un rol de administrador", line!(), module_path!())?.role_2_id;
 
     // Salir de la función si no hay un admin establecido
     if admin_role_id.is_none() {
@@ -248,7 +248,7 @@ pub async fn handle_forbidden_user(
 
     let admin_exception = admin_role_id.map_or(false, |admin_role_id| {
         member.roles(&ctx.cache)
-            .unwrap_log("Could not get member roles: `sent_message.rs` line 112")
+            .unwrap_log("Could not get member roles", line!(), module_path!())
             .iter()
             .flat_map(|roles| roles.iter())
             .any(|role| role.id == admin_role_id)
@@ -256,7 +256,7 @@ pub async fn handle_forbidden_user(
 
     let admin_exception_2 = admin_role_id_2.map_or(false, |admin_role_id_2| {
         member.roles(&ctx.cache)
-            .unwrap_log("Could not get member roles: `sent_message.rs` line 206")
+            .unwrap_log("Could not get member roles", line!(), module_path!())
             .iter()
             .flat_map(|roles| roles.iter())
             .any(|role| role.id == admin_role_id_2)
@@ -266,7 +266,7 @@ pub async fn handle_forbidden_user(
         return Ok(())
     }
 
-    let time_out_role_id = time_out_role.unwrap_log("No se ha establecido un rol de timeout")?.role_id;
+    let time_out_role_id = time_out_role.unwrap_log("No se ha establecido un rol de timeout", line!(), module_path!())?.role_id;
     let mut warns = Warns::new(author_user_id);
     let existing_warns = warns.get_warns().await?;
 
@@ -279,7 +279,7 @@ pub async fn handle_forbidden_user(
         warns.save_to_db().await?;
     }
 
-    let warn_message = warn_message.unwrap_log("No se ha establecido un mensaje de advertencia")?.warn_message;
+    let warn_message = warn_message.unwrap_log("No se ha establecido un mensaje de advertencia", line!(), module_path!())?.warn_message;
     let mut message_map = HashMap::new();
     message_map.insert("content", format!("{warn_message}\nAdvertencia {}/3", warns.warns));
     let http = ctx.http.clone();

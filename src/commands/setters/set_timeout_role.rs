@@ -63,7 +63,7 @@ pub async fn set_time_out_role(
 ) -> CommandResult {
 
     DB.use_ns("discord-namespace").use_db("discord").await?;
-    let guild_id = ctx.guild_id().unwrap_log("Could not get the guild id: `set_time_out_role.rs` Line 66")?;
+    let guild_id = ctx.guild_id().unwrap_log("Could not get the guild id", line!(), module_path!())?;
     let author = ctx.author();
     let owner = ctx.guild().unwrap().owner_id;
     let admin_role = AdminData::get_admin_role(guild_id).await?;
