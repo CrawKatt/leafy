@@ -10,6 +10,7 @@ use crate::commands::setters::set_admins::AdminData;
 use crate::commands::setters::set_timeout_role::RoleData;
 use crate::commands::setters::set_forbidden_user::ForbiddenUserData;
 use crate::commands::setters::set_forbidden_role::ForbiddenRoleData;
+use crate::commands::setters::set_timeout_message::TimeOutMessageData;
 use crate::commands::setters::set_timeout_timer::SetTimeoutTimer;
 use crate::commands::setters::set_warn_message::WarnMessageData;
 use crate::utils::debug::UnwrapLog;
@@ -228,13 +229,13 @@ pub async fn handle_forbidden_user(
         .take(0)?;
 
     let sql_query = "SELECT * FROM time_out_message WHERE guild_id = $guild_id";
-    let time_out_message: Option<WarnMessageData> = DB
+    let time_out_message: Option<TimeOutMessageData> = DB
         .query(sql_query)
         .bind(("guild_id", guild_id)) // pasar el valor
         .await?
         .take(0)?;
 
-    let time_out_message = time_out_message.unwrap_log("No se ha establecido un mensaje de silencio")?.warn_message;
+    let time_out_message = time_out_message.unwrap_log("No se ha establecido un mensaje de silencio")?.time_out_message;
     let time_out_timer = time_out_timer.unwrap_log("No se ha establecido un tiempo de silencio")?.time;
     let admin_role_id = admin_role.clone().unwrap_log("No se ha establecido un rol de administrador")?.role_id;
     let admin_role_id_2 = admin_role.unwrap_log("No se ha establecido un rol de administrador")?.role_2_id;

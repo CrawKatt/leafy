@@ -104,7 +104,7 @@ pub async fn set_admins(
         
         let role_id = role.as_ref().map(|role| role.id);
         let role_2_id = role_2.as_ref().map(|role| role.id);
-        let role = role.unwrap_log("Could not get the role: `set_admins.rs` Line 99")?;
+        let role = role.unwrap_log("Could not get the role: `set_admins.rs` Line 107")?;
         let admin_data = AdminData::new(role.clone(), role_2, role_id, role_2_id, guild_id);
         admin_data.save_to_db().await?;
         let role_name = role.name;

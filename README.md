@@ -4,8 +4,8 @@
 
 - (**POST PRODUCCIÓN**)
 - [ ] Refactorizar el código para que sea más legible
+- (**Próxima versión**)
 - [ ] Añadir un comando que desactive y reactive la función de usuario prohíbido si este está de acuerdo (el comando solo debe poder usarlo el usuario prohíbido)
-- [x] Restringir el uso de comandos de administración a los usuarios con el rol de `Administrador`
 
 ---
 
@@ -41,4 +41,5 @@
 - [x] Añadir una excepción para que el Bot no tome en cuenta si el usuario prohíbido se menciona a si mismo
 - [x] Corregir el error de que el Bot detecta a cualquier usuario como un usuario prohíbido si se menciona en un mensaje
 - [x] Enviar mensaje de sugerencia pidiendo responder un mensaje sin mencionar a un usuario o un rol prohibido
+- [x] Restringir el uso de comandos de administración a los usuarios con el rol de `Administrador`
 ---

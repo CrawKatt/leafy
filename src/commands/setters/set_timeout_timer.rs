@@ -76,10 +76,10 @@ pub async fn set_timeout_timer(
     }
 
     let time_out_timer = match set_time.as_str() {
-        "5 Minutos" => SetTimeoutTimer::new(300, ctx.guild_id().unwrap_or_default()),
-        "30 Minutos" => SetTimeoutTimer::new(1800, ctx.guild_id().unwrap_or_default()),
-        "60 Minutos" => SetTimeoutTimer::new(3600, ctx.guild_id().unwrap_or_default()),
-        _ => SetTimeoutTimer::new(60, ctx.guild_id().unwrap_or_default()),
+        "5 Minutos" => SetTimeoutTimer::new(300, ctx.guild_id().unwrap_log("Failed to get guild id: `set_timeout_timer` Line 79")?),
+        "30 Minutos" => SetTimeoutTimer::new(1800, ctx.guild_id().unwrap_log("Failed to get guild id: `set_timeout_timer` Line 80")?),
+        "60 Minutos" => SetTimeoutTimer::new(3600, ctx.guild_id().unwrap_log("Failed to get guild id: `set_timeout_timer` Line 81")?),
+        _ => SetTimeoutTimer::new(60, ctx.guild_id().unwrap_log("Failed to get guild id: `set_timeout_timer` Line 82")?),
     };
 
     //let time_out_timer = SetTimeoutTimer::new(tiempo_de_time_out, ctx.guild_id().unwrap_or_default());
