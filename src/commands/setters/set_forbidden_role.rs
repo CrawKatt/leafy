@@ -60,7 +60,7 @@ impl ForbiddenRoleData {
         Ok(existing_data)
     }
 
-    pub async fn get_role_id(&self) -> SurrealResult<Option<RoleId>> {
+    pub async fn get_role_id(guild_id: GuildId) -> SurrealResult<Option<RoleId>> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
 
         // Obtener el rol prphíbido de mencionar desde la base de datos
@@ -68,12 +68,13 @@ impl ForbiddenRoleData {
         let sql_query = "SELECT * FROM forbidden_roles WHERE role.guild_id = $guild_id";
         let existing_data: Option<Self> = DB
             .query(sql_query)
-            .bind(("guild_id", &self.guild_id))
+            .bind(("guild_id", &guild_id))
             .await?
             .take(0)?;
 
         Ok(existing_data.map(|data| data.role_id))
     }
+
 }
 
 /// Establece el rol de usuario prohibido de mencionar

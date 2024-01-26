@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use std::collections::HashMap;
-use serenity::all::{CreateAttachment, GuildId, Http, Member, Mentionable, Message, Role, RoleId, UserId};
+use serenity::all::{CreateAttachment, GuildId, Http, Member, Mentionable, Message, RoleId, UserId};
 use poise::serenity_prelude as serenity;
 
 use crate::{DB, log_handle};
@@ -59,16 +59,8 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
         return Ok(());
     }
 
-    // El primer RoleId(1) es un Default es por la creación del objeto, es innecesario y da igual
-    let forbiden_role_data = ForbiddenRoleData::new(Role::default(), RoleId::default(), guild_id);
-    let result = forbiden_role_data.get_role_id().await?;
-
-    let Some(result) = result else {
-        println!("No hay un rol prohibido de mencionar: `sent_message.rs` line 66");
-        return Ok(())
-    };
-
-    let forbidden_role_id = result;
+    let get_role_id = ForbiddenRoleData::get_role_id(guild_id).await?;
+    let forbidden_role_id = get_role_id.unwrap_log("No se ha establecido un rol prohibido de mencionar", line!(), module_path!())?;
     let mentioned_user = guild_id.member(&ctx.http, user_id).await?;
     let mentioned_user_roles = mentioned_user.roles(&ctx.cache).unwrap_log("Could not get mentioned user roles", line!(), module_path!())?;
 
@@ -119,45 +111,17 @@ pub async fn handle_forbidden_role(
         .await?
         .take(0)?;
 
-    let Some(time_out_message) = time_out_message else {
-        println!("No hay un mensaje de silencio: `sent_message.rs` line 122");
-        return Ok(())
-    };
-
-    let time_out_message = time_out_message.warn_message;
-
-    let Some(time_out_timer) = time_out_timer else {
-        println!("No hay un tiempo de silencio establecido: `sent_message.rs` line 129");
-        return Ok(())
-    };
-
-    let time_out_timer = time_out_timer.time;
-
-    let Some(admin_role) = admin_role else {
-        println!("No hay un admin establecido: `sent_message.rs` line 136");
-        return Ok(())
-    };
-
-    let admin_role_id = admin_role.role_id;
-    let admin_exception = admin_role_id.map_or(false, |admin_role_id| {
-        member.roles(&ctx.cache)
-            .unwrap_log("Could not get member roles", line!(), module_path!())
-            .iter()
-            .flat_map(|roles| roles.iter())
-            .any(|role| role.id == admin_role_id)
-    });
+    let time_out_message = time_out_message.unwrap_log("No hay un mensaje de timeout establecido", line!(), module_path!())?.warn_message;
+    let time_out_timer = time_out_timer.unwrap_log("No hay un tiempo de silencio establecido", line!(), module_path!())?.time;
+    let admin_role_id = admin_role.unwrap_log("No hay un rol de administrador establecido", line!(), module_path!())?.role_id;
+    let admin_exception = check_admin_exception(admin_role_id, &member, &ctx);
 
     if admin_exception {
-        println!("Admin exception");
+        println!("Admin exception : `sent_message.rs` Line 120");
         return Ok(())
     }
 
-    let Some(time_out_role) = time_out_role else {
-        println!("No hay un rol de silencio establecido: `sent_message.rs` line 152");
-        return Ok(())
-    };
-
-    let time_out_role_id = time_out_role.role_id;
+    let time_out_role_id = time_out_role.unwrap_log("No hay un rol de silencio establecido", line!(), module_path!())?.role_id;
     let mut warns = Warns::new(author_user_id);
     let existing_warns = warns.get_warns().await?;
 
@@ -246,23 +210,11 @@ pub async fn handle_forbidden_user(
         return Ok(())
     }
 
-    let admin_exception = admin_role_id.map_or(false, |admin_role_id| {
-        member.roles(&ctx.cache)
-            .unwrap_log("Could not get member roles", line!(), module_path!())
-            .iter()
-            .flat_map(|roles| roles.iter())
-            .any(|role| role.id == admin_role_id)
-    });
-
-    let admin_exception_2 = admin_role_id_2.map_or(false, |admin_role_id_2| {
-        member.roles(&ctx.cache)
-            .unwrap_log("Could not get member roles", line!(), module_path!())
-            .iter()
-            .flat_map(|roles| roles.iter())
-            .any(|role| role.id == admin_role_id_2)
-    });
+    let admin_exception = check_admin_exception(admin_role_id, &member, &ctx);
+    let admin_exception_2 = check_admin_exception(admin_role_id_2, &member, &ctx);
 
     if admin_exception || admin_exception_2 {
+        println!("Admin exception : `sent_message.rs` Line 217");
         return Ok(())
     }
 
@@ -325,4 +277,14 @@ async fn handle_warns(
     handle_time(member.to_owned(), http.to_owned(), time_out_role_id, time_out_timer);
 
     Ok(())
+}
+
+fn check_admin_exception(admin_role_id: Option<RoleId>, member: &Member, ctx: &serenity::Context) -> bool {
+    admin_role_id.map_or(false, |admin_role_id| {
+        member.roles(&ctx.cache)
+            .unwrap_log("Could not get member roles", line!(), module_path!())
+            .iter()
+            .flat_map(|roles| roles.iter())
+            .any(|role| role.id == admin_role_id)
+    })
 }
