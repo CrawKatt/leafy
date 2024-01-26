@@ -17,7 +17,7 @@ pub async fn get_timeout_role(
         .take(0)?;
 
     let timeout_role_id = database_info.unwrap_or_default().role_id;
-    ctx.say(format!("Timeout role is <@&{}>", timeout_role_id)).await?;
+    ctx.say(format!("Timeout role is <@&{timeout_role_id}>")).await?;
 
     Ok(())
 }

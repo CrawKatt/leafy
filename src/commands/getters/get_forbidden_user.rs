@@ -15,9 +15,16 @@ pub async fn get_forbidden_user(
         .bind(("guild_id", guild_id)) // pasar el valor
         .await?
         .take(0)?;
-
-    let forbidden_user_id = database_info.unwrap_or_default().user_id;
-    ctx.say(format!("Forbidden user is <@{forbidden_user_id}>")).await?;
+    
+    let Some(forbidden_user_id) = database_info else {
+        ctx.say("No se ha establecido un usuario prohíbido de mencionar").await?;
+        return Ok(())
+    };
+    
+    let forbidden_user_id = forbidden_user_id.user_id;
+    let forbidden_user = ctx.cache().user(forbidden_user_id).ok_or("User not found")?.name.clone();
+    
+    ctx.say(format!("Forbidden user is **{forbidden_user}**")).await?;
 
     Ok(())
 }

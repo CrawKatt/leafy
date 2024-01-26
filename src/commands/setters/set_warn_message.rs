@@ -65,7 +65,10 @@ pub async fn set_warn_message(
     #[description = "The message to set as the warn message"] warn_message: String,
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
-    let guild_id = ctx.guild_id().unwrap_log("Could not get the guild_id", line!(), module_path!())?;
+    let current_line = line!();
+    let current_module = module_path!();
+
+    let guild_id = ctx.guild_id().unwrap_log("Could not get the guild_id", current_line, current_module)?;
     let author = ctx.author();
     let owner = ctx.guild().unwrap().owner_id;
     let admin_role = AdminData::get_admin_role(guild_id).await?;
@@ -80,7 +83,7 @@ pub async fn set_warn_message(
         return Ok(())
     }
 
-    let data = WarnMessageData::new(ctx.guild_id().unwrap_log("Could not get the guild_id", line!(), module_path!())?, warn_message.clone());
+    let data = WarnMessageData::new(ctx.guild_id().unwrap_log("Could not get the guild_id", current_line, current_module)?, warn_message.clone());
     let existing_data = data.verify_data().await?;
 
     if existing_data.is_some() {
