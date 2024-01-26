@@ -14,7 +14,7 @@ pub async fn get_admins(
         return Ok(())
     };
 
-    let role_names = &ctx.cache().role(guild_id, role_id).ok_or("Role not found")?.name.clone();
+    let role_names = ctx.cache().role(guild_id, role_id).ok_or("Role not found")?.name.clone();
     poise::say_reply(ctx, format!("The current admin role is: **{role_names}**")).await?;
 
     Ok(())

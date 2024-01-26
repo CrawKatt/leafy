@@ -16,8 +16,15 @@ pub async fn get_forbidden_role(
         .await?
         .take(0)?;
 
-    let forbidden_role_id = database_info.unwrap_or_default().role_id;
-    ctx.say(format!("Forbidden role is <@&{forbidden_role_id}>")).await?;
+    let Some(forbidden_role_id) = database_info else {
+        ctx.say("No se ha establecido un rol prohíbido de mencionar").await?;
+        return Ok(())
+    };
+
+    let forbidden_role_id = forbidden_role_id.role_id;
+    let forbidden_role = ctx.cache().role(guild_id, forbidden_role_id).ok_or("Role not found")?.name.clone();
+
+    ctx.say(format!("Forbidden role is **{forbidden_role}**")).await?;
 
     Ok(())
 }

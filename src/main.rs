@@ -15,9 +15,9 @@ mod utils;
 
 use utils::Data;
 use utils::MessageData;
+use utils::load_commands;
 use utils::events::event_handler;
 use utils::handlers::error::err_handler;
-use crate::utils::load_commands;
 
 #[tokio::main]
 async fn main() {
@@ -74,10 +74,12 @@ fn clean_database_loop() {
             sleep(Duration::from_secs(60 * 60 * 24)); // 24 horas (60 * 60 * 24)
 
             DB.use_ns("discord-namespace").use_db("discord").await.unwrap_or_else(|why| {
+                log_handle!("Could not use namespace: {why}");
                 panic!("Could not use namespace: {why}");
             });
 
             DB.delete("messages").await.unwrap_or_else(|why| -> Vec<MessageData> {
+                log_handle!("Could not delete messages: {why}");
                 panic!("Could not delete messages: {why}");
             });
         }

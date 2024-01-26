@@ -32,8 +32,8 @@ pub async fn event_handler(
             edited_message_handler(ctx, event).await?;
         }
 
-        serenity::FullEvent::PresenceUpdate { .. } => {
-            //println!("Event Presence updated: {:?}", new_data.user);
+        serenity::FullEvent::PresenceUpdate { new_data } => {
+            println!("Event Presence updated: {:?}", new_data.user);
         }
 
         _ => println!("Unhandled event: {:?}", event.snake_case_name())
