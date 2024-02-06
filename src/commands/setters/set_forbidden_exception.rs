@@ -1,0 +1,124 @@
+use std::panic::Location;
+use serde::{Deserialize, Serialize};
+use serenity::all::{GuildId, Permissions, UserId};
+use surrealdb::Result as SurrealResult;
+use crate::DB;
+use crate::utils::{CommandResult, Context};
+use crate::utils::debug::UnwrapLog;
+
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
+pub struct ForbiddenException {
+    pub user_id: UserId,
+    pub guild_id: GuildId,
+    pub is_active: Option<bool>,
+}
+
+impl ForbiddenException {
+    pub const fn new(user_id: UserId, guild_id: GuildId, is_active: bool) -> Self {
+        Self {
+            user_id,
+            guild_id,
+            is_active: Some(is_active),
+        }
+    }
+
+    pub async fn save_to_db(&self) -> SurrealResult<()> {
+        DB.use_ns("discord-namespace").use_db("discord").await?;
+        let _created: Vec<Self> = DB
+            .create("forbidden_exception")
+            .content(self)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn verify_data(&self) -> SurrealResult<Option<Self>> {
+        DB.use_ns("discord-namespace").use_db("discord").await?;
+        let sql_query = "SELECT * FROM forbidden_exception WHERE guild_id = $guild_id AND user_id = $user_id";
+        let existing_data: Option<Self> = DB
+            .query(sql_query)
+            .bind(("guild_id", self.guild_id))
+            .bind(("user_id", self.user_id))
+            .await?
+            .take(0)?;
+
+        Ok(existing_data)
+    }
+
+    pub async fn switch(&mut self) -> SurrealResult<()> {
+        DB.use_ns("discord-namespace").use_db("discord").await?;
+        let Some(is_active) = self.is_active else {
+            println!("No is_active value found {}", Location::caller());
+            return Ok(())
+        };
+
+        let sql_query = "UPDATE forbidden_exception SET is_active = $is_active WHERE guild_id = $guild_id AND user_id = $user_id";
+        DB.query(sql_query)
+            .bind(("is_active", self.is_active))
+            .bind(("guild_id", self.guild_id))
+            .bind(("user_id", self.user_id))
+            .await?;
+
+        self.is_active = Some(!is_active);
+
+        Ok(())
+    }
+
+    pub async fn have_exception(user_id: UserId) -> SurrealResult<Option<bool>> {
+        DB.use_ns("discord-namespace").use_db("discord").await?;
+        let sql_query = "SELECT * FROM forbidden_exception WHERE user_id = $user_id";
+        let existing_data: Option<Self> = DB
+            .query(sql_query)
+            .bind(("user_id", user_id))
+            .await?
+            .take(0)?;
+
+        let is_active = existing_data.map(|data| data.is_active);
+
+        if let Some(is_active) = is_active {
+            return Ok(is_active)
+        }
+
+        Ok(None)
+
+        //Ok(is_active)
+    }
+}
+
+#[poise::command(
+    prefix_command,
+    slash_command,
+    guild_only,
+    ephemeral
+)]
+pub async fn set_forbidden_exception(
+    ctx: Context<'_>,
+    #[description = "The user id to set as a forbidden exception"] user: Option<UserId>,
+    #[description = "The state to set for the forbidden exception"] state: bool
+) -> CommandResult {
+    let guild_id = ctx.guild_id().unwrap();
+    let user_id = user.unwrap_or(ctx.author().id);
+
+    if user_id != ctx.author().id {
+        let member = guild_id.member(ctx.serenity_context(), ctx.author().id).await.unwrap_log("Error getting member", module_path!(), line!())?;
+        if !member.permissions(ctx.serenity_context()).unwrap_log("Error checking permissions", module_path!(), line!())?.contains(Permissions::ADMINISTRATOR) {
+            poise::say_reply(ctx, "Debes ser administrador para cambiar la excepción de otros usuarios").await?;
+            return Ok(());
+        }
+    }
+
+    let mut data = ForbiddenException::new(user_id, guild_id, state);
+    let existing_data = data.verify_data().await.unwrap_log("Error verifying data", module_path!(), line!())?;
+    let user = user_id.to_user(ctx.http()).await.unwrap_log("Error getting user", module_path!(), line!())?;
+    let username = user.name;
+
+    if existing_data.is_none() {
+        data.save_to_db().await.unwrap_log("Error saving data", module_path!(), line!())?;
+        poise::say_reply(ctx, format!("User {username} has been set as a forbidden exception")).await?;
+    } else {
+        data.switch().await.unwrap_log("Error switching data", module_path!(), line!())?;
+        poise::say_reply(ctx, format!("El usuario {username} ya ha solicitado una excepción. Actualizando")).await?;
+    }
+
+    Ok(())
+}

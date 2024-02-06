@@ -1,19 +1,24 @@
 use std::sync::Arc;
 use std::collections::HashMap;
-use serenity::all::{CreateAttachment, GuildId, Http, Member, Mentionable, Message, RoleId, UserId};
+use std::panic::Location;
+use chrono::{Duration, Utc};
+use serenity::all::{CreateAttachment, GuildId, Http, Member, Mentionable, Message, RoleId, Timestamp};
 use poise::serenity_prelude as serenity;
 
 use crate::{DB, log_handle};
+use crate::commands::joke::Joke;
 use crate::utils::{CommandResult, Warns};
 use crate::utils::MessageData;
-use crate::commands::setters::set_admins::AdminData;
-use crate::commands::setters::set_timeout_role::RoleData;
-use crate::commands::setters::set_forbidden_user::ForbiddenUserData;
-use crate::commands::setters::set_forbidden_role::ForbiddenRoleData;
-use crate::commands::setters::set_timeout_message::TimeOutMessageData;
-use crate::commands::setters::set_timeout_timer::SetTimeoutTimer;
-use crate::commands::setters::set_warn_message::WarnMessageData;
+use crate::commands::setters::AdminData;
+use crate::commands::setters::ForbiddenUserData;
+use crate::commands::setters::ForbiddenRoleData;
+use crate::commands::setters::set_forbidden_exception::ForbiddenException;
+use crate::commands::setters::TimeOutMessageData;
+use crate::commands::setters::SetTimeoutTimer;
+use crate::commands::setters::WarnMessageData;
 use crate::utils::debug::UnwrapLog;
+
+const CURRENT_MODULE: &str = file!();
 
 pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> CommandResult {
     if new_message.author.bot {
@@ -24,7 +29,7 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     let message_content = &new_message.content;
 
     // variable que obtiene el id del servidor
-    let guild_id = new_message.guild_id.unwrap_log("Could not get guild id", line!(), module_path!())?;
+    let guild_id = new_message.guild_id.unwrap_log("Could not get guild id", CURRENT_MODULE, line!())?;
 
     // Obtener el canal de logs de la base de datos
     let data = MessageData::new(
@@ -34,6 +39,49 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
         new_message.channel_id,
         new_message.guild_id,
     );
+
+    // inicio broma
+    //let author_user_id = new_message.author.id;
+    let sql_query = "SELECT * FROM joke WHERE guild_id = $guild_id";
+    let joke: Option<Joke> = DB
+        .query(sql_query)
+        .bind(("guild_id", guild_id)) // pasar el valor
+        .await?
+        .take(0)?;
+
+    /*
+    if let Some(mut joke) = joke {
+        let joke_id = joke.target.parse::<u64>()?;
+        let joke_active = joke.is_active;
+        if joke_active && author_user_id == joke_id {
+            let mut message_map = HashMap::new();
+            message_map.insert("content", "test".to_string());
+            let http = ctx.http.clone();
+            let attachment = CreateAttachment::path("./assets/joke.gif").await?;
+            http.send_message(new_message.channel_id, vec![attachment], &message_map).await?;
+
+            joke.switch(false).await?;
+        }
+    }
+    */
+
+    let joke_id = joke.clone().unwrap_log("No hay un objetivo de broma establecido", CURRENT_MODULE, line!())?.target;
+    let joke_id = joke_id.parse::<u64>()?;
+    let joke_status = joke.clone().unwrap_log("No hay un objetivo de broma establecido", CURRENT_MODULE, line!())?.is_active;
+
+    if joke_status {
+        let author_user_id = new_message.author.id;
+        if author_user_id == joke_id {
+            let mut message_map = HashMap::new();
+            message_map.insert("content", "test".to_string());
+            let http = ctx.http.clone();
+            let attachment = CreateAttachment::path("./assets/joke.gif").await?;
+            http.send_message(new_message.channel_id, vec![attachment], &message_map).await?;
+
+            joke.unwrap_log("No se pudo cambiar el estado", module_path!(), line!())?.switch(false).await?;
+        }
+    }
+    // fin broma
 
     // Si el mensaje no contiene una mención, guardar el mensaje en la base de datos
     // (NECESARIO PARA EVITAR EL PANIC)
@@ -49,20 +97,21 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
         .collect::<Vec<&str>>()[0]
         .parse::<u64>()?;
 
-    let user = UserId::new(user_id).to_user(&ctx.http).await?;
-    let forbidden_user_data = ForbiddenUserData::new(user, UserId::new(user_id), guild_id);
-    let forbidden_user_id = forbidden_user_data.user_id;
+    let forbidden_user_data = ForbiddenUserData::new(user_id.into(), guild_id);
+    let forbidden_user_id = forbidden_user_data.user_id.parse::<u64>().ok();
 
-    // Si el usuario prohibido de mencionar es mencionado, silenciar al autor del mensaje
-    if new_message.mentions_user_id(forbidden_user_id) {
-        handle_forbidden_user(ctx, new_message, guild_id, data, forbidden_user_id).await?;
-        return Ok(());
+    if let Some(forbidden_user_id) = forbidden_user_id {
+        // Si el usuario prohibido de mencionar es mencionado, silenciar al autor del mensaje
+        if new_message.mentions_user_id(forbidden_user_id) {
+            handle_forbidden_user(ctx, new_message, guild_id, data, forbidden_user_id).await?;
+            return Ok(());
+        }
     }
 
     let get_role_id = ForbiddenRoleData::get_role_id(guild_id).await?;
-    let forbidden_role_id = get_role_id.unwrap_log("No se ha establecido un rol prohibido de mencionar", line!(), module_path!())?;
+    let forbidden_role_id = get_role_id.unwrap_log("No se ha establecido un rol prohibido de mencionar", CURRENT_MODULE, line!())?;
     let mentioned_user = guild_id.member(&ctx.http, user_id).await?;
-    let mentioned_user_roles = mentioned_user.roles(&ctx.cache).unwrap_log("Could not get mentioned user roles", line!(), module_path!())?;
+    let mentioned_user_roles = mentioned_user.roles(&ctx.cache).unwrap_log("Could not get mentioned user roles", CURRENT_MODULE, line!())?;
 
     // Si el usuario mencionado tiene el rol de prohibido de mencionar, silenciar al autor del mensaje
     if mentioned_user_roles.iter().any(|role| role.id == forbidden_role_id) {
@@ -83,12 +132,6 @@ pub async fn handle_forbidden_role(
 ) -> CommandResult {
     let author_user_id = new_message.author.id;
     let member = guild_id.member(&ctx.http, author_user_id).await?;
-    let sql_query = "SELECT * FROM time_out_roles WHERE guild_id = $guild_id";
-    let time_out_role: Option<RoleData> = DB
-        .query(sql_query)
-        .bind(("guild_id", guild_id)) // pasar el valor
-        .await?
-        .take(0)?;
 
     let sql_query = "SELECT * FROM admins WHERE guild_id = $guild_id";
     let admin_role: Option<AdminData> = DB
@@ -111,17 +154,17 @@ pub async fn handle_forbidden_role(
         .await?
         .take(0)?;
 
-    let time_out_message = time_out_message.unwrap_log("No hay un mensaje de timeout establecido", line!(), module_path!())?.warn_message;
-    let time_out_timer = time_out_timer.unwrap_log("No hay un tiempo de silencio establecido", line!(), module_path!())?.time;
-    let admin_role_id = admin_role.unwrap_log("No hay un rol de administrador establecido", line!(), module_path!())?.role_id;
-    let admin_exception = check_admin_exception(admin_role_id, &member, &ctx);
+    let time_out_message = time_out_message.unwrap_log("No hay un mensaje de timeout establecido", CURRENT_MODULE, line!())?.warn_message;
+    let time_out_timer = time_out_timer.unwrap_log("No hay un tiempo de timeout establecido", CURRENT_MODULE, line!())?.time;
+
+    let admin_role_id = admin_role.unwrap_log("No hay un rol de administrador establecido", CURRENT_MODULE, line!())?.role_id;
+    let admin_exception = check_admin_exception(admin_role_id, &member, ctx);
 
     if admin_exception {
         println!("Admin exception : `sent_message.rs` Line 120");
         return Ok(())
     }
 
-    let time_out_role_id = time_out_role.unwrap_log("No hay un rol de silencio establecido", line!(), module_path!())?.role_id;
     let mut warns = Warns::new(author_user_id);
     let existing_warns = warns.get_warns().await?;
 
@@ -138,10 +181,10 @@ pub async fn handle_forbidden_role(
     message_map.insert("content", format!("Mensaje eliminado por mencionar a un usuario prohibido de mencionar\nAdvertencia {}/3", warns.warns));
     let http = ctx.http.clone();
     http.send_message(new_message.channel_id, vec![], &message_map).await?;
-    let member = guild_id.member(&ctx.http, author_user_id).await?;
+    let mut member = guild_id.member(&ctx.http, author_user_id).await?;
 
     if warns.warns >= 3 {
-        handle_warns(&member, new_message, time_out_role_id, message_map, &http, warns, time_out_timer, time_out_message).await?;
+        handle_warns(&mut member, new_message, message_map, &http, warns, time_out_timer, time_out_message).await?;
     }
 
     let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
@@ -156,21 +199,24 @@ pub async fn handle_forbidden_user(
     new_message: &Message,
     guild_id: GuildId,
     data: MessageData,
-    forbidden_user_id: UserId
+    forbidden_user_id: u64
 ) -> CommandResult {
     let author_user_id = new_message.author.id;
     if author_user_id == forbidden_user_id {
         return Ok(())
     }
 
-    let member = guild_id.member(&ctx.http, author_user_id).await?;
-    let sql_query = "SELECT * FROM time_out_roles WHERE guild_id = $guild_id";
-    let time_out_role: Option<RoleData> = DB
-        .query(sql_query)
-        .bind(("guild_id", guild_id)) // pasar el valor
-        .await?
-        .take(0)?;
+    let forbidden_user_exception = ForbiddenException::have_exception(forbidden_user_id.into()).await?;
 
+    // Si el usuario ha solicitado una excepción o no hay una excepción establecida para este usuario, salir de la función
+    if let Some(forbidden_user_exception) = forbidden_user_exception {
+        if forbidden_user_exception {
+            println!("El usuario ha solicitado una excepción : {}", Location::caller());
+            return Ok(())
+        }
+    }
+
+    let mut member = guild_id.member(&ctx.http, author_user_id).await?;
     let sql_query = "SELECT * FROM admins WHERE guild_id = $guild_id";
     let admin_role: Option<AdminData> = DB
         .query(sql_query)
@@ -199,26 +245,25 @@ pub async fn handle_forbidden_user(
         .await?
         .take(0)?;
 
-    let time_out_message = time_out_message.unwrap_log("No se ha establecido un mensaje de silencio", line!(), module_path!())?.time_out_message;
-    let time_out_timer = time_out_timer.unwrap_log("No se ha establecido un tiempo de silencio", line!(), module_path!())?.time;
-    let admin_role_id = admin_role.clone().unwrap_log("No se ha establecido un rol de administrador", line!(), module_path!())?.role_id;
-    let admin_role_id_2 = admin_role.unwrap_log("No se ha establecido un rol de administrador", line!(), module_path!())?.role_2_id;
+    let time_out_message = time_out_message.unwrap_log("No se ha establecido un mensaje de silencio", CURRENT_MODULE, line!())?.time_out_message;
+    let time_out_timer = time_out_timer.unwrap_log("No se ha establecido un tiempo de silencio", CURRENT_MODULE, line!())?.time;
+    let admin_role_id = admin_role.clone().unwrap_log("No se ha establecido un rol de administrador", CURRENT_MODULE, line!())?.role_id;
+    let admin_role_id_2 = admin_role.unwrap_log("No se ha establecido un rol de administrador", CURRENT_MODULE, line!())?.role_2_id;
 
     // Salir de la función si no hay un admin establecido
     if admin_role_id.is_none() {
-        log_handle!("No hay un admin establecido: `sent_message.rs` line 196");
+        log_handle!("No hay un admin establecido: `sent_message.rs` {}", line!());
         return Ok(())
     }
 
-    let admin_exception = check_admin_exception(admin_role_id, &member, &ctx);
-    let admin_exception_2 = check_admin_exception(admin_role_id_2, &member, &ctx);
+    let admin_exception = check_admin_exception(admin_role_id, &member, ctx);
+    let admin_exception_2 = check_admin_exception(admin_role_id_2, &member, ctx);
 
     if admin_exception || admin_exception_2 {
-        println!("Admin exception : `sent_message.rs` Line 217");
+        println!("Admin exception : {}", Location::caller());
         return Ok(())
     }
 
-    let time_out_role_id = time_out_role.unwrap_log("No se ha establecido un rol de timeout", line!(), module_path!())?.role_id;
     let mut warns = Warns::new(author_user_id);
     let existing_warns = warns.get_warns().await?;
 
@@ -231,7 +276,7 @@ pub async fn handle_forbidden_user(
         warns.save_to_db().await?;
     }
 
-    let warn_message = warn_message.unwrap_log("No se ha establecido un mensaje de advertencia", line!(), module_path!())?.warn_message;
+    let warn_message = warn_message.unwrap_log("No se ha establecido un mensaje de advertencia", CURRENT_MODULE, line!())?.warn_message;
     let mut message_map = HashMap::new();
     message_map.insert("content", format!("{warn_message}\nAdvertencia {}/3", warns.warns));
     let http = ctx.http.clone();
@@ -243,7 +288,7 @@ pub async fn handle_forbidden_user(
     http.send_message(new_message.channel_id, vec![attachment_mobile], &message_map).await?;
 
     if warns.warns >= 3 {
-        handle_warns(&member, new_message, time_out_role_id, message_map, &http, warns, time_out_timer, time_out_message).await?;
+        handle_warns(&mut member, new_message, message_map, &http, warns, time_out_timer, time_out_message).await?;
     }
 
     let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
@@ -252,39 +297,34 @@ pub async fn handle_forbidden_user(
     Ok(())
 }
 
-fn handle_time(member: Member, http: Arc<Http>, time_out_role_id: RoleId, time_out_timer: u64) {
-    tokio::spawn(async move {
-        tokio::time::sleep(tokio::time::Duration::from_secs(time_out_timer)).await;
-        member.remove_role(&http, time_out_role_id).await.unwrap_or_default();
-        println!("Desilenciado");
-    });
-}
-
 async fn handle_warns(
-    member: &Member,
+    member: &mut Member,
     new_message: &Message,
-    time_out_role_id: RoleId,
     mut message_map: HashMap<&str, String>,
     http: &Arc<Http>,
     mut warns: Warns,
-    time_out_timer: u64,
+    time_out_timer: i64,
     time_out_message: String,
 ) -> CommandResult {
-    member.add_role(http, time_out_role_id).await?;
+
+    let time = Timestamp::from(Utc::now() + Duration::seconds(time_out_timer));
+    member.disable_communication_until_datetime(&http, time).await.unwrap_or_else(|why| {
+        log_handle!("Could not disable communication for member {why} : `sent_message.rs` {}", line!());
+    });
+
     message_map.insert("content", format!("{} {}", member.mention(), time_out_message));
     http.send_message(new_message.channel_id, vec![], &message_map).await?;
     warns.reset_warns().await?;
-    handle_time(member.to_owned(), http.to_owned(), time_out_role_id, time_out_timer);
 
     Ok(())
 }
 
-fn check_admin_exception(admin_role_id: Option<RoleId>, member: &Member, ctx: &serenity::Context) -> bool {
+fn check_admin_exception(admin_role_id: Option<String>, member: &Member, ctx: &serenity::Context) -> bool {
     admin_role_id.map_or(false, |admin_role_id| {
         member.roles(&ctx.cache)
-            .unwrap_log("Could not get member roles", line!(), module_path!())
+            .unwrap_log("Could not get member roles", CURRENT_MODULE, line!())
             .iter()
             .flat_map(|roles| roles.iter())
-            .any(|role| role.id == admin_role_id)
+            .any(|role| role.id == RoleId::new(admin_role_id.parse::<u64>().unwrap_or_default()))
     })
 }

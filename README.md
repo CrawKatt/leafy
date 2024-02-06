@@ -4,8 +4,10 @@
 
 - (**POST PRODUCCIÓN**)
 - [ ] Refactorizar el código para que sea más legible
-- (**Próxima versión**)
-- [ ] Añadir un comando que desactive y reactive la función de usuario prohíbido si este está de acuerdo (el comando solo debe poder usarlo el usuario prohíbido)
+- [x] Añadir un comando que desactive y reactive la función de usuario prohíbido si este está de acuerdo (el comando solo debe poder usarlo el usuario prohíbido o un administrador)
+- [x] Cambiar los campos de structs por tipos primitivos y crear métodos para obtener los valores de los campos
+- [ ] Enviar un sticker de "que dijiste @muteado"
+- [x] Cambiar método de sanción de rol a `timeout`
 
 ---
 

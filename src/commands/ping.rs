@@ -1,48 +1,36 @@
-use crate::utils::{CommandResult, Context};
+use tokio::time::Instant;
+use crate::utils::{Context, Error};
 
-/// Pong!
-#[poise::command(slash_command)]
-pub async fn ping(
-    ctx: Context<'_>,
-) -> CommandResult {
-    ctx.say("Pong!").await?;
+#[poise::command(
+prefix_command,
+slash_command,
+category = "Info",
+guild_only,
+ephemeral
+)]
+/// Check if yours truly is alive and well.
+pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
+    let start_time = Instant::now();
 
-    Ok(())
-}
+    let (mut shard_ids, mut shard_stages, mut shard_latencies) =
+        (Vec::new(), Vec::new(), Vec::new());
 
-/*
-use chrono::{DateTime, Utc};
-use serenity::client::Context;
-use serenity::framework::standard::CommandResult;
-use serenity::framework::standard::macros::command;
-use serenity::model::channel::Message;
-*/
-/*
-#[command]
-pub async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
-    let now = Utc::now();
-    let created = DateTime::<Utc>::from_utc(msg.timestamp.naive_utc(), Utc);
-    let response_time = now.signed_duration_since(created).num_milliseconds();
+    let runners = ctx.framework().shard_manager.runners.lock().await;
+    let runners_iter = runners.iter();
 
-    let color;
-    let response_time_string = response_time.to_string();
+    for (id, runner) in runners_iter {
+        let stage = runner.stage;
+        let latency = runner.latency;
 
-    if response_time < 100 {
-        color = '🟢';
-    } else if response_time >= 200 && response_time < 500 {
-        color = '🟡';
-    } else {
-        color = '🔴';
+        shard_ids.push(id);
+        shard_stages.push(stage);
+        shard_latencies.push(latency);
     }
 
-    msg.reply(&ctx.http, format!("Pong! {}ms {}", response_time_string, color)).await?;
+    let elapsed_time = start_time.elapsed();
+    let ping = elapsed_time.as_millis();
+
+    ctx.say(format!("Pong. La latencia del Bot es de: **{ping}ms**")).await?;
 
     Ok(())
 }
-*/
-/*
-#[no_mangle]
-async fn ping_inner(ctx: Context<'_>) -> CommandResult {
-
-}
-*/
