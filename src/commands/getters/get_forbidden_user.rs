@@ -1,8 +1,15 @@
 use crate::DB;
 use crate::utils::{CommandResult, Context};
-use crate::commands::setters::set_forbidden_user::ForbiddenUserData;
+use crate::commands::setters::ForbiddenUserData;
 
-#[poise::command(prefix_command, slash_command)]
+#[poise::command(
+    prefix_command,
+    slash_command,
+    category = "Moderator",
+    required_permissions = "MANAGE_ROLES",
+    guild_only,
+    ephemeral
+)]
 pub async fn get_forbidden_user(
     ctx: Context<'_>,
 ) -> CommandResult {
@@ -21,8 +28,8 @@ pub async fn get_forbidden_user(
         return Ok(())
     };
     
-    let forbidden_user_id = forbidden_user_id.user_id;
-    let forbidden_user = ctx.cache().user(forbidden_user_id).ok_or("User not found")?.name.clone();
+    let forbidden_user_id = forbidden_user_id.user_id.parse::<u64>().unwrap_or_default();
+    let forbidden_user = ctx.cache().user(forbidden_user_id).ok_or("No se ha establecido un usuario prohíbido de mencionar")?.name.clone();
     
     ctx.say(format!("Forbidden user is **{forbidden_user}**")).await?;
 

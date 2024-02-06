@@ -17,11 +17,11 @@ impl fmt::Display for UnwrapLogError<'_> {
 impl Error for UnwrapLogError<'_> {}
 
 pub trait UnwrapLog<T> {
-    fn unwrap_log<'a>(self, msg: &'a str, line: u32, module: &str) -> Result<T, UnwrapLogError<'a>>;
+    fn unwrap_log<'a>(self, msg: &'a str, module: &str, line: u32) -> Result<T, UnwrapLogError<'a>>;
 }
 
 impl<T: Default> UnwrapLog<T> for Option<T> {
-    fn unwrap_log<'a>(self, msg: &'a str, line: u32, module: &str) -> Result<T, UnwrapLogError<'a>> {
+    fn unwrap_log<'a>(self, msg: &'a str, module: &str, line: u32) -> Result<T, UnwrapLogError<'a>> {
         self.map_or_else(|| {
             log_handle!("{msg} : `{module}` Line {line}");
             Err(UnwrapLogError { msg })
@@ -30,11 +30,11 @@ impl<T: Default> UnwrapLog<T> for Option<T> {
 }
 
 impl<T: Default, E: StdError> UnwrapLog<T> for Result<T, E> {
-    fn unwrap_log<'a>(self, msg: &'a str, line: u32, module: &str) -> Result<T, UnwrapLogError<'a>> {
+    fn unwrap_log<'a>(self, msg: &'a str, module: &str, line: u32) -> Result<T, UnwrapLogError<'a>> {
         match self {
             Ok(t) => Ok(t),
             Err(why) => {
-                log_handle!("{msg}: {why} Line {line}: `{module}`");
+                log_handle!("{msg}: {why} : `{module}` Line {line}");
                 Err(UnwrapLogError { msg })
             }
         }

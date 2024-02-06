@@ -2,6 +2,7 @@ use poise::Command;
 use serde::{Deserialize, Serialize};
 use serenity::all::{ChannelId, GuildId, MessageId, UserId};
 use surrealdb::Result as SurrealResult;
+use crate::commands::get_joke::get_joke;
 
 pub mod autocomplete;
 pub mod embeds;
@@ -13,19 +14,20 @@ use crate::DB;
 use crate::commands::ping::ping;
 use crate::commands::setters::set_admins::set_admins;
 use crate::commands::setters::set_log_channel::set_log_channel;
-use crate::commands::setters::set_timeout_role::set_time_out_role;
+use crate::commands::setters::set_warn_message::set_warn_message;
 use crate::commands::setters::set_timeout_timer::set_timeout_timer;
 use crate::commands::setters::set_forbidden_role::set_forbidden_role;
 use crate::commands::setters::set_forbidden_user::set_forbidden_user;
+use crate::commands::setters::set_timeout_message::set_time_out_message;
+use crate::commands::setters::set_forbidden_exception::set_forbidden_exception;
 
 use crate::commands::getters::get_admins::get_admins;
+use crate::commands::getters::get_forbidden_exception::get_forbidden_exception;
 use crate::commands::getters::get_log_channel::get_log_channel;
-use crate::commands::getters::get_timeout_role::get_timeout_role;
 use crate::commands::getters::get_timeout_timer::get_timeout_timer;
 use crate::commands::getters::get_forbidden_role::get_forbidden_role;
 use crate::commands::getters::get_forbidden_user::get_forbidden_user;
-use crate::commands::setters::set_timeout_message::set_time_out_message;
-use crate::commands::setters::set_warn_message::set_warn_message;
+use crate::commands::joke::joke;
 
 pub struct Data {
     pub poise_mentions: String,
@@ -136,16 +138,18 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         set_admins(),
         set_log_channel(),
         set_warn_message(),
-        set_time_out_role(),
         set_timeout_timer(),
         set_forbidden_user(),
         set_forbidden_role(),
         set_time_out_message(),
+        set_forbidden_exception(),
         get_admins(),
         get_log_channel(),
-        get_timeout_role(),
         get_timeout_timer(),
         get_forbidden_user(),
         get_forbidden_role(),
+        get_forbidden_exception(),
+        joke(), // Retirar este comando en la próxima versión
+        get_joke(), // Retirar este comando en la próxima versión
     ]
 }
