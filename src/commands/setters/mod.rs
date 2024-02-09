@@ -11,6 +11,7 @@ use crate::DB;
 use serenity::all::{ChannelId, GuildId, RoleId, UserId};
 use serde::{Deserialize, Serialize};
 use surrealdb::Result as SurrealResult;
+use crate::utils::debug::UnwrapErrors;
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct AdminData {
@@ -54,8 +55,6 @@ pub struct GuildData {
     pub guild_id: GuildId,
     pub log_channel_id: ChannelId,
 }
-
-
 
 impl AdminData {
     pub fn new(role_id: Option<RoleId>, role_2_id: Option<RoleId>, guild_id: GuildId) -> Self {
@@ -268,6 +267,18 @@ impl SetTimeoutTimer {
 
         Ok(existing_data)
     }
+
+    pub async fn get_time_out_timer(guild_id: GuildId) -> SurrealResult<Option<i64>> {
+        DB.use_ns("discord-namespace").use_db("discord").await?;
+        let sql_query = "SELECT * FROM time_out_timer WHERE guild_id = $guild_id";
+        let existing_data: Option<Self> = DB
+            .query(sql_query)
+            .bind(("guild_id", &guild_id))
+            .await?
+            .take(0)?;
+
+        Ok(existing_data.map(|data| data.time))
+    }
 }
 
 impl WarnMessageData {
@@ -301,7 +312,7 @@ impl WarnMessageData {
         Ok(())
     }
 
-    pub async fn verify_data(&self) -> SurrealResult<Option<Self>> {
+    pub async fn verify_data(&self) -> Result<Option<Self>, UnwrapErrors> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
         let sql_query = "SELECT * FROM warn_message WHERE guild_id = $guild_id";
         let existing_data: Option<Self> = DB
@@ -313,6 +324,18 @@ impl WarnMessageData {
         println!("Verified warn message: {:?}", self.warn_message);
 
         Ok(existing_data)
+    }
+
+    pub async fn get_warn_message(guild_id: GuildId) -> SurrealResult<Option<String>> {
+        DB.use_ns("discord-namespace").use_db("discord").await?;
+        let sql_query = "SELECT * FROM warn_message WHERE guild_id = $guild_id";
+        let existing_data: Option<Self> = DB
+            .query(sql_query)
+            .bind(("guild_id", &guild_id))
+            .await?
+            .take(0)?;
+
+        Ok(existing_data.map(|data| data.warn_message))
     }
 }
 
@@ -359,6 +382,18 @@ impl TimeOutMessageData {
         println!("Verified time out message: {:?}", self.time_out_message);
 
         Ok(existing_data)
+    }
+
+    pub async fn get_time_out_message(guild_id: GuildId) -> SurrealResult<Option<String>> {
+        DB.use_ns("discord-namespace").use_db("discord").await?;
+        let sql_query = "SELECT * FROM time_out_message WHERE guild_id = $guild_id";
+        let existing_data: Option<Self> = DB
+            .query(sql_query)
+            .bind(("guild_id", &guild_id))
+            .await?
+            .take(0)?;
+
+        Ok(existing_data.map(|data| data.time_out_message))
     }
 }
 

@@ -5,7 +5,7 @@ use chrono::{Duration, Utc};
 use serenity::all::{CreateAttachment, GuildId, Http, Member, Mentionable, Message, RoleId, Timestamp};
 use poise::serenity_prelude as serenity;
 
-use crate::{DB, log_handle};
+use crate::{DB, log_handle, unwrap_log};
 use crate::commands::joke::Joke;
 use crate::utils::{CommandResult, Warns};
 use crate::utils::MessageData;
@@ -224,31 +224,11 @@ pub async fn handle_forbidden_user(
         .await?
         .take(0)?;
 
-    let sql_query = "SELECT * FROM time_out_timer WHERE guild_id = $guild_id";
-    let time_out_timer: Option<SetTimeoutTimer> = DB
-        .query(sql_query)
-        .bind(("guild_id", guild_id)) // pasar el valor
-        .await?
-        .take(0)?;
-
-    let sql_query = "SELECT * FROM warn_message WHERE guild_id = $guild_id";
-    let warn_message: Option<WarnMessageData> = DB
-        .query(sql_query)
-        .bind(("guild_id", guild_id)) // pasar el valor
-        .await?
-        .take(0)?;
-
-    let sql_query = "SELECT * FROM time_out_message WHERE guild_id = $guild_id";
-    let time_out_message: Option<TimeOutMessageData> = DB
-        .query(sql_query)
-        .bind(("guild_id", guild_id)) // pasar el valor
-        .await?
-        .take(0)?;
-
-    let time_out_message = time_out_message.unwrap_log("No se ha establecido un mensaje de silencio", CURRENT_MODULE, line!())?.time_out_message;
-    let time_out_timer = time_out_timer.unwrap_log("No se ha establecido un tiempo de silencio", CURRENT_MODULE, line!())?.time;
-    let admin_role_id = admin_role.clone().unwrap_log("No se ha establecido un rol de administrador", CURRENT_MODULE, line!())?.role_id;
-    let admin_role_id_2 = admin_role.unwrap_log("No se ha establecido un rol de administrador", CURRENT_MODULE, line!())?.role_2_id;
+    let time_out_timer = unwrap_log!(SetTimeoutTimer::get_time_out_timer(guild_id).await?, "No se ha establecido un tiempo de silencio");
+    let warn_message = unwrap_log!(WarnMessageData::get_warn_message(guild_id).await?, "No se ha establecido un mensaje de advertencia");
+    let time_out_message = unwrap_log!(TimeOutMessageData::get_time_out_message(guild_id).await?, "No se ha establecido un mensaje de silencio");
+    let admin_role_id = unwrap_log!(admin_role.clone(), "No se ha establecido un rol de administrador").role_id;
+    let admin_role_id_2 = unwrap_log!(admin_role, "No se ha establecido un rol de administrador").role_2_id;
 
     // Salir de la función si no hay un admin establecido
     if admin_role_id.is_none() {
@@ -276,7 +256,6 @@ pub async fn handle_forbidden_user(
         warns.save_to_db().await?;
     }
 
-    let warn_message = warn_message.unwrap_log("No se ha establecido un mensaje de advertencia", CURRENT_MODULE, line!())?.warn_message;
     let mut message_map = HashMap::new();
     message_map.insert("content", format!("{warn_message}\nAdvertencia {}/3", warns.warns));
     let http = ctx.http.clone();
@@ -308,9 +287,7 @@ async fn handle_warns(
 ) -> CommandResult {
 
     let time = Timestamp::from(Utc::now() + Duration::seconds(time_out_timer));
-    member.disable_communication_until_datetime(&http, time).await.unwrap_or_else(|why| {
-        log_handle!("Could not disable communication for member {why} : `sent_message.rs` {}", line!());
-    });
+    member.disable_communication_until_datetime(&http, time).await?;
 
     message_map.insert("content", format!("{} {}", member.mention(), time_out_message));
     http.send_message(new_message.channel_id, vec![], &message_map).await?;
