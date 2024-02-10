@@ -50,7 +50,7 @@ pub async fn delete_message_handler(ctx: &serenity::Context, channel_id: &Channe
         .parse::<u64>()?;
 
     let user = UserId::new(user_id);
-    let user_mentioned = user.to_user(&ctx.http).await.unwrap();
+    let user_mentioned = user.to_user(&ctx.http).await?;
 
     crate::utils::embeds::send_embed_if_mention(ctx,log_channel, &message_channel_id, author_id, &message_content,user_mentioned).await;
 
