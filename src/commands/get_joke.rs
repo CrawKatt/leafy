@@ -1,7 +1,6 @@
 use crate::commands::joke::Joke;
 use crate::DB;
 use crate::utils::{CommandResult, Context};
-use crate::utils::debug::UnwrapLog;
 
 #[poise::command(
     prefix_command,
@@ -16,29 +15,15 @@ pub async fn get_joke(
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
     let guild_id = ctx.guild_id().unwrap();
-    let sql_query = "SELECT * FROM joke WHERE guild_id = $guild_id";
-    let database_info: Option<Joke> = DB
-        .query(sql_query)
-        .bind(("guild_id", guild_id)) // pasar el valor
-        .await?
-        .take(0)?;
-
-    let joke = match database_info {
-        Some(joke) => joke,
-        None => {
-            ctx.say("No se ha establecido un usuario prohíbido de mencionar").await?;
-            return Ok(())
-        }
-    };
-
-    let joke_target_id = joke.target.parse::<u64>().unwrap_log("Failed to parse joke target id", module_path!(), line!())?;
+    let joke_status = Joke::get_joke_status(guild_id).await?;
+    let joke_target_id = Joke::get_joke_target_id(guild_id).await?;
     let target = ctx.cache()
         .user(joke_target_id)
         .ok_or("No se ha establecido un usuario prohíbido de mencionar")?
         .name
         .clone();
 
-    ctx.say(format!("Joke is **{}** for **{target}**", joke.is_active)).await?;
+    ctx.say(format!("Joke is **{joke_status}** for **{target}**")).await?;
 
     Ok(())
 }
