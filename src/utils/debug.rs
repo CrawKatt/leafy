@@ -1,4 +1,3 @@
-use anyhow::{anyhow, Error};
 use std::fmt;
 use serde::ser::StdError;
 use thiserror::Error;
@@ -27,20 +26,18 @@ impl fmt::Display for UnwrapLogError {
     }
 }
 
-//impl Error for UnwrapLogError<'_> {}
-
 pub trait UnwrapLog<T> {
-    fn unwrap_log(self, msg: &'static str, module: &str, line: u32) -> Result<T, Error>;
+    fn unwrap_log(self, msg: &'static str, module: &str, line: u32) -> Result<T, UnwrapLogError>;
 }
 
 impl<T> UnwrapLog<T> for Option<T>
     where
         T: Default,
 {
-    fn unwrap_log(self, msg: &'static str, module: &str, line: u32) -> Result<T, Error> {
+    fn unwrap_log(self, msg: &'static str, module: &str, line: u32) -> Result<T, UnwrapLogError> {
         self.map_or_else(move || {
             log_handle!("{msg} : Caller: `{module}` Line {line}");
-            Err(anyhow!(UnwrapLogError { msg }))
+            Err(UnwrapLogError { msg })
         }, move |t| Ok(t))
     }
 }
@@ -50,12 +47,12 @@ impl<T, E> UnwrapLog<T> for Result<T, E>
         T: Default,
         E: StdError,
 {
-    fn unwrap_log(self, msg: &'static str, module: &str, line: u32) -> Result<T, Error> {
+    fn unwrap_log(self, msg: &'static str, module: &str, line: u32) -> Result<T, UnwrapLogError> {
         match self {
             Ok(t) => Ok(t),
             Err(why) => {
                 log_handle!("{msg}: {why} : `{module}` Line {line}");
-                Err(anyhow!(UnwrapLogError { msg }))
+                Err(UnwrapLogError { msg })
             }
         }
     }
