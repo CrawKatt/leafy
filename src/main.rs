@@ -22,8 +22,9 @@ use utils::handlers::error::err_handler;
 #[tokio::main]
 async fn main() {
 
+    let database_url = dotenvy::var("DATABASE_URL").expect("missing SURREAL_URL");
     let database_password = dotenvy::var("DATABASE_PASSWORD").expect("missing SURREAL_PASSWORD");
-    DB.connect::<Ws>("localhost:8000").await.unwrap_or_else(|why| {
+    DB.connect::<Ws>(database_url).await.unwrap_or_else(|why| {
         panic!("Could not connect to database: {why}");
     });
 
