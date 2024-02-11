@@ -4,7 +4,6 @@ use serenity::all::{GuildId, Permissions, UserId};
 use surrealdb::Result as SurrealResult;
 use crate::DB;
 use crate::utils::{CommandResult, Context};
-use crate::utils::debug::UnwrapLog;
 
 #[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct ForbiddenException {
@@ -100,23 +99,24 @@ pub async fn set_forbidden_exception(
     let user_id = user.unwrap_or(ctx.author().id);
 
     if user_id != ctx.author().id {
-        let member = guild_id.member(ctx.serenity_context(), ctx.author().id).await.unwrap_log("Error getting member", module_path!(), line!())?;
-        if !member.permissions(ctx.serenity_context()).unwrap_log("Error checking permissions", module_path!(), line!())?.contains(Permissions::ADMINISTRATOR) {
+        let member = guild_id.member(ctx.serenity_context(), ctx.author().id).await?;
+        let member_permissions = member.permissions(ctx.serenity_context())?;
+        if !member_permissions.contains(Permissions::ADMINISTRATOR) {
             poise::say_reply(ctx, "Debes ser administrador para cambiar la excepción de otros usuarios").await?;
             return Ok(());
         }
     }
 
     let mut data = ForbiddenException::new(user_id, guild_id, state);
-    let existing_data = data.verify_data().await.unwrap_log("Error verifying data", module_path!(), line!())?;
-    let user = user_id.to_user(ctx.http()).await.unwrap_log("Error getting user", module_path!(), line!())?;
+    let existing_data = data.verify_data().await?;
+    let user = user_id.to_user(ctx.http()).await?;
     let username = user.name;
 
     if existing_data.is_none() {
-        data.save_to_db().await.unwrap_log("Error saving data", module_path!(), line!())?;
+        data.save_to_db().await?;
         poise::say_reply(ctx, format!("User {username} has been set as a forbidden exception")).await?;
     } else {
-        data.switch().await.unwrap_log("Error switching data", module_path!(), line!())?;
+        data.switch().await?;
         poise::say_reply(ctx, format!("El usuario {username} ya ha solicitado una excepción. Actualizando")).await?;
     }
 

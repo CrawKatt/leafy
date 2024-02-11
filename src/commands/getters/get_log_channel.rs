@@ -1,7 +1,7 @@
-use crate::DB;
+use crate::{DB, unwrap_log};
 use crate::utils::{CommandResult, Context};
 use crate::commands::setters::GuildData;
-use crate::utils::debug::UnwrapLog;
+
 
 /// Obtiene el canal de logs establecido en el servidor
 #[poise::command(
@@ -16,10 +16,8 @@ pub async fn get_log_channel(
     ctx: Context<'_>,
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
-    let current_line = line!();
-    let current_module = module_path!();
 
-    let guild_id = ctx.guild_id().unwrap_log("No se pudo obtener el guild_id", current_module, current_line)?; // obtener el guild_id
+    let guild_id = unwrap_log!(ctx.guild_id(), "No se pudo obtener el guild_id"); // obtener el guild_id
     let sql_query = "SELECT * FROM guilds WHERE guild_id = $guild_id";
     let database_info: Option<GuildData> = DB
         .query(sql_query)

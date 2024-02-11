@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
-use serenity::all::UserId;
+use serenity::all::{GuildId, UserId};
 use surrealdb::Result as SurrealResult;
 use crate::DB;
 use crate::utils::{CommandResult, Context};
-use crate::utils::debug::UnwrapLog;
+use crate::utils::debug::{UnwrapErrors, UnwrapLog};
 
 #[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, Eq)]
 pub struct Joke {
@@ -52,6 +52,34 @@ impl Joke {
             .await?;
 
         Ok(())
+    }
+
+    pub async fn get_joke_target_id(guild_id: GuildId) -> Result<u64, UnwrapErrors> {
+        let sql_query = "SELECT * FROM joke WHERE guild_id = $guild_id";
+        let database_info: Option<Self> = DB
+            .query(sql_query)
+            .bind(("guild_id", guild_id))
+            .await?
+            .take(0)?;
+
+        let joke_target_data = database_info.unwrap_log("Failed to get joke target id", module_path!(), line!())?;
+        let joke_target_id = joke_target_data.target.parse::<u64>().unwrap_log("Failed to parse joke target id", module_path!(), line!())?;
+
+        Ok(joke_target_id)
+    }
+
+    pub async fn get_joke_status(guild_id: GuildId) -> Result<bool, UnwrapErrors> {
+        let sql_query = "SELECT * FROM joke WHERE guild_id = $guild_id";
+        let database_info: Option<Self> = DB
+            .query(sql_query)
+            .bind(("guild_id", guild_id))
+            .await?
+            .take(0)?;
+
+        let joke_data = database_info.unwrap_log("Failed to get joke status", module_path!(), line!())?;
+        let joke_status = joke_data.is_active;
+
+        Ok(joke_status)
     }
 }
 

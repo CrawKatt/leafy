@@ -1,8 +1,7 @@
 use serenity::all::Role;
-use crate::DB;
+use crate::{DB, unwrap_log};
 use crate::utils::{CommandResult, Context};
 use crate::utils::autocomplete::args_set_admins;
-use crate::utils::debug::UnwrapLog;
 use crate::commands::setters::AdminData;
 
 #[poise::command(
@@ -22,20 +21,19 @@ pub async fn set_admins(
     role_2: Option<Role>,
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
-    let current_module = file!();
-    let guild_id = ctx.guild_id().unwrap_log("Could not get the guild_id", current_module, line!())?;
+
+    let guild_id = unwrap_log!(ctx.guild_id(), "No se pudo obtener el guild_id");
     let role_id = role.as_ref().map(|role| role.id);
     let role_2_id = role_2.as_ref().map(|role| role.id);
 
     let admin_data = AdminData::new(role_id, role_2_id, guild_id);
     admin_data.save_to_db().await?;
 
-    let role_name = role.unwrap_log("Could not get the role_name", module_path!(), line!())?.name;
+    let role_name = unwrap_log!(role.clone(), "No se pudo obtener el nombre del rol").name;
     ctx.say(format!("Admin role set to: **{role_name}**")).await?;
     
-    let role_2 = role_2.unwrap_log("Could not get the role", module_path!(), line!())?;
-    let role_2_name = role_2.name;
-    ctx.say(format!("Admin role set to: **{role_2_name}**")).await?;
+    let role_2 = unwrap_log!(role, "No se pudo obtener el nombre del segundo rol").name;
+    ctx.say(format!("Admin role set to: **{role_2}**")).await?;
 
     Ok(())
 }

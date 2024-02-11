@@ -20,20 +20,18 @@ pub async fn set_forbidden_user(
     #[description = "The user to set as the forbidden user"] user: User,
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
-    
+
     let guild_id = ctx.guild_id().unwrap_log("Could not get the guild id", module_path!(), line!())?;
     let data = ForbiddenUserData::new(user.id, guild_id);
     let existing_data = data.verify_data().await?;
 
-    let Some(_) = existing_data else {
+    if existing_data.is_none() {
         data.save_to_db().await?;
         ctx.say(format!("Se ha prohibido mencionar a: **{}**", user.name)).await?;
-        return Ok(())
-    };
-
-    data.update_in_db().await?;
-
-    ctx.say(format!("Se ha prohibido mencionar a: **{}**", user.name)).await?;
+    } else {
+        data.update_in_db().await?;
+        ctx.say(format!("Se ha actualizado el usuario prohibido a: **{}**", user.name)).await?;
+    }
 
     Ok(())
 }

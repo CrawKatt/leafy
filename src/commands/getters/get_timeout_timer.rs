@@ -1,7 +1,6 @@
-use crate::DB;
+use crate::{DB, unwrap_log};
 use crate::utils::{Context, Error};
 use crate::commands::setters::SetTimeoutTimer;
-use crate::utils::debug::UnwrapLog;
 
 #[poise::command(
     prefix_command,
@@ -15,10 +14,8 @@ pub async fn get_timeout_timer(
     ctx: Context<'_>,
 ) -> Result<(), Error> {
     DB.use_ns("discord-namespace").use_db("discord").await?;
-    //let current_line = line!();
-    //let current_module = module_path!();
-    
-    let guild_id = ctx.guild_id().unwrap_log("No se pudo obtener el guild_id", module_path!(), line!())?;
+
+    let guild_id = unwrap_log!(ctx.guild_id(), "No se pudo obtener el guild_id");
     let sql_query = "SELECT * FROM time_out_timer WHERE guild_id = $guild_id";
     let time_out_timer: Option<SetTimeoutTimer> = DB
         .query(sql_query)
