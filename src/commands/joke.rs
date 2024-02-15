@@ -51,6 +51,8 @@ impl Joke {
             .bind(("guild_id", self.guild_id.to_string()))
             .await?;
 
+        self.is_active = enable;
+
         Ok(())
     }
 
