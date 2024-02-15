@@ -73,7 +73,7 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
         let author_user_id = new_message.author.id;
         if author_user_id == joke_id {
             let mut message_map = HashMap::new();
-            message_map.insert("content", "test".to_string());
+            message_map.insert("content", " ".to_string());
             let http = ctx.http.clone();
             let attachment = CreateAttachment::path("./assets/joke.gif").await?;
             http.send_message(new_message.channel_id, vec![attachment], &message_map).await?;
