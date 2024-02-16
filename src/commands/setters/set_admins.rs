@@ -29,10 +29,10 @@ pub async fn set_admins(
     let admin_data = AdminData::new(role_id, role_2_id, guild_id);
     admin_data.save_to_db().await?;
 
-    let role_name = unwrap_log!(role.clone(), "No se pudo obtener el nombre del rol").name;
+    let role_name = unwrap_log!(role, "No se pudo obtener el nombre del rol").name;
     ctx.say(format!("Admin role set to: **{role_name}**")).await?;
     
-    let role_2 = unwrap_log!(role, "No se pudo obtener el nombre del segundo rol").name;
+    let role_2 = unwrap_log!(role_2, "No se pudo obtener el nombre del segundo rol").name;
     ctx.say(format!("Admin role set to: **{role_2}**")).await?;
 
     Ok(())

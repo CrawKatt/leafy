@@ -4,7 +4,6 @@ use std::panic::Location;
 use chrono::{Duration, Utc};
 use serenity::all::{CreateAttachment, GuildId, Http, Member, Mentionable, Message, RoleId, Timestamp};
 use poise::serenity_prelude as serenity;
-
 use crate::{DB, log_handle, unwrap_log};
 use crate::commands::joke::Joke;
 use crate::utils::{CommandResult, Warns};
@@ -13,10 +12,11 @@ use crate::commands::setters::AdminData;
 use crate::commands::setters::ForbiddenUserData;
 use crate::commands::setters::ForbiddenRoleData;
 use crate::commands::setters::set_forbidden_exception::ForbiddenException;
+use crate::commands::setters::set_joke_channel::JokeChannelData;
 use crate::commands::setters::TimeOutMessageData;
 use crate::commands::setters::SetTimeoutTimer;
 use crate::commands::setters::WarnMessageData;
-use crate::utils::debug::UnwrapLog;
+use crate::utils::debug::{UnwrapErrors, UnwrapLog};
 
 const CURRENT_MODULE: &str = file!();
 
@@ -31,6 +31,18 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     // variable que obtiene el id del servidor
     let guild_id = new_message.guild_id.unwrap_log("Could not get guild id", CURRENT_MODULE, line!())?;
 
+    if !new_message.attachments.is_empty() {
+        for attachment in new_message.attachments.clone() {
+            if attachment.content_type.unwrap_or_default().starts_with("audio") {
+                let audio_url = &attachment.url;
+                let data = MessageData::new(new_message.id, audio_url.to_owned(), new_message.author.id, new_message.channel_id, new_message.guild_id, None);
+                // Guardar el enlace del archivo de audio en la base de datos
+                let _created: Vec<MessageData> = DB.create("audio").content(data).await?;
+                println!("Audio file saved to database");
+            }
+        }
+    }
+
     // Obtener el canal de logs de la base de datos
     let data = MessageData::new(
         new_message.id,
@@ -38,10 +50,10 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
         new_message.author.id,
         new_message.channel_id,
         new_message.guild_id,
+        None
     );
 
     // inicio broma
-    //let author_user_id = new_message.author.id;
     let sql_query = "SELECT * FROM joke WHERE guild_id = $guild_id";
     let joke: Option<Joke> = DB
         .query(sql_query)
@@ -49,38 +61,8 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
         .await?
         .take(0)?;
 
-    /*
-    if let Some(mut joke) = joke {
-        let joke_id = joke.target.parse::<u64>()?;
-        let joke_active = joke.is_active;
-        if joke_active && author_user_id == joke_id {
-            let mut message_map = HashMap::new();
-            message_map.insert("content", "test".to_string());
-            let http = ctx.http.clone();
-            let attachment = CreateAttachment::path("./assets/joke.gif").await?;
-            http.send_message(new_message.channel_id, vec![attachment], &message_map).await?;
+    if let Some(joke) = joke { handle_joke(joke, new_message, ctx).await? }
 
-            joke.switch(false).await?;
-        }
-    }
-    */
-
-    let joke_id = joke.clone().unwrap_log("No hay un objetivo de broma establecido", CURRENT_MODULE, line!())?.target;
-    let joke_id = joke_id.parse::<u64>()?;
-    let joke_status = joke.clone().unwrap_log("No hay un objetivo de broma establecido", CURRENT_MODULE, line!())?.is_active;
-
-    if joke_status {
-        let author_user_id = new_message.author.id;
-        if author_user_id == joke_id {
-            let mut message_map = HashMap::new();
-            message_map.insert("content", "test".to_string());
-            let http = ctx.http.clone();
-            let attachment = CreateAttachment::path("./assets/joke.gif").await?;
-            http.send_message(new_message.channel_id, vec![attachment], &message_map).await?;
-
-            joke.unwrap_log("No se pudo cambiar el estado", module_path!(), line!())?.switch(false).await?;
-        }
-    }
     // fin broma
 
     // Si el mensaje no contiene una mención, guardar el mensaje en la base de datos
@@ -304,4 +286,38 @@ fn check_admin_exception(admin_role_id: Option<String>, member: &Member, ctx: &s
             .flat_map(|roles| roles.iter())
             .any(|role| role.id == RoleId::new(admin_role_id.parse::<u64>().unwrap_or_default()))
     })
+}
+
+async fn handle_joke(mut joke: Joke, new_message: &Message, ctx: &serenity::Context) -> Result<(), UnwrapErrors> {
+    let sql_query = "SELECT * FROM joke_channel WHERE guild_id = $guild_id";
+    let joke_channel: Option<JokeChannelData> = DB
+        .query(sql_query)
+        .bind(("guild_id", &joke.guild_id)) // pasar el valor
+        .await?
+        .take(0)?;
+
+    let joke_channel = joke_channel
+        .unwrap_log("No se ha establecido un canal de broma", CURRENT_MODULE, line!())?
+        .channel_id
+        .parse::<u64>()?;
+
+    let joke_channel = serenity::all::ChannelId::new(joke_channel);
+
+    let joke_id = joke.target.parse::<u64>()?;
+    let joke_status = joke.is_active;
+
+    if joke_status && joke_channel == new_message.channel_id {
+        let author_user_id = new_message.author.id;
+        if author_user_id == joke_id {
+            let mut message_map = HashMap::new();
+            message_map.insert("content", " ".to_string());
+            let http = ctx.http.clone();
+            let attachment = CreateAttachment::path("./assets/joke.gif").await?;
+            http.send_message(new_message.channel_id, vec![attachment], &message_map).await?;
+
+            joke.switch(false).await?;
+        }
+    }
+
+    Ok(())
 }
