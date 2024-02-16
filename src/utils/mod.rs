@@ -1,6 +1,6 @@
 use poise::Command;
 use serde::{Deserialize, Serialize};
-use serenity::all::{ChannelId, GuildId, MessageId, UserId};
+use serenity::all::{Attachment, ChannelId, GuildId, MessageId, UserId};
 use surrealdb::Result as SurrealResult;
 use crate::commands::get_joke::get_joke;
 
@@ -28,6 +28,7 @@ use crate::commands::getters::get_timeout_timer::get_timeout_timer;
 use crate::commands::getters::get_forbidden_role::get_forbidden_role;
 use crate::commands::getters::get_forbidden_user::get_forbidden_user;
 use crate::commands::joke::joke;
+use crate::commands::setters::set_joke_channel::set_joke_channel;
 
 pub struct Data {
     pub poise_mentions: String,
@@ -38,13 +39,14 @@ pub type CommandResult = Result<(), Error>;
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MessageData {
     pub message_id: MessageId,
     pub message_content: String,
     pub author_id: UserId,
     pub channel_id: ChannelId,
     pub guild_id: Option<GuildId>,
+    pub attachment: Option<Attachment>,
 }
 
 impl MessageData {
@@ -54,6 +56,7 @@ impl MessageData {
         author_id: UserId,
         channel_id: ChannelId,
         guild_id: Option<GuildId>,
+        attachment: Option<Attachment>,
     ) -> Self {
         Self {
             message_id,
@@ -61,6 +64,7 @@ impl MessageData {
             author_id,
             channel_id,
             guild_id,
+            attachment,
         }
     }
 }
@@ -151,5 +155,6 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         get_forbidden_exception(),
         joke(), // Retirar este comando en la próxima versión
         get_joke(), // Retirar este comando en la próxima versión
+        set_joke_channel(), // Retirar este comando en la próxima versión
     ]
 }

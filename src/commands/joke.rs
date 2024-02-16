@@ -104,13 +104,14 @@ pub async fn joke(
 
     let Some(mut existing_data) = existing_data else {
         joke.save_to_db().await?;
-        ctx.say("Joke command enabled").await?;
+        let status = if enable { "habilitado" } else { "deshabilitado" };
+        ctx.say(format!("Comando de broma activado\n Status : {status}")).await?;
         return Ok(())
     };
 
     existing_data.switch(enable).await?;
     println!("Swtich status: {}", existing_data.is_active);
-    let status = if existing_data.is_active { "enabled" } else { "disabled" };
+    let status = if existing_data.is_active { "habilitado" } else { "deshabilitado" };
     ctx.say(format!("Joke command {status}")).await?;
 
     Ok(())

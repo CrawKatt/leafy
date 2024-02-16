@@ -6,6 +6,7 @@ pub mod set_admins;
 pub mod set_warn_message;
 pub mod set_timeout_message;
 pub mod set_forbidden_exception;
+pub mod set_joke_channel;
 
 use crate::DB;
 use serenity::all::{ChannelId, GuildId, RoleId, UserId};
@@ -115,6 +116,31 @@ impl AdminData {
                 let role_u64 = role_id.parse::<u64>().unwrap_or_default();
                 let role_id = RoleId::new(role_u64);
                 Ok(Some(role_id))
+            },
+            None => Ok(None)
+        }
+    }
+
+    pub async fn get_admin_role_2(guild_id: GuildId) -> SurrealResult<Option<RoleId>> {
+        DB.use_ns("discord-namespace").use_db("discord").await?;
+        let sql_query = "SELECT * FROM admins WHERE guild_id = $guild_id";
+        let query_result = DB
+            .query(sql_query)
+            .bind(("guild_id", &guild_id.to_string()))
+            .await;
+
+        let existing_data: Option<Self> = match query_result {
+            Ok(mut result) => result.take(0)?,
+            Err(why) => return Err(why)
+        };
+
+        match existing_data {
+            Some(data) => {
+                data.role_2_id.map_or_else(|| Ok(None), |role_id| {
+                    let role_u64 = role_id.parse::<u64>().unwrap_or_default();
+                    let role_id = RoleId::new(role_u64);
+                    Ok(Some(role_id))
+                })
             },
             None => Ok(None)
         }
