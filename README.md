@@ -4,11 +4,7 @@
 
 - (**POST PRODUCCIÓN**)
 - [ ] Refactorizar el código para que sea más legible
-- [x] Añadir un comando que desactive y reactive la función de usuario prohíbido si este está de acuerdo (el comando solo debe poder usarlo el usuario prohíbido o un administrador)
-- [x] Cambiar los campos de structs por tipos primitivos y crear métodos para obtener los valores de los campos
 - [ ] Enviar un sticker de "que dijiste @muteado"
-- [x] Cambiar método de sanción de rol a `timeout`
-
 ---
 
 # Tareas Completadas
@@ -44,4 +40,13 @@
 - [x] Corregir el error de que el Bot detecta a cualquier usuario como un usuario prohíbido si se menciona en un mensaje
 - [x] Enviar mensaje de sugerencia pidiendo responder un mensaje sin mencionar a un usuario o un rol prohibido
 - [x] Restringir el uso de comandos de administración a los usuarios con el rol de `Administrador`
+- [x] Añadir un comando que desactive y reactive la función de usuario prohíbido si este está de acuerdo (el comando solo debe poder usarlo el usuario prohíbido o un administrador)
+- [x] Crear un comando que active y desactive la función de broma del Bot
+- [x] Realizar una broma a Meica como presentación del Bot cuando interactúe con el la primera vez. La broma debe desactivarse automáticamente antes de terminar la función
+- [x] Cambiar los campos de structs por tipos primitivos y crear métodos para obtener los valores de los campos
+- [x] Crear un comando para establecer un canal exclusivo en donde se enviará la broma del Bot
+- [x] Arreglar el embed para enviar los audios al canal de Logs
+- [x] Corregir Bug en el comando get_admins que no muestra todos los roles de administrador
+- [x] Corregir Bug en el comando set_admins que reptie el primer rol de administrador cuando se establecen dos roles
+- [x] Cambiar método de sanción de rol a `timeout`
 ---
