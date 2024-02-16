@@ -1,3 +1,13 @@
 /target
 .env
 /.idea
+/database/*sst
+/database/*log
+/database/LOCK
+/database/LOG
+/database/IDENTITY
+/db_password.txt
+/database/CURRENT
+/database/MANIFEST-002017
+/database/OPTIONS-002014
+/database/OPTIONS-002019
