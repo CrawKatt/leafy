@@ -136,7 +136,10 @@ pub async fn handle_forbidden_role(
         .await?
         .take(0)?;
 
-    let time_out_message = time_out_message.unwrap_log("No hay un mensaje de timeout establecido", CURRENT_MODULE, line!())?.warn_message;
+    let time_out_message = time_out_message.unwrap_or(WarnMessageData {
+        warn_message: "Por favor no hagas @ a este usuario. Si estás respondiendo un mensaje, considera responder al mensaje sin usar @".to_string(),
+        guild_id: GuildId::default(),
+    }).warn_message;
     let time_out_timer = time_out_timer.unwrap_log("No hay un tiempo de timeout establecido", CURRENT_MODULE, line!())?.time;
 
     let admin_role_id = admin_role.unwrap_log("No hay un rol de administrador establecido", CURRENT_MODULE, line!())?.role_id;
