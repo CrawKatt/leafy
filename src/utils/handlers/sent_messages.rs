@@ -140,6 +140,7 @@ pub async fn handle_forbidden_role(
         warn_message: "Por favor no hagas @ a este usuario. Si estás respondiendo un mensaje, considera responder al mensaje sin usar @".to_string(),
         guild_id: GuildId::default(),
     }).warn_message;
+
     let time_out_timer = time_out_timer.unwrap_log("No hay un tiempo de timeout establecido", CURRENT_MODULE, line!())?.time;
 
     let admin_role_id = admin_role.unwrap_log("No hay un rol de administrador establecido", CURRENT_MODULE, line!())?.role_id;
@@ -210,7 +211,11 @@ pub async fn handle_forbidden_user(
         .take(0)?;
 
     let time_out_timer = unwrap_log!(SetTimeoutTimer::get_time_out_timer(guild_id).await?, "No se ha establecido un tiempo de silencio");
-    let warn_message = unwrap_log!(WarnMessageData::get_warn_message(guild_id).await?, "No se ha establecido un mensaje de advertencia");
+    let warn_message = WarnMessageData::get_warn_message(guild_id).await?.unwrap_or_else(|| {
+        log_handle!("No se ha establecido un mensaje de advertencia: `sent_message.rs` {}", Location::caller());
+        "Por favor no hagas @ a este usuario. Si estás respondiendo un mensaje, considera responder al mensaje sin usar @".to_string()
+    });
+
     let time_out_message = unwrap_log!(TimeOutMessageData::get_time_out_message(guild_id).await?, "No se ha establecido un mensaje de silencio");
     let admin_role_id = unwrap_log!(admin_role.clone(), "No se ha establecido un rol de administrador").role_id;
     let admin_role_id_2 = unwrap_log!(admin_role, "No se ha establecido un rol de administrador").role_2_id;
