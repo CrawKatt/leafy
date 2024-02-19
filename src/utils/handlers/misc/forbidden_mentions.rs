@@ -36,6 +36,11 @@ pub async fn handle_forbidden_user(
         }
     }
 
+    if !new_message.mentions_user_id(forbidden_user_id) {
+        println!("No se ha mencionado al usuario prohibido : {}", Location::caller());
+        return Ok(())
+    }
+
     let mut member = guild_id.member(&ctx.http, author_user_id).await?;
     let sql_query = "SELECT * FROM admins WHERE guild_id = $guild_id";
     let admin_role: Option<AdminData> = DB
@@ -124,17 +129,19 @@ pub async fn handle_forbidden_role(
         .take(0)?;
 
     let sql_query = "SELECT * FROM time_out_message WHERE guild_id = $guild_id";
-    let time_out_message: Option<WarnMessageData> = DB
+    let time_out_message: Option<TimeOutMessageData> = DB
         .query(sql_query)
         .bind(("guild_id", guild_id)) // pasar el valor
         .await?
         .take(0)?;
 
-    let time_out_message = time_out_message.unwrap_or(WarnMessageData {
-        warn_message: "Por favor no hagas @ a este usuario. Si estás respondiendo un mensaje, considera responder al mensaje sin usar @".to_string(),
-        guild_id: GuildId::default(),
-    }).warn_message;
+    let warn_message = WarnMessageData::get_warn_message(guild_id).await?.unwrap_or_else(|| {
+        log_handle!("No se ha establecido un mensaje de advertencia: `sent_message.rs` {}", Location::caller());
+        "Por favor no hagas @ a este usuario. Si estás respondiendo un mensaje, considera responder al mensaje sin usar @".to_string()
+    });
 
+    // Esto está mal, es para el time_out message no para el warn_message
+    let time_out_message = time_out_message.unwrap_log("No se ha establecido un mensaje de silencio", CURRENT_MODULE, line!())?.time_out_message;
     let time_out_timer = time_out_timer.unwrap_log("No hay un tiempo de timeout establecido", CURRENT_MODULE, line!())?.time;
 
     let admin_role_id = admin_role.unwrap_log("No hay un rol de administrador establecido", CURRENT_MODULE, line!())?.role_id;
@@ -158,7 +165,7 @@ pub async fn handle_forbidden_role(
     }
 
     let mut message_map = HashMap::new();
-    message_map.insert("content", format!("Mensaje eliminado por mencionar a un usuario prohibido de mencionar\nAdvertencia {}/3", warns.warns));
+    message_map.insert("content", format!("{warn_message} {}/3", warns.warns));
     let http = ctx.http.clone();
     http.send_message(new_message.channel_id, vec![], &message_map).await?;
     let mut member = guild_id.member(&ctx.http, author_user_id).await?;

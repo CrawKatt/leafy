@@ -191,6 +191,21 @@ impl ForbiddenUserData {
 
         Ok(existing_data)
     }
+
+    pub async fn get_forbidden_user_id(guild_id: GuildId) -> SurrealResult<Option<u64>> {
+        DB.use_ns("discord-namespace").use_db("discord").await?;
+        let sql_query = "SELECT * FROM forbidden_users WHERE guild_id = $guild_id";
+        let existing_data: Option<Self> = DB
+            .query(sql_query)
+            .bind(("guild_id", &guild_id))
+            .await?
+            .take(0)?;
+
+        Ok(existing_data.map(|data| data.user_id.parse::<u64>().unwrap_or_else(|why| {
+            println!("Error: {why:?}");
+            0
+        })))
+    }
 }
 
 impl ForbiddenRoleData {
