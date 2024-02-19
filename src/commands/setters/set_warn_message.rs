@@ -3,7 +3,7 @@ use crate::utils::{CommandResult, Context};
 use crate::utils::debug::UnwrapLog;
 use crate::commands::setters::WarnMessageData;
 
-/// Establece el mensaje de advertencia
+/// Establece el mensaje de advertencia si se menciona a un usuario o un usuario con un rol prohíbido
 #[poise::command(
     prefix_command,
     slash_command,

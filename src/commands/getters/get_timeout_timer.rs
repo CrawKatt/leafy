@@ -2,6 +2,7 @@ use crate::{DB, unwrap_log};
 use crate::utils::{Context, Error};
 use crate::commands::setters::SetTimeoutTimer;
 
+/// Obtiene el tiempo de timeout establecido en el servidor.
 #[poise::command(
     prefix_command,
     slash_command,

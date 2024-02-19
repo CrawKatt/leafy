@@ -7,7 +7,7 @@ use crate::DB;
 use crate::utils::debug::UnwrapLog;
 use crate::utils::Error;
 use crate::utils::embeds::{edit_message_embed, edit_message_embed_if_mention};
-use crate::utils::handlers::sent_messages::{handle_forbidden_role, handle_forbidden_user};
+use crate::utils::handlers::misc::forbidden_mentions::{handle_forbidden_user, handle_forbidden_role};
 use crate::utils::MessageData;
 use crate::matches;
 

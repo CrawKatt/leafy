@@ -41,6 +41,7 @@ impl JokeChannelData {
     }
 }
 
+/// Establece el canal de broma donde se ejecutará la broma a Meica
 #[poise::command(
     prefix_command,
     slash_command,

@@ -2,6 +2,7 @@ use crate::DB;
 use crate::utils::{CommandResult, Context};
 use crate::commands::setters::ForbiddenRoleData;
 
+/// Obtiene el rol que está prohibido de mencionar si está establecido.
 #[poise::command(
     prefix_command,
     slash_command,
