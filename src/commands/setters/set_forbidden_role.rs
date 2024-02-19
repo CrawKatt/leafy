@@ -32,17 +32,6 @@ pub async fn set_forbidden_role(
     
     data.update_in_db().await?;
 
-    /*
-    match existing_data {
-        Some(_) => {
-            data.update_in_db().await?;
-        }
-        None => {
-            data.save_to_db().await?;
-        }
-    }
-    */
-
     let message = format!("Set forbidden role to: **{}**", role.name);
     ctx.say(message).await?;
 

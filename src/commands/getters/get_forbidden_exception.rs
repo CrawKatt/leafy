@@ -4,6 +4,7 @@ use crate::utils::{CommandResult, Context};
 use crate::utils::debug::UnwrapLog;
 use crate::DB;
 
+/// Obtiene el estado de excepción de un usuario si es que tiene uno.
 #[poise::command(
     prefix_command,
     slash_command,

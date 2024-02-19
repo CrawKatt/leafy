@@ -4,6 +4,7 @@ use crate::utils::{CommandResult, Context};
 use crate::utils::autocomplete::args_set_admins;
 use crate::commands::setters::AdminData;
 
+/// Establece los roles de administrador
 #[poise::command(
     prefix_command,
     slash_command,

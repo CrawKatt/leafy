@@ -4,6 +4,7 @@ use crate::utils::autocomplete::args_set_timeout_timer;
 use crate::utils::debug::UnwrapLog;
 use crate::commands::setters::SetTimeoutTimer;
 
+/// Establece el tiempo de timeout para el servidor
 #[poise::command(
     prefix_command,
     slash_command,

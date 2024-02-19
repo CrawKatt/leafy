@@ -2,6 +2,7 @@ use crate::DB;
 use crate::utils::{CommandResult, Context};
 use crate::commands::setters::ForbiddenUserData;
 
+/// Obtiene el usuario prohíbido de mencionar si está establecido.
 #[poise::command(
     prefix_command,
     slash_command,

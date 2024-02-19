@@ -79,11 +79,10 @@ impl ForbiddenException {
         }
 
         Ok(None)
-
-        //Ok(is_active)
     }
 }
 
+/// Establece una excepción para un usuario si este quiere ser mencionado con @
 #[poise::command(
     prefix_command,
     slash_command,
