@@ -87,8 +87,10 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
         .collect::<Vec<&str>>()[0]
         .parse::<u64>()?;
 
-    let forbidden_user_data = ForbiddenUserData::new(user_id.into(), guild_id);
-    let forbidden_user_id = forbidden_user_data.user_id.parse::<u64>().ok();
+    // Fallo aquí (se obtiene cualquier user_id y se considera un usuario prohibido de mencionar)
+    let forbidden_user_id = ForbiddenUserData::get_forbidden_user_id(guild_id).await?;
+    //let forbidden_user_id = forbidden_user_data.user_id.parse::<u64>().ok();
+    println!("forbidden_user_id: {:?}", forbidden_user_id);
 
     if let Some(forbidden_user_id) = forbidden_user_id {
         // Si el usuario prohibido de mencionar es mencionado, silenciar al autor del mensaje
