@@ -260,7 +260,7 @@ impl ForbiddenRoleData {
         let sql_query = "SELECT * FROM forbidden_roles WHERE guild_id = $guild_id";
         let existing_data: Option<Self> = DB
             .query(sql_query)
-            .bind(("guild_id", &guild_id))
+            .bind(("guild_id", guild_id))
             .await?
             .take(0)?;
 

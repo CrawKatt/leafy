@@ -60,10 +60,13 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
 
     let user = UserId::new(user_id);
     let user_mentioned = user.to_user(&ctx.http).await.unwrap_log("No se pudo obtener el usuario", current_module, line!())?;
-    let forbidden_user_data = ForbiddenUserData::new(u64::from(user).into(), database_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", current_module, line!())?);
-    let forbidden_user_id = forbidden_user_data.user_id;
-    let forbidden_role_id = ForbiddenRoleData::get_role_id(database_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", current_module, line!())?).await?;
-    let forbidden_role_id = forbidden_role_id.unwrap_log("No se pudo obtener el id del rol", current_module, line!())?;
+
+    let forbidden_user_id = ForbiddenUserData::get_forbidden_user_id(database_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", current_module, line!())?).await?;
+    let forbidden_user_id = forbidden_user_id.unwrap_log("No se pudo obtener el id del usuario", current_module, line!())?;
+
+    let guild_id = event.guild_id.unwrap_log("No se pudo obtener el id del servidor", current_module, line!())?;
+    let forbidden_role_id = ForbiddenRoleData::get_role_id(guild_id).await?;
+    let forbidden_role_id = forbidden_role_id.unwrap_log("No se pudo obtener el id del rol prohíbido o no está configurado", current_module, line!())?;
     let mentioned_user = database_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", current_module, line!())?.member(&ctx.http, user_id).await?;
     let mentioned_user_roles = mentioned_user.roles(&ctx.cache).unwrap_log("Could not get the roles", current_module, line!())?;
 
@@ -73,7 +76,7 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
     matches!(
         contains_forbidden_user, {
             let message = ctx.http.get_message(database_message.channel_id, database_message.message_id).await?;
-            handle_forbidden_user(ctx, &message, database_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", current_module, line!())?,database_message, forbidden_user_id.parse::<u64>()?).await?;
+            handle_forbidden_user(ctx, &message, database_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", current_module, line!())?,database_message, forbidden_user_id).await?;
         },
         contains_forbidden_role, {
             let message = ctx.http.get_message(database_message.channel_id, database_message.message_id).await?;
