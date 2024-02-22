@@ -5,6 +5,8 @@
 - (**POST PRODUCCIÓN**)
 - [ ] Refactorizar el código para que sea más legible
 - [ ] Enviar un sticker de "que dijiste @muteado"
+- [ ] Crear un mensaje de bienvenida para los miembros nuevos en el canal de Bienvenida
+- [ ] El mensaje de bienvenida será estilo Koya
 ---
 
 # Tareas Completadas
