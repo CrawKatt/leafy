@@ -1,6 +1,6 @@
 use serenity::all::{Member, RoleId};
 use poise::serenity_prelude as serenity;
-use crate::utils::debug::UnwrapLog;
+use crate::utils::misc::debug::UnwrapLog;
 
 const CURRENT_MODULE: &str = file!();
 

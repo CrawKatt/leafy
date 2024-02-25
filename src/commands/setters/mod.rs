@@ -7,12 +7,14 @@ pub mod set_warn_message;
 pub mod set_timeout_message;
 pub mod set_forbidden_exception;
 pub mod set_joke_channel;
+pub mod set_to_blacklist;
+pub mod set_joke;
 
 use crate::DB;
 use serenity::all::{ChannelId, GuildId, RoleId, UserId};
 use serde::{Deserialize, Serialize};
 use surrealdb::Result as SurrealResult;
-use crate::utils::debug::UnwrapErrors;
+use crate::utils::misc::debug::UnwrapErrors;
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct AdminData {

@@ -68,7 +68,7 @@ impl<T, E> UnwrapLog<T> for Result<T, E>
 macro_rules! unwrap_log {
     ($expr:expr, $msg:expr) => {
         {
-            use $crate::utils::debug::UnwrapLogError;
+            use $crate::utils::misc::debug::UnwrapLogError;
             use $crate::log_handle;
 
             match $expr {
@@ -82,7 +82,7 @@ macro_rules! unwrap_log {
     };
     ($expr:expr, $msg:expr) => {
         {
-            use $crate::utils::debug::UnwrapLogError;
+            use $crate::utils::misc::debug::UnwrapLogError;
             use $crate::log_handle;
             use anyhow::anyhow;
 

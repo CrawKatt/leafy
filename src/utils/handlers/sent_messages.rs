@@ -1,14 +1,14 @@
 use serenity::all::Message;
 use poise::serenity_prelude as serenity;
 use regex::Regex;
-use crate::commands::blacklist::BlackListData;
+use crate::commands::setters::set_to_blacklist::BlackListData;
 use crate::DB;
-use crate::commands::joke::Joke;
+use crate::commands::setters::set_joke::Joke;
 use crate::utils::CommandResult;
 use crate::utils::MessageData;
 use crate::commands::setters::{AdminData, ForbiddenUserData, SetTimeoutTimer};
 use crate::commands::setters::ForbiddenRoleData;
-use crate::utils::debug::UnwrapLog;
+use crate::utils::misc::debug::UnwrapLog;
 use crate::utils::handlers::misc::attachment_case::attachment_handler;
 use crate::utils::handlers::misc::everyone_case::handle_everyone;
 use crate::utils::handlers::misc::forbidden_mentions::{handle_forbidden_role, handle_forbidden_user};

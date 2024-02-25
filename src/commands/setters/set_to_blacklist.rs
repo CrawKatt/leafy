@@ -3,7 +3,7 @@ use serenity::all::GuildId;
 use crate::utils::{CommandResult, Context};
 use surrealdb::Result as SurrealResult;
 use crate::DB;
-use crate::utils::debug::{UnwrapLog, UnwrapResult};
+use crate::utils::misc::debug::{UnwrapLog, UnwrapResult};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BlackListData {

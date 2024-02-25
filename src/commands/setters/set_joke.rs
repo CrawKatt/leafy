@@ -3,7 +3,7 @@ use serenity::all::{GuildId, UserId};
 use surrealdb::Result as SurrealResult;
 use crate::DB;
 use crate::utils::{CommandResult, Context};
-use crate::utils::debug::{UnwrapErrors, UnwrapLog};
+use crate::utils::misc::debug::{UnwrapErrors, UnwrapLog};
 
 #[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, Eq)]
 pub struct Joke {

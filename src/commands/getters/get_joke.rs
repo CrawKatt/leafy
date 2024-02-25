@@ -1,4 +1,4 @@
-use crate::commands::joke::Joke;
+use crate::commands::setters::set_joke::Joke;
 use crate::DB;
 use crate::utils::{CommandResult, Context};
 

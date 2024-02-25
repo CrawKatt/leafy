@@ -1,7 +1,7 @@
 use serenity::all::RoleId;
 use crate::utils::{CommandResult, Context};
 use crate::commands::setters::AdminData;
-use crate::utils::debug::UnwrapLog;
+use crate::utils::misc::debug::UnwrapLog;
 
 /// Obtiene el rol de administrador establecido en el servidor
 #[poise::command(

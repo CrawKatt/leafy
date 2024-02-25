@@ -3,22 +3,23 @@ use serde::{Deserialize, Serialize};
 use serenity::all::{Attachment, ChannelId, GuildId, MessageId, UserId};
 use surrealdb::Result as SurrealResult;
 
-pub mod autocomplete;
-pub mod embeds;
 pub mod handlers;
 pub mod events;
-pub mod debug;
+pub mod misc;
 
 use crate::DB;
 use crate::commands::ping::ping;
 use crate::commands::setters::set_admins::set_admins;
 use crate::commands::setters::set_log_channel::set_log_channel;
+use crate::commands::setters::set_joke_channel::set_joke_channel;
 use crate::commands::setters::set_warn_message::set_warn_message;
+use crate::commands::setters::set_to_blacklist::add_to_blacklist;
 use crate::commands::setters::set_timeout_timer::set_timeout_timer;
 use crate::commands::setters::set_forbidden_role::set_forbidden_role;
 use crate::commands::setters::set_forbidden_user::set_forbidden_user;
 use crate::commands::setters::set_timeout_message::set_time_out_message;
 use crate::commands::setters::set_forbidden_exception::set_forbidden_exception;
+use crate::commands::setters::set_joke::joke;
 
 use crate::commands::getters::get_admins::get_admins;
 use crate::commands::getters::get_forbidden_exception::get_forbidden_exception;
@@ -27,10 +28,6 @@ use crate::commands::getters::get_timeout_timer::get_timeout_timer;
 use crate::commands::getters::get_forbidden_role::get_forbidden_role;
 use crate::commands::getters::get_forbidden_user::get_forbidden_user;
 use crate::commands::getters::get_joke::get_joke;
-use crate::commands::joke::joke;
-use crate::commands::setters::set_joke_channel::set_joke_channel;
-
-use crate::commands::blacklist::add_to_blacklist;
 
 pub struct Data {
     pub poise_mentions: String,

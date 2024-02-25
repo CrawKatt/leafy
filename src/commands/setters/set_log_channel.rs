@@ -1,8 +1,8 @@
 use serenity::all::Channel;
 use crate::DB;
-use crate::utils::autocomplete::args_log_command;
+use crate::utils::misc::autocomplete::args_log_command;
 use crate::utils::{CommandResult, Context};
-use crate::utils::debug::UnwrapLog;
+use crate::utils::misc::debug::UnwrapLog;
 use crate::commands::setters::GuildData;
 
 /// Establece el canal de logs del servidor

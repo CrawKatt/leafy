@@ -1,9 +1,9 @@
 use serenity::all::User;
 use crate::DB;
-use crate::utils::debug::UnwrapLog;
+use crate::utils::misc::debug::UnwrapLog;
 use crate::utils::{CommandResult, Context};
 use crate::commands::setters::ForbiddenUserData;
-use crate::utils::autocomplete::args_set_forbidden_user;
+use crate::utils::misc::autocomplete::args_set_forbidden_user;
 
 /// Establece el usuario prohibido de mencionar
 #[poise::command(

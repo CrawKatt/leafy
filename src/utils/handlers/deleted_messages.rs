@@ -6,7 +6,8 @@ use tokio::io::AsyncWriteExt;
 use crate::utils::CommandResult;
 use crate::utils::MessageData;
 use crate::commands::setters::GuildData;
-use crate::utils::debug::UnwrapLog;
+use crate::utils::misc::debug::UnwrapLog;
+use crate::utils::misc::embeds::{send_embed_if_mention, send_embed_with_attachment};
 
 pub async fn delete_message_handler(ctx: &serenity::Context, channel_id: &ChannelId, deleted_message_id: &MessageId) -> CommandResult {
 
@@ -41,7 +42,7 @@ pub async fn delete_message_handler(ctx: &serenity::Context, channel_id: &Channe
 
     // convertir el mention en un objeto User
     let Some(_) = mention else {
-        crate::utils::embeds::send_embed(ctx,log_channel, &message_channel_id, author_id, &message_content).await;
+        crate::utils::misc::embeds::send_embed(ctx,log_channel, &message_channel_id, author_id, &message_content).await;
         return Ok(());
     };
 
@@ -55,7 +56,7 @@ pub async fn delete_message_handler(ctx: &serenity::Context, channel_id: &Channe
     let user = UserId::new(user_id);
     let user_mentioned = user.to_user(&ctx.http).await?;
 
-    crate::utils::embeds::send_embed_if_mention(ctx,log_channel, &message_channel_id, author_id, &message_content,user_mentioned).await;
+    send_embed_if_mention(ctx,log_channel, &message_channel_id, author_id, &message_content,user_mentioned).await;
 
     Ok(())
 }
@@ -82,7 +83,7 @@ async fn handle_audio(ctx: &serenity::Context, deleted_message_id: &MessageId, d
         return Ok(());
     }
 
-    crate::utils::embeds::send_embed_with_attachment(ctx,log_channel, &database_message.channel_id, database_message.author_id, &filename).await;
+    send_embed_with_attachment(ctx,log_channel, &database_message.channel_id, database_message.author_id, &filename).await;
 
     Ok(())
 }

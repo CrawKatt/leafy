@@ -8,7 +8,7 @@ use crate::{DB, log_handle, unwrap_log};
 use crate::utils::{CommandResult, MessageData, Warns};
 use crate::commands::setters::SetTimeoutTimer;
 use crate::commands::setters::TimeOutMessageData;
-use crate::utils::debug::UnwrapLog;
+use crate::utils::misc::debug::UnwrapLog;
 use crate::utils::handlers::misc::warns::handle_warns;
 use crate::utils::handlers::misc::exceptions::check_admin_exception;
 
