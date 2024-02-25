@@ -97,7 +97,7 @@ impl AdminData {
 
         Ok(())
     }
-    pub async fn get_admin_role(guild_id: GuildId) -> SurrealResult<Option<RoleId>> {
+    pub async fn get_admin_role(guild_id: GuildId) -> SurrealResult<Option<String>> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
         let sql_query = "SELECT * FROM admins WHERE guild_id = $guild_id";
         let query_result = DB
@@ -115,13 +115,13 @@ impl AdminData {
                 let role_id = data.role_id.unwrap_or_default();
                 let role_u64 = role_id.parse::<u64>().unwrap_or_default();
                 let role_id = RoleId::new(role_u64);
-                Ok(Some(role_id))
+                Ok(Some(role_id.to_string()))
             },
             None => Ok(None)
         }
     }
 
-    pub async fn get_admin_role_2(guild_id: GuildId) -> SurrealResult<Option<RoleId>> {
+    pub async fn get_admin_role_2(guild_id: GuildId) -> SurrealResult<Option<String>> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
         let sql_query = "SELECT * FROM admins WHERE guild_id = $guild_id";
         let query_result = DB
@@ -139,7 +139,7 @@ impl AdminData {
                 data.role_2_id.map_or_else(|| Ok(None), |role_id| {
                     let role_u64 = role_id.parse::<u64>().unwrap_or_default();
                     let role_id = RoleId::new(role_u64);
-                    Ok(Some(role_id))
+                    Ok(Some(role_id.to_string()))
                 })
             },
             None => Ok(None)

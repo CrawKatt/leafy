@@ -1,3 +1,4 @@
+use serenity::all::RoleId;
 use crate::utils::{CommandResult, Context};
 use crate::commands::setters::AdminData;
 use crate::utils::debug::UnwrapLog;
@@ -21,11 +22,15 @@ pub async fn get_admins(
     let mut role_names = String::new();
 
     if let Some(role_id) = role_id_1 {
+        let parse = role_id.parse::<u64>().unwrap();
+        let role_id = RoleId::new(parse);
         let role_name = ctx.cache().role(guild_id, role_id).ok_or("No se han establecido roles de moderador")?.name.clone();
         role_names.push_str(&role_name);
     }
 
     if let Some(role_id) = role_id_2 {
+        let parse = role_id.parse::<u64>().unwrap();
+        let role_id = RoleId::new(parse);
         let role_name = ctx.cache().role(guild_id, role_id).ok_or("No se han establecido roles de moderador")?.name.clone();
         if !role_names.is_empty() {
             role_names.push_str(", ");
