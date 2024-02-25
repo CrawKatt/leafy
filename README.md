@@ -6,7 +6,13 @@
 - [ ] Refactorizar el código para que sea más legible
 - [ ] Enviar un sticker de "que dijiste @muteado"
 - [ ] Crear un mensaje de bienvenida para los miembros nuevos en el canal de Bienvenida
-- [ ] El mensaje de bienvenida será estilo Koya
+    - [ ] Crear un sistema de edición de imágen para añadir el nombre del usuario al mensaje de bienvenida
+    - [ ] Crear un comando para establecer el canal de Bienvenida
+    - [ ] Crear un comando para obtener el canal de Bienvenida establecido
+    - [ ] Crear un comando para establecer el mensaje de Bienvenida
+- [x] Crear un sistema anti-spam para impedir el envío de links maliciosos
+- [ ] Cambiar los mensajes de advertencia por embeds
+
 ---
 
 # Tareas Completadas
