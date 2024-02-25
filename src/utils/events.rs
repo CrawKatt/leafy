@@ -32,9 +32,22 @@ pub async fn event_handler(
             edited_message_handler(ctx, event).await?;
         }
 
+        /*
         serenity::FullEvent::PresenceUpdate { .. } => {
+            // todo: implement presence update handler
             //println!("Event Presence updated: {:?}", new_data.user);
         }
+
+        serenity::FullEvent::ReactionAdd { .. } => {
+            // todo: implement reaction add handler
+            //println!("Event Reaction Add: {:?}", add_reaction);
+        }
+
+        serenity::FullEvent::ReactionRemove { .. } => {
+            // todo: implement reaction remove handler
+            //println!("Event Reaction Remove: {:?}", remove_reaction);
+        }
+        */
 
         _ => println!("Unhandled event: {:?}", event.snake_case_name())
     }

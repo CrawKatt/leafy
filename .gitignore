@@ -1,6 +1,7 @@
 /target
 .env
 /.idea
+/Cargo.lock
 /database/*sst
 /database/*log
 /database/LOCK

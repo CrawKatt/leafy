@@ -1,6 +1,6 @@
-use chrono::{Duration, Utc};
-use serenity::all::{Member, Message, RoleId, Timestamp};
+use serenity::all::Message;
 use poise::serenity_prelude as serenity;
+use regex::Regex;
 use crate::commands::blacklist::BlackListData;
 use crate::DB;
 use crate::commands::joke::Joke;
@@ -9,6 +9,8 @@ use crate::utils::MessageData;
 use crate::commands::setters::{AdminData, ForbiddenUserData, SetTimeoutTimer};
 use crate::commands::setters::ForbiddenRoleData;
 use crate::utils::debug::UnwrapLog;
+use crate::utils::handlers::misc::attachment_case::attachment_handler;
+use crate::utils::handlers::misc::everyone_case::handle_everyone;
 use crate::utils::handlers::misc::forbidden_mentions::{handle_forbidden_role, handle_forbidden_user};
 use crate::utils::handlers::misc::joke_call::handle_joke;
 
@@ -25,24 +27,9 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     // variable que obtiene el id del servidor
     let guild_id = new_message.guild_id.unwrap_log("Could not get guild id", CURRENT_MODULE, line!())?;
 
-    if !new_message.attachments.is_empty() {
-        for attachment in new_message.attachments.clone() {
-            if attachment.content_type.unwrap_or_default().starts_with("audio") {
-                let audio_url = &attachment.url;
-                let data = MessageData::new(
-                    new_message.id,
-                    audio_url.to_owned(),
-                    new_message.author.id,
-                    new_message.channel_id,
-                    new_message.guild_id,
-                    None
-                );
-
-                // Guardar el enlace del archivo de audio en la base de datos
-                let _created: Vec<MessageData> = DB.create("audio").content(data).await?;
-                println!("Audio file saved to database");
-            }
-        }
+    //attachment_handler(new_message).await;
+    if let Err(why) = attachment_handler(new_message).await {
+        println!("Error handling attachment: {why:?} {CURRENT_MODULE} : {}", line!());
     }
 
     // Obtener el canal de logs de la base de datos
@@ -81,27 +68,21 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     let time_out_timer = SetTimeoutTimer::get_time_out_timer(guild_id).await?;
     let time = time_out_timer.unwrap_or_default(); // SAFETY: Si se establece en 0, es porque no se ha establecido un tiempo de silencio
 
-    let sql_query = "SELECT * FROM blacklist WHERE guild_id = $guild_id";
-    let black_list: Option<BlackListData> = DB
-        .query(sql_query)
-        .bind(("guild_id", guild_id)) // pasar el valor
-        .await?
-        .take(0)?;
+    let message_link = extract_link(message_content);
+    if let Some(link) = message_link {
+        let link = BlackListData::get_blacklist_link(guild_id, link).await?;
+        // Si el mensaje contiene un enlace prohibido, silenciar al autor del mensaje
+        if message_content.contains(&link) {
+            let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
+            handle_everyone(admin_role_id, &mut member, ctx, time, new_message).await?;
 
-    let black_list = black_list.unwrap_log("No se ha establecido una lista negra", CURRENT_MODULE, line!())?;
-    let link = black_list.link;
-
-    // Si el mensaje contiene un enlace prohibido, silenciar al autor del mensaje
-    if message_content.contains(&link) {
-        let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
-        handle_everyone(admin_role_id, &mut member, ctx, time, new_message).await?;
-
-        return Ok(());
+            return Ok(());
+        }
     }
 
     // @everyone no tiene id, por lo que no es necesario el <@id> UBICAR ANTES DE LA CONDICIÓN DE MENCIONES
     if new_message.mention_everyone {
-        let _created: Vec<MessageData> = DB.create("messages").content(&data).await?;
+        let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
         handle_everyone(admin_role_id, &mut member, ctx, time, new_message).await?;
 
         return Ok(())
@@ -151,35 +132,6 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     Ok(())
 }
 
-/// Verifica si el usuario tiene un rol de administrador
-/// Si el usuario tiene un rol de administrador, no se silenciará
-pub fn check_admin_exception(admin_role_id: Option<String>, member: &Member, ctx: &serenity::Context) -> bool {
-    admin_role_id.map_or(false, |admin_role_id| {
-        member.roles(&ctx.cache)
-            .unwrap_log("Could not get member roles", CURRENT_MODULE, line!())
-            .iter()
-            .flat_map(|roles| roles.iter())
-            .any(|role| role.id == RoleId::new(admin_role_id.parse::<u64>().unwrap_or_default()))
-    })
-}
-
-/// Silencia al autor del mensaje y elimina el mensaje
-async fn handle_everyone(
-    admin_role_id: Option<String>,
-    member: &mut Member,
-    ctx: &serenity::Context,
-    time_out_timer: i64,
-    message: &Message,
-) -> CommandResult {
-
-    if check_admin_exception(admin_role_id, member, ctx) {
-        println!("Admin exception : `sent_message.rs` Line 169");
-        return Ok(());
-    }
-
-    let time = Timestamp::from(Utc::now() + Duration::seconds(time_out_timer));
-    member.disable_communication_until_datetime(&ctx.http, time).await?;
-    message.delete(&ctx.http).await?;
-
-    Ok(())
+fn extract_link(text: &str) -> Option<String> {
+    Regex::new(r"(https?://[^\s]+)").map_or(None, |url_re| url_re.find(text).map(|m| m.as_str().to_string()))
 }

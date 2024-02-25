@@ -4,6 +4,8 @@ use serde::ser::StdError;
 use thiserror::Error;
 use crate::log_handle;
 
+pub type UnwrapResult<T> = Result<T, UnwrapErrors>;
+
 #[derive(Error, Debug)]
 pub enum UnwrapErrors {
     #[error(transparent)]
