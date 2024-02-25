@@ -3,13 +3,12 @@ use reqwest::Url;
 use serenity::all::{ChannelId, MessageId, UserId};
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
-use crate::DB;
-use crate::utils::{CommandResult, Error};
+use crate::utils::CommandResult;
 use crate::utils::MessageData;
 use crate::commands::setters::GuildData;
 use crate::utils::debug::UnwrapLog;
 
-pub async fn delete_message_handler(ctx: &serenity::Context, channel_id: &ChannelId, deleted_message_id: &MessageId) -> Result<(), Error> {
+pub async fn delete_message_handler(ctx: &serenity::Context, channel_id: &ChannelId, deleted_message_id: &MessageId) -> CommandResult {
 
     let database_info = MessageData::get_message_data(deleted_message_id).await?;
     let Some(database_message) = database_info else {
