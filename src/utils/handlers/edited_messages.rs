@@ -3,7 +3,6 @@ use poise::serenity_prelude as serenity;
 use crate::commands::setters::ForbiddenRoleData;
 use crate::commands::setters::ForbiddenUserData;
 use crate::commands::setters::GuildData;
-use crate::DB;
 use crate::utils::debug::UnwrapLog;
 use crate::utils::Error;
 use crate::utils::embeds::{edit_message_embed, edit_message_embed_if_mention};
@@ -18,12 +17,8 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
         return Ok(());
     }
 
-    let sql_query = "SELECT * FROM messages WHERE message_id = $message_id";
-    let old_message: Option<MessageData> = DB
-        .query(sql_query)
-        .bind(("message_id", event.id)) // pasar el valor
-        .await?
-        .take(0)?;
+    let message_id = event.id;
+    let old_message = MessageData::get_message_data(&message_id).await?;
 
     let Some(database_message) = old_message else {
         return Ok(())
@@ -36,12 +31,8 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
         return Ok(());
     }
 
-    let log_channel_database = "SELECT * FROM guilds WHERE guild_id = $guild_id";
-    let log_channel_id: Option<GuildData> = DB
-        .query(log_channel_database)
-        .bind(("guild_id", database_message.guild_id)) // pasar el valor
-        .await?
-        .take(0)?;
+    let result_database = database_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", current_module, line!())?;
+    let log_channel_id = GuildData::get_log_channel(result_database).await?;
 
     let log_channel = log_channel_id.unwrap_log("No se pudo obtener el canal de Logs", current_module, line!())?.log_channel_id;
     let message_content = format!("\n**Antes:** {old_content}\n**Después:** {new_content}");

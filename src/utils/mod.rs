@@ -69,6 +69,30 @@ impl MessageData {
             attachment,
         }
     }
+
+    pub async fn get_message_data(message_id: &MessageId) -> SurrealResult<Option<Self>> {
+        DB.use_ns("discord-namespace").use_db("discord").await?;
+        let sql_query = "SELECT * FROM messages WHERE message_id = $message_id";
+        let existing_data: Option<Self> = DB
+            .query(sql_query)
+            .bind(("message_id", message_id))
+            .await?
+            .take(0)?;
+
+        Ok(existing_data)
+    }
+
+    pub async fn get_audio_data(message_id: &MessageId) -> SurrealResult<Option<Self>> {
+        DB.use_ns("discord-namespace").use_db("discord").await?;
+        let sql_query = "SELECT * FROM audio WHERE message_id = $message_id";
+        let existing_data: Option<Self> = DB
+            .query(sql_query)
+            .bind(("message_id", message_id))
+            .await?
+            .take(0)?;
+
+        Ok(existing_data)
+    }
 }
 
 #[derive(Serialize, Deserialize)]

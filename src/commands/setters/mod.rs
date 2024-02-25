@@ -474,4 +474,16 @@ impl GuildData {
 
         Ok(existing_data)
     }
+
+    pub async fn get_log_channel(guild_id: GuildId) -> SurrealResult<Option<Self>> {
+        DB.use_ns("discord-namespace").use_db("discord").await?;
+        let sql_query = "SELECT * FROM guilds WHERE guild_id = $guild_id";
+        let existing_data: Option<Self> = DB
+            .query(sql_query)
+            .bind(("guild_id", guild_id))
+            .await?
+            .take(0)?;
+
+        Ok(existing_data)
+    }
 }

@@ -68,6 +68,7 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     let time_out_timer = SetTimeoutTimer::get_time_out_timer(guild_id).await?;
     let time = time_out_timer.unwrap_or_default(); // SAFETY: Si se establece en 0, es porque no se ha establecido un tiempo de silencio
 
+    // Extraer el link del mensaje si existe
     let message_link = extract_link(message_content);
     if let Some(link) = message_link {
         let link = BlackListData::get_blacklist_link(guild_id, link).await?;
