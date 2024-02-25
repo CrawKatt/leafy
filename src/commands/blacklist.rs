@@ -3,6 +3,7 @@ use serenity::all::GuildId;
 use crate::utils::{CommandResult, Context};
 use surrealdb::Result as SurrealResult;
 use crate::DB;
+use crate::utils::debug::{UnwrapLog, UnwrapResult};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BlackListData {
@@ -45,6 +46,21 @@ impl BlackListData {
 
         Ok(existing_data)
     }
+
+    pub async fn get_blacklist_link(guild_id: GuildId, link: String) -> UnwrapResult<String> {
+        DB.use_ns("discord-namespace").use_db("discord").await?;
+        let sql_query = "SELECT * FROM blacklist WHERE guild_id = $guild_id AND link = $link";
+        let existing_data: Option<Self> = DB
+            .query(sql_query)
+            .bind(("guild_id", guild_id))
+            .bind(("link", link))
+            .await?
+            .take(0)?;
+
+        let result = existing_data.unwrap_log("No se encontró el link en la lista negra", file!(), line!())?.link;
+
+        Ok(result)
+    }
 }
 
 /// Agrega un link a la lista negra.
@@ -71,7 +87,7 @@ pub async fn add_to_blacklist(
 
     if existing_data.is_none() {
         black_list.save_to_db().await?;
-        poise::say_reply(ctx, format!("El link **{link}** ha sido agregado a la lista blanca")).await?;
+        poise::say_reply(ctx, format!("El link **{link}** ha sido agregado a la lista negra")).await?;
         return Ok(())
     }
 

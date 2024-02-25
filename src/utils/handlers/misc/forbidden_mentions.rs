@@ -10,7 +10,7 @@ use crate::commands::setters::SetTimeoutTimer;
 use crate::commands::setters::TimeOutMessageData;
 use crate::utils::debug::UnwrapLog;
 use crate::utils::handlers::misc::warns::handle_warns;
-use crate::utils::handlers::sent_messages::check_admin_exception;
+use crate::utils::handlers::misc::exceptions::check_admin_exception;
 
 const CURRENT_MODULE: &str = file!();
 
