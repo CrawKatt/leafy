@@ -58,6 +58,7 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
         .collect::<Vec<&str>>()[0]
         .parse::<u64>()?;
 
+    // `UserId::new()` necesario para convertir el user_id mencionado a un objeto User NO REMOVER NI CAMBIAR
     let user = UserId::new(user_id);
     let user_mentioned = user.to_user(&ctx.http).await.unwrap_log("No se pudo obtener el usuario", current_module, line!())?;
 
