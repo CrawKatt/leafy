@@ -9,6 +9,7 @@ pub mod set_forbidden_exception;
 pub mod set_joke_channel;
 pub mod set_to_blacklist;
 pub mod set_joke;
+pub mod set_welcome_channel;
 
 use crate::DB;
 use serenity::all::{ChannelId, GuildId, RoleId, UserId};

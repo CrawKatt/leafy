@@ -6,6 +6,7 @@ pub use crate::utils::Error;
 use crate::utils::handlers::deleted_messages::delete_message_handler;
 use crate::utils::handlers::edited_messages::edited_message_handler;
 use crate::utils::handlers::sent_messages::message_handler;
+use crate::utils::handlers::welcome_event::welcome_handler;
 
 pub async fn event_handler(
     ctx: &serenity::Context,
@@ -15,7 +16,7 @@ pub async fn event_handler(
 
     DB.use_ns("discord-namespace").use_db("discord").await?;
     match event {
-        serenity::FullEvent::Ready { data_about_bot, .. } => {
+        serenity::FullEvent::Ready { data_about_bot } => {
             println!("Logged in as {}", data_about_bot.user.name);
         }
 
@@ -48,6 +49,11 @@ pub async fn event_handler(
             //println!("Event Reaction Remove: {:?}", remove_reaction);
         }
         */
+
+        serenity::FullEvent::GuildMemberAddition { new_member} => {
+            println!("Event Guild Member Add: {:?}", new_member.user.name);
+            welcome_handler(ctx, new_member).await?;
+        }
 
         _ => println!("Unhandled event: {:?}", event.snake_case_name())
     }

@@ -28,6 +28,7 @@ use crate::commands::getters::get_timeout_timer::get_timeout_timer;
 use crate::commands::getters::get_forbidden_role::get_forbidden_role;
 use crate::commands::getters::get_forbidden_user::get_forbidden_user;
 use crate::commands::getters::get_joke::get_joke;
+use crate::commands::setters::set_welcome_channel::set_welcome_channel;
 
 pub struct Data {
     pub poise_mentions: String,
@@ -170,6 +171,7 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         set_forbidden_role(),
         set_time_out_message(),
         set_forbidden_exception(),
+        set_welcome_channel(),
         get_admins(),
         get_log_channel(),
         get_timeout_timer(),
