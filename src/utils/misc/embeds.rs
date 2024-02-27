@@ -3,7 +3,6 @@ use poise::serenity_prelude as serenity;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 use serenity::all::{ChannelId, CreateAttachment, CreateEmbedAuthor, CreateMessage, Message, User, UserId};
 use crate::log_handle;
-use crate::utils::Error;
 
 pub async fn edit_message_embed(
     ctx: &serenity::Context,
