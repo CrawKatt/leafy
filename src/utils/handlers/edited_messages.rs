@@ -75,7 +75,7 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
             handle_forbidden_role(ctx, &message, database_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", current_module, line!())?,database_message).await?;
         },
         default, {
-            edit_message_embed_if_mention(ctx, log_channel, &database_message.channel_id, database_message.author_id, &message_content,user_mentioned).await;
+            edit_message_embed_if_mention(ctx, log_channel, &database_message.channel_id, database_message.author_id, &message_content,user_mentioned).await?;
         }
     );
 
