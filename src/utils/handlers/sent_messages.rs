@@ -53,7 +53,7 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     // match necesario para continuar la función en caso de que el canal de broma no esté establecido
     if let Some(joke) = joke {
         match handle_joke(joke, new_message, ctx).await {
-            Ok(_) => (),
+            Ok(()) => (),
             Err(why) => {
                 println!("Error handling joke: {why:?}");
             },
