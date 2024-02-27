@@ -15,13 +15,19 @@ pub enum UnwrapErrors {
     Surreal(#[from] surrealdb::Error),
 
     #[error(transparent)]
-    Anyhow(#[from] anyhow::Error),
-
-    #[error(transparent)]
     ParseInt(#[from] ParseIntError),
 
     #[error(transparent)]
     Serenity(#[from] serenity::Error),
+
+    #[error(transparent)]
+    ImageError(#[from] image::ImageError),
+
+    #[error(transparent)]
+    Reqwest(#[from] reqwest::Error),
+
+    #[error(transparent)]
+    Tokio(#[from] tokio::io::Error),
 }
 
 #[derive(Error, Debug)]
@@ -84,7 +90,6 @@ macro_rules! unwrap_log {
         {
             use $crate::utils::misc::debug::UnwrapLogError;
             use $crate::log_handle;
-            use anyhow::anyhow;
 
             match $expr {
                 Ok(val) => val,
