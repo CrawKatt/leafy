@@ -8,7 +8,7 @@
 - [ ] Crear un mensaje de bienvenida para los miembros nuevos en el canal de Bienvenida
     - [x] Crear un sistema de edición de imágen para añadir el avatar del usuario nuevo en una plantilla de bienvenida
     - [x] Crear un comando para establecer el canal de Bienvenida
-    - [ ] Crear un comando para obtener el canal de Bienvenida establecido
+    - [x] Crear un comando para obtener el canal de Bienvenida establecido
     - [x] Crear un comando para establecer el mensaje de Bienvenida
 - [x] Crear un sistema anti-spam para impedir el envío de links maliciosos
 - [ ] Cambiar los mensajes de advertencia por embeds
