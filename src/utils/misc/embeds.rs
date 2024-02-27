@@ -14,7 +14,7 @@ pub async fn edit_message_embed(
     let author_mention = format!("<@{author_id}>");
     let description = format!("Autor del mensaje: {author_mention}\nCanal de origen: <#{delete_channel_id}>\nContenido del mensaje: {message_content}");
     let footer = "Nota: si hay una parte del mensaje que está en \"Negrita\" significa que es una mención con \"@\" a esa persona.";
-    let embed = create_embed(&author_id.to_user(&ctx.http).await.unwrap_or_default(), &description, footer);
+    let embed = create_embed_edited(&author_id.to_user(&ctx.http).await.unwrap_or_default(), &description, footer);
     log_channel_id.send_message(&ctx.http, create_message_embed(embed, CreateMessage::default())).await.ok()
 }
 
@@ -107,7 +107,18 @@ fn create_embed(author_user: &User, description: &str, footer: &str) -> CreateEm
         .description(description)
         .author(CreateEmbedAuthor::new(&author_user.name)
             .name(&author_user.name)
-            .icon_url(author_user.avatar_url().as_deref().unwrap_or_default()))
+            .icon_url(author_user.avatar_url().unwrap_or_else(|| author_user.default_avatar_url())))
+        .color(0x0000_ff00)
+        .footer(CreateEmbedFooter::new(footer))
+}
+
+fn create_embed_edited(author_user: &User, description: &str, footer: &str) -> CreateEmbed {
+    CreateEmbed::default()
+        .title("Mensaje editado")
+        .description(description)
+        .author(CreateEmbedAuthor::new(&author_user.name)
+            .name(&author_user.name)
+            .icon_url(author_user.avatar_url().unwrap_or_else(|| author_user.default_avatar_url())))
         .color(0x0000_ff00)
         .footer(CreateEmbedFooter::new(footer))
 }
@@ -118,7 +129,7 @@ fn create_embed_for_audio(author_user: &User, description: &str, footer: &str) -
         .description(description)
         .author(CreateEmbedAuthor::new(&author_user.name)
             .name(&author_user.name)
-            .icon_url(author_user.avatar_url().as_deref().unwrap_or_default()))
+            .icon_url(author_user.avatar_url().unwrap_or_else(|| author_user.default_avatar_url())))
         .color(0x0000_ff00)
         .footer(CreateEmbedFooter::new(footer))
 }
@@ -142,7 +153,7 @@ pub async fn send_embed_if_mention(
         .description(format!("Autor del mensaje: {}\nCanal de origen: <#{delete_channel_id}>\nContenido del mensaje: {}", author_mention, &message_content))
         .author(CreateEmbedAuthor::new(&author_user.name)
             .name(&author_user.name)
-            .icon_url(author_user.avatar_url().as_deref().unwrap_or_default()))
+            .icon_url(author_user.avatar_url().unwrap_or_else(|| user.default_avatar_url())))
         .color(0x0000_ff00)
         .footer(CreateEmbedFooter::new("Nota: si hay una parte del mensaje que está en \"Negrita\" significa que es una mención con \"@\" a esa persona."));
 
