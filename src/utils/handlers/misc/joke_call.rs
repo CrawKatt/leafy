@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use serenity::all::{CreateAttachment, Message};
-use crate::commands::joke::Joke;
+use crate::commands::setters::set_joke::Joke;
 use poise::serenity_prelude as serenity;
 use crate::commands::setters::set_joke_channel::JokeChannelData;
 use crate::DB;
-use crate::utils::debug::{UnwrapErrors, UnwrapLog};
+use crate::utils::misc::debug::{UnwrapErrors, UnwrapLog};
 
 const CURRENT_MODULE: &str = file!();
 

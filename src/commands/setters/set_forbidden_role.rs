@@ -1,8 +1,8 @@
 use serenity::all::Role;
 use crate::DB;
 use crate::utils::{CommandResult, Context};
-use crate::utils::autocomplete::args_set_forbidden_role;
-use crate::utils::debug::UnwrapLog;
+use crate::utils::misc::autocomplete::args_set_forbidden_role;
+use crate::utils::misc::debug::UnwrapLog;
 use crate::commands::setters::ForbiddenRoleData;
 
 /// Establece el rol de usuario prohibido de mencionar

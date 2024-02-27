@@ -1,36 +1,22 @@
+use poise::CreateReply;
 use tokio::time::Instant;
-use crate::utils::{Context, Error};
+use crate::utils::{CommandResult, Context};
 
 #[poise::command(
-prefix_command,
-slash_command,
-category = "Info",
-guild_only,
-ephemeral
+    prefix_command,
+    slash_command,
+    category = "Info",
+    guild_only,
+    ephemeral
 )]
-/// Check if yours truly is alive and well.
-pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
-    let start_time = Instant::now();
+pub async fn ping(ctx: Context<'_>) -> CommandResult {
+    let before = Instant::now();
+    let message = poise::say_reply(ctx, "Pinging...").await?;
+    let latency = before.elapsed();
+    let new_message = format!("Pong! La latencia del bot es de {} ms", latency.as_millis());
+    let reply = CreateReply::default().content(new_message);
 
-    let (mut shard_ids, mut shard_stages, mut shard_latencies) =
-        (Vec::new(), Vec::new(), Vec::new());
-
-    let runners = ctx.framework().shard_manager.runners.lock().await;
-    let runners_iter = runners.iter();
-
-    for (id, runner) in runners_iter {
-        let stage = runner.stage;
-        let latency = runner.latency;
-
-        shard_ids.push(id);
-        shard_stages.push(stage);
-        shard_latencies.push(latency);
-    }
-
-    let elapsed_time = start_time.elapsed();
-    let ping = elapsed_time.as_millis();
-
-    ctx.say(format!("Pong. La latencia del Bot es de: **{ping}ms**")).await?;
+    message.edit(ctx, reply).await?;
 
     Ok(())
 }

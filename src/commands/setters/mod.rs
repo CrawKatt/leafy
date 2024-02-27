@@ -7,12 +7,16 @@ pub mod set_warn_message;
 pub mod set_timeout_message;
 pub mod set_forbidden_exception;
 pub mod set_joke_channel;
+pub mod set_to_blacklist;
+pub mod set_joke;
+pub mod set_welcome_channel;
+pub mod set_welcome_message;
 
 use crate::DB;
 use serenity::all::{ChannelId, GuildId, RoleId, UserId};
 use serde::{Deserialize, Serialize};
 use surrealdb::Result as SurrealResult;
-use crate::utils::debug::UnwrapErrors;
+use crate::utils::misc::debug::UnwrapErrors;
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct AdminData {
@@ -469,6 +473,18 @@ impl GuildData {
         let existing_data: Option<Self> = DB
             .query(sql_query)
             .bind(("guild_id", self.guild_id))
+            .await?
+            .take(0)?;
+
+        Ok(existing_data)
+    }
+
+    pub async fn get_log_channel(guild_id: GuildId) -> SurrealResult<Option<Self>> {
+        DB.use_ns("discord-namespace").use_db("discord").await?;
+        let sql_query = "SELECT * FROM guilds WHERE guild_id = $guild_id";
+        let existing_data: Option<Self> = DB
+            .query(sql_query)
+            .bind(("guild_id", guild_id))
             .await?
             .take(0)?;
 

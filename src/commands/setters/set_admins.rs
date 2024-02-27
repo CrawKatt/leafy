@@ -1,7 +1,7 @@
 use serenity::all::Role;
 use crate::{DB, unwrap_log};
 use crate::utils::{CommandResult, Context};
-use crate::utils::autocomplete::args_set_admins;
+use crate::utils::misc::autocomplete::args_set_admins;
 use crate::commands::setters::AdminData;
 
 /// Establece los roles de administrador

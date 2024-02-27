@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serenity::all::{ChannelId, GuildId};
 use crate::DB;
-use crate::utils::debug::UnwrapLog;
+use crate::utils::misc::debug::UnwrapLog;
 use crate::utils::{CommandResult, Context};
 use surrealdb::Result as SurrealResult;
 

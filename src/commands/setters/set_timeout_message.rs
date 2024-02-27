@@ -1,5 +1,5 @@
 use crate::utils::{CommandResult, Context};
-use crate::utils::debug::UnwrapLog;
+use crate::utils::misc::debug::UnwrapLog;
 use crate::commands::setters::TimeOutMessageData;
 
 /// Establece el mensaje de time out

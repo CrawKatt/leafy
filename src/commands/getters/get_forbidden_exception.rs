@@ -1,7 +1,7 @@
 use serenity::all::UserId;
 use crate::commands::setters::set_forbidden_exception::ForbiddenException;
 use crate::utils::{CommandResult, Context};
-use crate::utils::debug::UnwrapLog;
+use crate::utils::misc::debug::UnwrapLog;
 use crate::DB;
 
 /// Obtiene el estado de excepción de un usuario si es que tiene uno.

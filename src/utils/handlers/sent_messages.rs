@@ -1,14 +1,14 @@
 use serenity::all::Message;
 use poise::serenity_prelude as serenity;
 use regex::Regex;
-use crate::commands::blacklist::BlackListData;
+use crate::commands::setters::set_to_blacklist::BlackListData;
 use crate::DB;
-use crate::commands::joke::Joke;
+use crate::commands::setters::set_joke::Joke;
 use crate::utils::CommandResult;
 use crate::utils::MessageData;
 use crate::commands::setters::{AdminData, ForbiddenUserData, SetTimeoutTimer};
 use crate::commands::setters::ForbiddenRoleData;
-use crate::utils::debug::UnwrapLog;
+use crate::utils::misc::debug::UnwrapLog;
 use crate::utils::handlers::misc::attachment_case::attachment_handler;
 use crate::utils::handlers::misc::everyone_case::handle_everyone;
 use crate::utils::handlers::misc::forbidden_mentions::{handle_forbidden_role, handle_forbidden_user};
@@ -27,7 +27,6 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     // variable que obtiene el id del servidor
     let guild_id = new_message.guild_id.unwrap_log("Could not get guild id", CURRENT_MODULE, line!())?;
 
-    //attachment_handler(new_message).await;
     if let Err(why) = attachment_handler(new_message).await {
         println!("Error handling attachment: {why:?} {CURRENT_MODULE} : {}", line!());
     }
@@ -53,7 +52,7 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     // match necesario para continuar la función en caso de que el canal de broma no esté establecido
     if let Some(joke) = joke {
         match handle_joke(joke, new_message, ctx).await {
-            Ok(_) => (),
+            Ok(()) => (),
             Err(why) => {
                 println!("Error handling joke: {why:?}");
             },
@@ -68,6 +67,7 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     let time_out_timer = SetTimeoutTimer::get_time_out_timer(guild_id).await?;
     let time = time_out_timer.unwrap_or_default(); // SAFETY: Si se establece en 0, es porque no se ha establecido un tiempo de silencio
 
+    // Extraer el link del mensaje si existe
     let message_link = extract_link(message_content);
     if let Some(link) = message_link {
         let link = BlackListData::get_blacklist_link(guild_id, link).await?;

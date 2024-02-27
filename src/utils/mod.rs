@@ -3,22 +3,23 @@ use serde::{Deserialize, Serialize};
 use serenity::all::{Attachment, ChannelId, GuildId, MessageId, UserId};
 use surrealdb::Result as SurrealResult;
 
-pub mod autocomplete;
-pub mod embeds;
 pub mod handlers;
 pub mod events;
-pub mod debug;
+pub mod misc;
 
 use crate::DB;
 use crate::commands::ping::ping;
 use crate::commands::setters::set_admins::set_admins;
 use crate::commands::setters::set_log_channel::set_log_channel;
+use crate::commands::setters::set_joke_channel::set_joke_channel;
 use crate::commands::setters::set_warn_message::set_warn_message;
+use crate::commands::setters::set_to_blacklist::add_to_blacklist;
 use crate::commands::setters::set_timeout_timer::set_timeout_timer;
 use crate::commands::setters::set_forbidden_role::set_forbidden_role;
 use crate::commands::setters::set_forbidden_user::set_forbidden_user;
 use crate::commands::setters::set_timeout_message::set_time_out_message;
 use crate::commands::setters::set_forbidden_exception::set_forbidden_exception;
+use crate::commands::setters::set_joke::joke;
 
 use crate::commands::getters::get_admins::get_admins;
 use crate::commands::getters::get_forbidden_exception::get_forbidden_exception;
@@ -27,10 +28,9 @@ use crate::commands::getters::get_timeout_timer::get_timeout_timer;
 use crate::commands::getters::get_forbidden_role::get_forbidden_role;
 use crate::commands::getters::get_forbidden_user::get_forbidden_user;
 use crate::commands::getters::get_joke::get_joke;
-use crate::commands::joke::joke;
-use crate::commands::setters::set_joke_channel::set_joke_channel;
-
-use crate::commands::blacklist::add_to_blacklist;
+use crate::commands::getters::get_welcome_channel::get_welcome_channel;
+use crate::commands::setters::set_welcome_channel::set_welcome_channel;
+use crate::commands::setters::set_welcome_message::set_welcome_message;
 
 pub struct Data {
     pub poise_mentions: String,
@@ -68,6 +68,30 @@ impl MessageData {
             guild_id,
             attachment,
         }
+    }
+
+    pub async fn get_message_data(message_id: &MessageId) -> SurrealResult<Option<Self>> {
+        DB.use_ns("discord-namespace").use_db("discord").await?;
+        let sql_query = "SELECT * FROM messages WHERE message_id = $message_id";
+        let existing_data: Option<Self> = DB
+            .query(sql_query)
+            .bind(("message_id", message_id))
+            .await?
+            .take(0)?;
+
+        Ok(existing_data)
+    }
+
+    pub async fn get_audio_data(message_id: &MessageId) -> SurrealResult<Option<Self>> {
+        DB.use_ns("discord-namespace").use_db("discord").await?;
+        let sql_query = "SELECT * FROM audio WHERE message_id = $message_id";
+        let existing_data: Option<Self> = DB
+            .query(sql_query)
+            .bind(("message_id", message_id))
+            .await?
+            .take(0)?;
+
+        Ok(existing_data)
     }
 }
 
@@ -147,6 +171,8 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         set_timeout_timer(),
         set_forbidden_user(),
         set_forbidden_role(),
+        set_welcome_message(),
+        set_welcome_channel(),
         set_time_out_message(),
         set_forbidden_exception(),
         get_admins(),
@@ -154,6 +180,7 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         get_timeout_timer(),
         get_forbidden_user(),
         get_forbidden_role(),
+        get_welcome_channel(),
         get_forbidden_exception(),
         add_to_blacklist(),
         joke(), // Retirar este comando en la próxima versión
