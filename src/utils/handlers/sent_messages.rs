@@ -27,7 +27,6 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     // variable que obtiene el id del servidor
     let guild_id = new_message.guild_id.unwrap_log("Could not get guild id", CURRENT_MODULE, line!())?;
 
-    //attachment_handler(new_message).await;
     if let Err(why) = attachment_handler(new_message).await {
         println!("Error handling attachment: {why:?} {CURRENT_MODULE} : {}", line!());
     }
