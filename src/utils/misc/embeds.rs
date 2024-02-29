@@ -38,25 +38,6 @@ pub async fn edit_message_embed_if_mention(
     log_channel_id.send_message(&ctx.http, create_message_embed(embed, CreateMessage::default())).await
 }
 
-/* // todo: Utilizar este embed como un embed para archivos adjuntos
-pub async fn send_welcome_embed(
-    ctx: &serenity::Context,
-    log_channel_id: ChannelId,
-    message_content: String,
-    welcome_image: String,
-) -> Result<Message, Error> {
-
-    let file_name = welcome_image.split('/').last().unwrap_or_default();
-    println!("File name: {:?}", file_name);
-    let attachment_image = CreateAttachment::path(welcome_image.clone()).await?;
-    let footer = "Por favor, no olvides leer las reglas del servidor";
-    let embed = create_embed_welcome("Bienvenido al servidor", &message_content.to_string(), footer, file_name.to_string());
-    let message = log_channel_id.send_message(&ctx.http, create_message_embed(embed, CreateMessage::default().add_file(attachment_image))).await?;
-
-    Ok(message)
-}
-*/
-
 pub async fn send_embed(
     ctx: &serenity::Context,
     log_channel_id: ChannelId,
@@ -112,6 +93,23 @@ pub async fn send_embed_with_attachment(
     log_channel_id.send_message(&ctx.http, message_attachment).await.ok()
 }
 
+pub async fn send_warn_embed(
+    ctx: &serenity::Context,
+    warns: u8,
+    tip_image: &str,
+    channel_id: ChannelId,
+    warn_message: &str,
+) -> serenity::Result<Message> {
+
+    let warn_message = format!("{warn_message}\n**Advertencia {warns}/3**");
+    let footer = "En el caso de recibir 3 advertencias serás silenciado por una semana. Si estás respondiendo un mensaje considera responder sin el uso de \"@\".";
+    let attachment_image = CreateAttachment::path(tip_image).await?;
+    let embed = create_warn_embed(&warn_message,&attachment_image, footer);
+    let message = CreateMessage::default().add_file(attachment_image);
+
+    channel_id.send_message(&ctx.http, create_message_embed(embed, message)).await
+}
+
 fn create_embed_common(author_user: &User, title: &str, description: &str, footer: &str) -> CreateEmbed {
     CreateEmbed::default()
         .title(title)
@@ -123,16 +121,13 @@ fn create_embed_common(author_user: &User, title: &str, description: &str, foote
         .footer(CreateEmbedFooter::new(footer))
 }
 
-/* // todo: Utilizar este embed como un embed para archivos adjuntos
-fn create_embed_welcome(title: &str, description: &str, footer: &str, welcome_image: String) -> CreateEmbed {
+fn create_warn_embed(warn_message: &str, tip_image_mobile: &CreateAttachment, footer: &str) -> CreateEmbed {
     CreateEmbed::default()
-        .title(title)
-        .description(description)
-        .attachment(welcome_image)
-        .color(0x0000_ff00)
+        .description(warn_message)
+        .attachment(tip_image_mobile.filename.as_str())
+        .color(0x00FF_FF00)
         .footer(CreateEmbedFooter::new(footer))
 }
-*/
 
 pub async fn send_embed_if_mention(
     ctx: &serenity::Context,

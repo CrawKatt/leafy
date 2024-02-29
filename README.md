@@ -11,7 +11,8 @@
     - [x] Crear un comando para obtener el canal de Bienvenida establecido
     - [x] Crear un comando para establecer el mensaje de Bienvenida
 - [x] Crear un sistema anti-spam para impedir el envío de links maliciosos
-- [ ] Cambiar los mensajes de advertencia por embeds
+- [x] Cambiar los mensajes de advertencia por embeds
+- [ ] Crear tests unitarios para las funciones del Bot
 
 ---
 

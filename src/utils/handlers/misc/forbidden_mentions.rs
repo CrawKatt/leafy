@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::panic::Location;
 use poise::serenity_prelude as serenity;
-use serenity::all::{CreateAttachment, GuildId, Message};
+use serenity::all::{GuildId, Message};
 use crate::commands::setters::{AdminData, WarnMessageData};
 use crate::commands::setters::set_forbidden_exception::ForbiddenException;
 use crate::{DB, log_handle, unwrap_log};
@@ -11,6 +11,7 @@ use crate::commands::setters::TimeOutMessageData;
 use crate::utils::misc::debug::UnwrapLog;
 use crate::utils::handlers::misc::warns::handle_warns;
 use crate::utils::handlers::misc::exceptions::check_admin_exception;
+use crate::utils::misc::embeds::send_warn_embed;
 
 const CURRENT_MODULE: &str = file!();
 
@@ -85,16 +86,14 @@ pub async fn handle_forbidden_user(
         warns.save_to_db().await?;
     }
 
-    let mut message_map = HashMap::new();
-    message_map.insert("content", format!("{warn_message}\nAdvertencia {}/3", warns.warns));
+    let path = "./assets/sugerencia.png";
+    let channel_id = new_message.channel_id;
+    let warnings = warns.warns;
+
+    send_warn_embed(ctx, warnings,path, channel_id, &warn_message).await?;
+
+    let message_map = HashMap::new();
     let http = ctx.http.clone();
-    let attachment = CreateAttachment::path("./assets/sugerencia.png").await?;
-    http.send_message(new_message.channel_id, vec![attachment], &message_map).await?;
-
-    message_map.insert("content", String::new());
-    let attachment_mobile = CreateAttachment::path("./assets/sugerencia_mobile.png").await?;
-    http.send_message(new_message.channel_id, vec![attachment_mobile], &message_map).await?;
-
     if warns.warns >= 3 {
         handle_warns(&mut member, new_message, message_map, &http, warns, time_out_timer, time_out_message).await?;
     }
@@ -164,10 +163,12 @@ pub async fn handle_forbidden_role(
         warns.save_to_db().await?;
     }
 
-    let mut message_map = HashMap::new();
-    message_map.insert("content", format!("{warn_message} {}/3", warns.warns));
+    let path = "./assets/sugerencia.png";
+    let channel_id = new_message.channel_id;
+    send_warn_embed(ctx, warns.warns, path, channel_id, &warn_message).await?;
+
+    let message_map = HashMap::new();
     let http = ctx.http.clone();
-    http.send_message(new_message.channel_id, vec![], &message_map).await?;
     let mut member = guild_id.member(&ctx.http, author_user_id).await?;
 
     if warns.warns >= 3 {
