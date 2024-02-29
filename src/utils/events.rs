@@ -16,10 +16,7 @@ pub async fn event_handler(
 
     DB.use_ns("discord-namespace").use_db("discord").await?;
     match event {
-        serenity::FullEvent::Ready { data_about_bot } => {
-            println!("Logged in as {}", data_about_bot.user.name);
-        }
-
+        serenity::FullEvent::Ready { data_about_bot } => println!("Logged in as {}", data_about_bot.user.name),
         serenity::FullEvent::Message { new_message } => message_handler(ctx, new_message).await?,
         serenity::FullEvent::MessageDelete { channel_id, deleted_message_id, .. } => delete_message_handler(ctx, channel_id, deleted_message_id).await?,
         serenity::FullEvent::MessageUpdate { event, .. } => edited_message_handler(ctx, event).await?,

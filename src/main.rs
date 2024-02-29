@@ -20,9 +20,10 @@ use utils::MessageData;
 use utils::load_commands;
 use utils::events::event_handler;
 use utils::handlers::error::err_handler;
+use crate::utils::misc::debug::UnwrapResult;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> UnwrapResult<()> {
 
     let database_url = dotenvy::var("DATABASE_URL").expect("missing SURREAL_URL");
     let database_password = dotenvy::var("DATABASE_PASSWORD").expect("missing SURREAL_PASSWORD");
@@ -70,13 +71,16 @@ async fn main() {
         })
         .build();
 
-    let client = serenity::ClientBuilder::new(token, intents)
+    let mut client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
-        .await;
+        .await?;
 
-    client.unwrap().start().await.unwrap();
+    client.start().await?;
+
+    Ok(())
 }
 
+#[allow(deprecated)]
 fn clean_database_loop() {
     tokio::spawn(async {
         loop {
