@@ -20,18 +20,11 @@ pub async fn event_handler(
             println!("Logged in as {}", data_about_bot.user.name);
         }
 
-        serenity::FullEvent::Message { new_message } => {
-            println!("Event Message: {:?}", new_message.content);
-            message_handler(ctx, new_message).await?;
-        }
-
-        serenity::FullEvent::MessageDelete { channel_id, deleted_message_id, .. } => {
-            delete_message_handler(ctx, channel_id, deleted_message_id).await?;
-        }
-
-        serenity::FullEvent::MessageUpdate { event, .. } => {
-            edited_message_handler(ctx, event).await?;
-        }
+        serenity::FullEvent::Message { new_message } => message_handler(ctx, new_message).await?,
+        serenity::FullEvent::MessageDelete { channel_id, deleted_message_id, .. } => delete_message_handler(ctx, channel_id, deleted_message_id).await?,
+        serenity::FullEvent::MessageUpdate { event, .. } => edited_message_handler(ctx, event).await?,
+        serenity::FullEvent::GuildMemberAddition { new_member} => welcome_handler(ctx, new_member).await?,
+        serenity::FullEvent::PresenceUpdate { .. } | serenity::FullEvent::TypingStart { .. } => (),
 
         /*
         serenity::FullEvent::PresenceUpdate { .. } => {
@@ -49,11 +42,6 @@ pub async fn event_handler(
             //println!("Event Reaction Remove: {:?}", remove_reaction);
         }
         */
-
-        serenity::FullEvent::GuildMemberAddition { new_member} => {
-            println!("Event Guild Member Add: {:?}", new_member.user.name);
-            welcome_handler(ctx, new_member).await?;
-        }
 
         _ => println!("Unhandled event: {:?}", event.snake_case_name())
     }
