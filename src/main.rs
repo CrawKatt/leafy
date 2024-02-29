@@ -1,12 +1,14 @@
 use std::sync::Arc;
 use surrealdb::Surreal;
-use std::thread::sleep;
 use std::time::Duration;
+use tokio::time::Instant;
+use chrono::Local;
 use once_cell::sync::Lazy;
 use poise::serenity_prelude as serenity;
 use reqwest::Client;
 use surrealdb::opt::auth::Root;
 use surrealdb::engine::remote::ws::{Client as SurrealClient, Ws};
+use tokio::time::sleep_until;
 
 pub static DB: Lazy<Surreal<SurrealClient>> = Lazy::new(Surreal::init);
 
@@ -78,7 +80,15 @@ async fn main() {
 fn clean_database_loop() {
     tokio::spawn(async {
         loop {
-            sleep(Duration::from_secs(60 * 60 * 24)); // 24 horas (60 * 60 * 24)
+            let now = Local::now();
+            let midnight = now + chrono::Duration::days(1);
+            let midnight = midnight.date().and_hms(0, 0, 0);
+            let duration_until_midnight = (midnight - now).to_std().unwrap_or_else(|why| {
+                log_handle!("Could not get duration until midnight: {why}");
+                Duration::from_secs(60 * 60 * 24)
+            });
+
+            sleep_until(Instant::now() + duration_until_midnight).await; // 24 horas (60 * 60 * 24)
 
             DB.use_ns("discord-namespace").use_db("discord").await.unwrap_or_else(|why| {
                 log_handle!("Could not use namespace: {why}");
@@ -89,6 +99,8 @@ fn clean_database_loop() {
                 log_handle!("Could not delete messages: {why}");
                 panic!("Could not delete messages: {why}");
             });
+
+            sleep_until(Instant::now() + Duration::from_secs(60 * 60 * 24)).await;
         }
     });
 }
