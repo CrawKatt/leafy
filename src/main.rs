@@ -14,6 +14,7 @@ pub static DB: Lazy<Surreal<SurrealClient>> = Lazy::new(Surreal::init);
 
 mod commands;
 mod utils;
+mod test;
 
 use utils::Data;
 use utils::MessageData;
