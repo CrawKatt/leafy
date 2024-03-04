@@ -13,11 +13,7 @@ pub async fn handle_everyone(
     message: &Message,
 ) -> CommandResult {
 
-    if check_admin_exception(admin_role_id, member, ctx) {
-        println!("Admin exception : `sent_message.rs` Line 169");
-        return Ok(());
-    }
-
+    if check_admin_exception(admin_role_id, member, ctx) { return Ok(()) }
     let time = Timestamp::from(Utc::now() + Duration::seconds(time_out_timer));
     member.disable_communication_until_datetime(&ctx.http, time).await?;
     message.delete(&ctx.http).await?;
