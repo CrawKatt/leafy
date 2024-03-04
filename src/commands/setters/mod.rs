@@ -184,10 +184,10 @@ impl ForbiddenUserData {
     }
     pub async fn verify_data(&self) -> SurrealResult<Option<Self>> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
-        let sql_query = "SELECT * FROM forbidden_users WHERE user_id = $user_id";
+        let sql_query = "SELECT * FROM forbidden_users WHERE guild_id = $guild_id";
         let existing_data: Option<Self> = DB
             .query(sql_query)
-            .bind(("user_id", &self.user_id))
+            .bind(("guild_id", &self.guild_id))
             .await?
             .take(0)?;
 
@@ -270,7 +270,6 @@ impl ForbiddenRoleData {
 
         Ok(existing_data.map(|data| data.role_id.parse::<u64>().unwrap_or_default()))
     }
-
 }
 
 impl SetTimeoutTimer {
