@@ -10,13 +10,13 @@ pub async fn edit_message_embed(
     delete_channel_id: &ChannelId,
     author_id: UserId,
     message_content: &String,
-) -> Option<Message> {
+) -> serenity::Result<Message> {
     let author_mention = format!("<@{author_id}>");
     let description = format!("Autor del mensaje: {author_mention}\nCanal de origen: <#{delete_channel_id}>\nContenido del mensaje: {message_content}");
     let footer = "Nota: si hay una parte del mensaje que está en \"Negrita\" significa que es una mención con \"@\" a esa persona.";
     let author_user = author_id.to_user(&ctx.http).await.unwrap_or_default();
     let embed = create_embed_common(&author_user, "Mensaje editado", &description, footer);
-    log_channel_id.send_message(&ctx.http, create_message_embed(embed, CreateMessage::default())).await.ok()
+    log_channel_id.send_message(&ctx.http, create_message_embed(embed, CreateMessage::default())).await
 }
 
 pub async fn edit_message_embed_if_mention(
@@ -44,7 +44,7 @@ pub async fn send_embed(
     delete_channel_id: &ChannelId,
     author_id: UserId,
     message_content: &String,
-) -> Option<Message> {
+) -> serenity::Result<Message> {
     let author_user = author_id.to_user(&ctx.http).await.unwrap_or_else(|why| {
         println!("Could not get author user: {why}");
         User::default()
@@ -55,7 +55,7 @@ pub async fn send_embed(
     let footer = "Nota: si hay una parte del mensaje que está en \"Negrita\" significa que es una mención con \"@\" a esa persona.";
     let embed = create_embed_common(&author_user, "Mensaje eliminado", &description, footer);
 
-    log_channel_id.send_message(&ctx.http, create_message_embed(embed, CreateMessage::default())).await.ok()
+    log_channel_id.send_message(&ctx.http, create_message_embed(embed, CreateMessage::default())).await
 }
 
 pub async fn send_embed_with_attachment(
@@ -64,7 +64,7 @@ pub async fn send_embed_with_attachment(
     delete_channel_id: &ChannelId,
     author_id: UserId,
     attachment_path: &String,
-) -> Option<Message> {
+) -> serenity::Result<Message> {
     let author_user = author_id.to_user(&ctx.http).await.unwrap_or_else(|why| {
         println!("Could not get author user: {why}");
         User::default()
@@ -78,10 +78,7 @@ pub async fn send_embed_with_attachment(
     println!("Attachment path: {attachment_path}");
 
     let path = PathBuf::from(attachment_path);
-    let attachment = CreateAttachment::path(path).await.ok().unwrap_or({
-        eprintln!("Could not get attachment");
-        CreateAttachment::bytes(Vec::new(), "")
-    });
+    let attachment = CreateAttachment::path(path).await?;
 
     let message = CreateMessage::default()
         .embed(embed);
@@ -89,8 +86,8 @@ pub async fn send_embed_with_attachment(
     let message_attachment = CreateMessage::default()
         .add_file(attachment);
 
-    log_channel_id.send_message(&ctx.http, message).await.ok();
-    log_channel_id.send_message(&ctx.http, message_attachment).await.ok()
+    log_channel_id.send_message(&ctx.http, message).await?;
+    log_channel_id.send_message(&ctx.http, message_attachment).await
 }
 
 pub async fn send_warn_embed(
@@ -129,17 +126,14 @@ fn create_warn_embed(warn_message: &str, tip_image_mobile: &CreateAttachment, fo
         .footer(CreateEmbedFooter::new(footer))
 }
 
+// LOS EMBEDS NO NOTIFICAN SI SE MENCIONA CON @
 pub async fn send_embed_if_mention(
     ctx: &serenity::Context,
     log_channel_id: ChannelId,
     delete_channel_id: &ChannelId,
     author_id: UserId,
     message_content: &str,
-    user: User,
 ) -> Message {
-    let user_mention = format!("<@{}>", user.id);
-    let user_mention_bold = format!("**{}**", user.name);
-    let message_content = message_content.replace(&user_mention,&user_mention_bold);
     let author_user = author_id.to_user(&ctx.http).await.unwrap_or_default();
     let description = format!("Autor del mensaje: <@{author_id}>\nCanal de origen: <#{delete_channel_id}>\nContenido del mensaje: {message_content}");
 

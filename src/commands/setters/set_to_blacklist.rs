@@ -3,9 +3,9 @@ use serenity::all::GuildId;
 use crate::utils::{CommandResult, Context};
 use surrealdb::Result as SurrealResult;
 use crate::DB;
-use crate::utils::misc::debug::{UnwrapLog, UnwrapResult};
+use crate::utils::misc::debug::UnwrapResult;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct BlackListData {
     pub link: String,
     pub guild_id: GuildId,
@@ -47,7 +47,7 @@ impl BlackListData {
         Ok(existing_data)
     }
 
-    pub async fn get_blacklist_link(guild_id: GuildId, link: String) -> UnwrapResult<String> {
+    pub async fn get_blacklist_link(guild_id: GuildId, link: &String) -> UnwrapResult<Option<String>> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
         let sql_query = "SELECT * FROM blacklist WHERE guild_id = $guild_id AND link = $link";
         let existing_data: Option<Self> = DB
@@ -57,9 +57,7 @@ impl BlackListData {
             .await?
             .take(0)?;
 
-        let result = existing_data.unwrap_log("No se encontró el link en la lista negra", file!(), line!())?.link;
-
-        Ok(result)
+        Ok(existing_data.map(|data| data.link))
     }
 }
 

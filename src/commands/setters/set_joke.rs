@@ -78,7 +78,7 @@ impl Joke {
             .await?
             .take(0)?;
 
-        let joke_data = database_info.unwrap_log("Failed to get joke status", module_path!(), line!())?;
+        let joke_data = database_info.unwrap_log("Failed to get joke status or not setted", module_path!(), line!())?;
         let joke_status = joke_data.is_active;
 
         Ok(joke_status)

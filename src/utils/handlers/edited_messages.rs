@@ -8,7 +8,7 @@ use crate::utils::Error;
 use crate::utils::misc::embeds::{edit_message_embed, edit_message_embed_if_mention};
 use crate::utils::handlers::misc::forbidden_mentions::{handle_forbidden_user, handle_forbidden_role};
 use crate::utils::MessageData;
-use crate::matches;
+use crate::match_handle;
 
 pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> Result<(), Error> {
     let current_module = file!();
@@ -38,7 +38,7 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
     let message_content = format!("\n**Antes:** {old_content}\n**Después:** {new_content}");
 
     if !message_content.contains("<@") {
-        edit_message_embed(ctx, log_channel, &database_message.channel_id, database_message.author_id, &message_content).await;
+        edit_message_embed(ctx, log_channel, &database_message.channel_id, database_message.author_id, &message_content).await?;
         return Ok(());
     }
 
@@ -65,14 +65,14 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
     let contains_forbidden_user = new_content.contains(&format!("<@{forbidden_user_id}>"));
     let contains_forbidden_role = mentioned_user_roles.iter().any(|role| role.id == forbidden_role_id);
 
-    matches!(
+    match_handle!(
         contains_forbidden_user, {
             let message = ctx.http.get_message(database_message.channel_id, database_message.message_id).await?;
-            handle_forbidden_user(ctx, &message, database_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", current_module, line!())?,database_message, forbidden_user_id).await?;
+            handle_forbidden_user(ctx, &message, database_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", current_module, line!())?,&database_message, forbidden_user_id).await?;
         },
         contains_forbidden_role, {
             let message = ctx.http.get_message(database_message.channel_id, database_message.message_id).await?;
-            handle_forbidden_role(ctx, &message, database_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", current_module, line!())?,database_message).await?;
+            handle_forbidden_role(ctx, &message, database_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", current_module, line!())?,&database_message).await?;
         },
         default, {
             edit_message_embed_if_mention(ctx, log_channel, &database_message.channel_id, database_message.author_id, &message_content,user_mentioned).await?;
@@ -83,7 +83,7 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
 }
 
 #[macro_export]
-macro_rules! matches {
+macro_rules! match_handle {
     ($cond1:expr, $block1:block, $cond2:expr, $block2:block, default, $block3:block) => {
         if $cond1 {
             $block1

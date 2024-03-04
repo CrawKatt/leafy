@@ -9,7 +9,7 @@ use crate::utils::{CommandResult, MessageData, Warns};
 use crate::commands::setters::SetTimeoutTimer;
 use crate::commands::setters::TimeOutMessageData;
 use crate::utils::misc::debug::UnwrapLog;
-use crate::utils::handlers::misc::warns::handle_warns;
+use crate::utils::handlers::misc::warns::handle_warn_system;
 use crate::utils::handlers::misc::exceptions::check_admin_exception;
 use crate::utils::misc::embeds::send_warn_embed;
 
@@ -19,7 +19,7 @@ pub async fn handle_forbidden_user(
     ctx: &serenity::Context,
     new_message: &Message,
     guild_id: GuildId,
-    data: MessageData,
+    data: &MessageData,
     forbidden_user_id: u64
 ) -> CommandResult {
     let author_user_id = new_message.author.id;
@@ -95,7 +95,7 @@ pub async fn handle_forbidden_user(
     let message_map = HashMap::new();
     let http = ctx.http.clone();
     if warns.warns >= 3 {
-        handle_warns(&mut member, new_message, message_map, &http, warns, time_out_timer, time_out_message).await?;
+        handle_warn_system(&mut member, new_message, message_map, &http, warns, time_out_timer, time_out_message).await?;
     }
 
     let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
@@ -108,7 +108,7 @@ pub async fn handle_forbidden_role(
     ctx: &serenity::Context,
     new_message: &Message,
     guild_id: GuildId,
-    data: MessageData
+    data: &MessageData
 ) -> CommandResult {
     let author_user_id = new_message.author.id;
     let member = guild_id.member(&ctx.http, author_user_id).await?;
@@ -147,7 +147,7 @@ pub async fn handle_forbidden_role(
     let admin_exception = check_admin_exception(admin_role_id, &member, ctx);
 
     if admin_exception {
-        println!("Admin exception : `sent_message.rs` Line 120");
+        println!("Admin exception : `sent_message.rs` {}", line!());
         return Ok(())
     }
 
@@ -172,7 +172,7 @@ pub async fn handle_forbidden_role(
     let mut member = guild_id.member(&ctx.http, author_user_id).await?;
 
     if warns.warns >= 3 {
-        handle_warns(&mut member, new_message, message_map, &http, warns, time_out_timer, time_out_message).await?;
+        handle_warn_system(&mut member, new_message, message_map, &http, warns, time_out_timer, time_out_message).await?;
     }
 
     let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
