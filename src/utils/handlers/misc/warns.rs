@@ -4,7 +4,7 @@ use chrono::{Duration, Utc};
 use serenity::all::{Http, Member, Mentionable, Message, Timestamp};
 use crate::utils::{CommandResult, Warns};
 
-pub async fn handle_warns(
+pub async fn handle_warn_system(
     member: &mut Member,
     new_message: &Message,
     mut message_map: HashMap<&str, String>,
