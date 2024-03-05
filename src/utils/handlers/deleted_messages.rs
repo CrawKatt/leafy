@@ -7,7 +7,7 @@ use crate::utils::CommandResult;
 use crate::utils::MessageData;
 use crate::commands::setters::GuildData;
 use crate::utils::misc::debug::UnwrapLog;
-use crate::utils::misc::embeds::{send_embed, send_embed_if_mention, send_embed_with_attachment};
+use crate::utils::misc::embeds::{send_embed, send_embed_with_attachment};
 
 pub async fn delete_message_handler(ctx: &serenity::Context, channel_id: &ChannelId, deleted_message_id: &MessageId) -> CommandResult {
 
@@ -46,7 +46,7 @@ pub async fn delete_message_handler(ctx: &serenity::Context, channel_id: &Channe
         return Ok(());
     };
 
-    send_embed_if_mention(ctx,log_channel, &message_channel_id, author_id, &message_content).await;
+    send_embed(ctx,log_channel, &message_channel_id, author_id, &message_content).await?;
 
     Ok(())
 }
