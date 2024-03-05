@@ -46,7 +46,7 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
         new_message.author.id,
         new_message.channel_id,
         new_message.guild_id,
-        new_message.attachments.first().cloned()
+        //new_message.attachments.first().cloned()
     );
 
     // inicio broma

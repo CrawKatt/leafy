@@ -48,7 +48,6 @@ pub struct MessageData {
     pub author_id: UserId,
     pub channel_id: ChannelId,
     pub guild_id: Option<GuildId>,
-    pub attachment: Option<Attachment>,
 }
 
 impl MessageData {
@@ -58,7 +57,6 @@ impl MessageData {
         author_id: UserId,
         channel_id: ChannelId,
         guild_id: Option<GuildId>,
-        attachment: Option<Attachment>,
     ) -> Self {
         Self {
             message_id,
@@ -66,7 +64,6 @@ impl MessageData {
             author_id,
             channel_id,
             guild_id,
-            attachment,
         }
     }
 
