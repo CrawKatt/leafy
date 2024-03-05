@@ -13,7 +13,6 @@ pub async fn attachment_handler(new_message: &Message) -> CommandResult {
                     new_message.author.id,
                     new_message.channel_id,
                     new_message.guild_id,
-                    new_message.attachments.first().cloned()
                 );
 
                 // Guardar el enlace del archivo de audio en la base de datos

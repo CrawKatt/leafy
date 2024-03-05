@@ -12,7 +12,8 @@
     - [x] Crear un comando para establecer el mensaje de Bienvenida
 - [x] Crear un sistema anti-spam para impedir el envío de links maliciosos
 - [x] Cambiar los mensajes de advertencia por embeds
-- [ ] Crear tests unitarios para las funciones del Bot
+- [x] Crear tests unitarios para las funciones del Bot
+- [x] Crear una librería con FFMPEG para convertir formatos de audio
 
 ---
 

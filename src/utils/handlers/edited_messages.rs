@@ -1,11 +1,11 @@
-use serenity::all::{MessageUpdateEvent, UserId};
+use serenity::all::MessageUpdateEvent;
 use poise::serenity_prelude as serenity;
 use crate::commands::setters::ForbiddenRoleData;
 use crate::commands::setters::ForbiddenUserData;
 use crate::commands::setters::GuildData;
 use crate::utils::misc::debug::UnwrapLog;
 use crate::utils::Error;
-use crate::utils::misc::embeds::{edit_message_embed, edit_message_embed_if_mention};
+use crate::utils::misc::embeds::{edit_message_embed};
 use crate::utils::handlers::misc::forbidden_mentions::{handle_forbidden_user, handle_forbidden_role};
 use crate::utils::MessageData;
 use crate::match_handle;
@@ -49,10 +49,6 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
         .collect::<Vec<&str>>()[0]
         .parse::<u64>()?;
 
-    // `UserId::new()` necesario para convertir el user_id mencionado a un objeto User NO REMOVER NI CAMBIAR
-    let user = UserId::new(user_id);
-    let user_mentioned = user.to_user(&ctx.http).await.unwrap_log("No se pudo obtener el usuario", current_module, line!())?;
-
     let forbidden_user_id = ForbiddenUserData::get_forbidden_user_id(database_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", current_module, line!())?).await?;
     let forbidden_user_id = forbidden_user_id.unwrap_log("No se pudo obtener el id del usuario", current_module, line!())?;
 
@@ -75,7 +71,7 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
             handle_forbidden_role(ctx, &message, database_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", current_module, line!())?,&database_message).await?;
         },
         default, {
-            edit_message_embed_if_mention(ctx, log_channel, &database_message.channel_id, database_message.author_id, &message_content,user_mentioned).await?;
+            edit_message_embed(ctx, log_channel, &database_message.channel_id, database_message.author_id, &message_content).await?;
         }
     );
 

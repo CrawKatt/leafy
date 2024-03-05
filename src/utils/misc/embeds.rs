@@ -1,9 +1,10 @@
 use std::path::PathBuf;
+use plantita_audio::convert_to_mp3;
 use poise::serenity_prelude as serenity;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 use serenity::all::{ChannelId, CreateAttachment, CreateEmbedAuthor, CreateMessage, Message, User, UserId};
-use crate::log_handle;
 
+// LOS EMBEDS NO NOTIFICAN SI SE MENCIONA CON @ A UN USUARIO
 pub async fn edit_message_embed(
     ctx: &serenity::Context,
     log_channel_id: ChannelId,
@@ -19,25 +20,7 @@ pub async fn edit_message_embed(
     log_channel_id.send_message(&ctx.http, create_message_embed(embed, CreateMessage::default())).await
 }
 
-pub async fn edit_message_embed_if_mention(
-    ctx: &serenity::Context,
-    log_channel_id: ChannelId,
-    delete_channel_id: &ChannelId,
-    author_id: UserId,
-    message_content: &str,
-    user: User,
-) -> serenity::Result<Message> {
-    let user_mention = format!("<@{}>", user.id);
-    let user_mention_bold = format!("**{}**", user.name);
-    let message_content = message_content.replace(&user_mention,&user_mention_bold);
-    let author_user = author_id.to_user(&ctx.http).await.unwrap_or_default();
-    let description = format!("Autor del mensaje: <@{author_id}>\nCanal de origen: <#{delete_channel_id}>\nContenido del mensaje: {message_content}");
-
-    let embed = create_embed_common(&author_user, "Mensaje editado", &description, "Nota: si hay una parte del mensaje que está en \"Negrita\" significa que es una mención con \"@\" a esa persona.");
-
-    log_channel_id.send_message(&ctx.http, create_message_embed(embed, CreateMessage::default())).await
-}
-
+// LOS EMBEDS NO NOTIFICAN SI SE MENCIONA CON @ A UN USUARIO
 pub async fn send_embed(
     ctx: &serenity::Context,
     log_channel_id: ChannelId,
@@ -45,13 +28,9 @@ pub async fn send_embed(
     author_id: UserId,
     message_content: &String,
 ) -> serenity::Result<Message> {
-    let author_user = author_id.to_user(&ctx.http).await.unwrap_or_else(|why| {
-        println!("Could not get author user: {why}");
-        User::default()
-    });
+    let author_user = author_id.to_user(&ctx.http).await.unwrap_or_default();
 
-    let author_mention = format!("<@{author_id}>");
-    let description = format!("Autor del mensaje: {author_mention}\nCanal de origen: <#{delete_channel_id}>\nContenido del mensaje: {message_content}");
+    let description = format!("Autor del mensaje: <@{author_id}>\nCanal de origen: <#{delete_channel_id}>\nContenido del mensaje: {message_content}");
     let footer = "Nota: si hay una parte del mensaje que está en \"Negrita\" significa que es una mención con \"@\" a esa persona.";
     let embed = create_embed_common(&author_user, "Mensaje eliminado", &description, footer);
 
@@ -63,7 +42,7 @@ pub async fn send_embed_with_attachment(
     log_channel_id: ChannelId,
     delete_channel_id: &ChannelId,
     author_id: UserId,
-    attachment_path: &String,
+    attachment_path: &str,
 ) -> serenity::Result<Message> {
     let author_user = author_id.to_user(&ctx.http).await.unwrap_or_else(|why| {
         println!("Could not get author user: {why}");
@@ -72,12 +51,14 @@ pub async fn send_embed_with_attachment(
 
     let author_mention = format!("<@{author_id}>");
     let description = format!("Autor del mensaje: {author_mention}\nCanal de origen: <#{delete_channel_id}>");
-    let footer = "Nota: Los audios de Discord no pueden enviarse dentro de un embed y no pueden enviarse como audios reproducibles, por lo que aparecen como dos mensajes y el audio debe descargarse.";
+    let footer = "Nota: Los audios de Discord no pueden incrustarse dentro de un embed, por lo que el Bot debe enviar dos mensajes al Log.";
     let embed = create_embed_common(&author_user, "Audio eliminado", &description, footer);
+    let output_path = "/tmp/converted_audio";
 
-    println!("Attachment path: {attachment_path}");
+    // Convertir el archivo de audio a mp3
+    let mp3_path = convert_to_mp3(attachment_path, output_path)?;
 
-    let path = PathBuf::from(attachment_path);
+    let path = PathBuf::from(&mp3_path);
     let attachment = CreateAttachment::path(path).await?;
 
     let message = CreateMessage::default()
@@ -124,25 +105,6 @@ fn create_warn_embed(warn_message: &str, tip_image_mobile: &CreateAttachment, fo
         .attachment(tip_image_mobile.filename.as_str())
         .color(0x00FF_FF00)
         .footer(CreateEmbedFooter::new(footer))
-}
-
-// LOS EMBEDS NO NOTIFICAN SI SE MENCIONA CON @
-pub async fn send_embed_if_mention(
-    ctx: &serenity::Context,
-    log_channel_id: ChannelId,
-    delete_channel_id: &ChannelId,
-    author_id: UserId,
-    message_content: &str,
-) -> Message {
-    let author_user = author_id.to_user(&ctx.http).await.unwrap_or_default();
-    let description = format!("Autor del mensaje: <@{author_id}>\nCanal de origen: <#{delete_channel_id}>\nContenido del mensaje: {message_content}");
-
-    let embed = create_embed_common(&author_user, "Mensaje eliminado", &description, "Nota: si hay una parte del mensaje que está en \"Negrita\" significa que es una mención con \"@\" a esa persona.");
-
-    log_channel_id.send_message(&ctx.http, create_message_embed(embed, CreateMessage::default())).await.unwrap_or_else(|why| {
-        log_handle!("Could not send message: {}", why);
-        Message::default()
-    })
 }
 
 fn create_message_embed(embed: CreateEmbed, m: CreateMessage) -> CreateMessage {
