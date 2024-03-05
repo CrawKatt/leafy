@@ -1,6 +1,6 @@
 use poise::Command;
 use serde::{Deserialize, Serialize};
-use serenity::all::{Attachment, ChannelId, GuildId, MessageId, UserId};
+use serenity::all::{ChannelId, GuildId, MessageId, UserId};
 use surrealdb::Result as SurrealResult;
 
 pub mod handlers;

@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use plantita_audio::convert_to_mp3;
 use poise::serenity_prelude as serenity;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 use serenity::all::{ChannelId, CreateAttachment, CreateEmbedAuthor, CreateMessage, Message, User, UserId};
@@ -72,12 +73,14 @@ pub async fn send_embed_with_attachment(
 
     let author_mention = format!("<@{author_id}>");
     let description = format!("Autor del mensaje: {author_mention}\nCanal de origen: <#{delete_channel_id}>");
-    let footer = "Nota: Los audios de Discord no pueden enviarse dentro de un embed y no pueden enviarse como audios reproducibles, por lo que aparecen como dos mensajes y el audio debe descargarse.";
+    let footer = "Nota: Los audios de Discord no pueden incrustarse dentro de un embed, por lo que el Bot debe enviar dos mensajes al Log.";
     let embed = create_embed_common(&author_user, "Audio eliminado", &description, footer);
+    let output_path = "/tmp/converted_audio";
 
-    println!("Attachment path: {attachment_path}");
+    // Convertir el archivo de audio a mp3
+    let mp3_path = convert_to_mp3(attachment_path, output_path)?;
 
-    let path = PathBuf::from(attachment_path);
+    let path = PathBuf::from(&mp3_path);
     let attachment = CreateAttachment::path(path).await?;
 
     let message = CreateMessage::default()
