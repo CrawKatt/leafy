@@ -34,50 +34,50 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
 
     let log_channel = log_channel_id.unwrap_log("No se pudo obtener el canal de Logs", current_module, line!())?.log_channel_id;
     let message_content = format!("\n**Antes:** {old_content}\n**Después:** {new_content}");
+
+    // Bug: Resolver, un unwrap_or_default() está devolviendo 1
     let user_id = event.mentions
         .clone()
         .unwrap_or_default()
         .first()
-        .map(|user| user.id)
-        .unwrap_or_default();
+        .map(|user| user.id);
 
-    let forbidden_user_id = ForbiddenUserData::get_forbidden_user_id(guild_id).await?;
-    let forbidden_user_id = forbidden_user_id.unwrap_log("No se pudo obtener el id del usuario", current_module, line!())?;
+    if let Some(user_id) = user_id {
+        let forbidden_user_id = ForbiddenUserData::get_forbidden_user_id(guild_id).await?;
+        let forbidden_user_id = forbidden_user_id.unwrap_log("No se pudo obtener el id del usuario", current_module, line!())?;
 
-    let forbidden_role_id = ForbiddenRoleData::get_role_id(guild_id).await?;
-    let forbidden_role_id = forbidden_role_id.unwrap_log("No se pudo obtener el id del rol prohíbido o no está configurado", current_module, line!())?;
-    let mentioned_user = guild_id.member(&ctx.http, user_id).await?; // SAFETY: El GuildId siempre está disponible
-    let mentioned_user_roles = mentioned_user.roles(&ctx.cache).unwrap_log("Could not get the roles", current_module, line!())?;
+        let forbidden_role_id = ForbiddenRoleData::get_role_id(guild_id).await?;
+        let forbidden_role_id = forbidden_role_id.unwrap_log("No se pudo obtener el id del rol prohíbido o no está configurado", current_module, line!())?;
+        let mentioned_user = guild_id.member(&ctx.http, user_id).await?; // SAFETY: El GuildId siempre está disponible
+        let mentioned_user_roles = mentioned_user.roles(&ctx.cache).unwrap_log("Could not get the roles", current_module, line!())?;
 
-    let contains_forbidden_user = new_content.contains(&format!("<@{forbidden_user_id}>"));
-    let contains_forbidden_role = mentioned_user_roles.iter().any(|role| role.id == forbidden_role_id);
+        let contains_forbidden_user = new_content.contains(&format!("<@{forbidden_user_id}>"));
+        let contains_forbidden_role = mentioned_user_roles.iter().any(|role| role.id == forbidden_role_id);
 
-    match_handle!(
-        contains_forbidden_user, {
-            let message = ctx.http.get_message(database_message.channel_id, database_message.message_id).await?;
-            handle_forbidden_user(ctx, &message, guild_id, &database_message, forbidden_user_id).await?;
-        },
-        contains_forbidden_role, {
-            let message = ctx.http.get_message(database_message.channel_id, database_message.message_id).await?;
-            handle_forbidden_role(ctx, &message, guild_id, &database_message).await?;
-        },
-        default, {
-            edit_message_embed(ctx, log_channel, &database_message.channel_id, database_message.author_id, &message_content).await?;
-        }
-    );
+        match_handle!(
+            contains_forbidden_user, {
+                let message = ctx.http.get_message(database_message.channel_id, database_message.message_id).await?;
+                handle_forbidden_user(ctx, &message, guild_id, &database_message, forbidden_user_id).await?;
+            },
+            contains_forbidden_role, {
+                let message = ctx.http.get_message(database_message.channel_id, database_message.message_id).await?;
+                handle_forbidden_role(ctx, &message, guild_id, &database_message).await?;
+            }
+        );
+    }
+
+    edit_message_embed(ctx, log_channel, &database_message.channel_id, database_message.author_id, &message_content).await?;
 
     Ok(())
 }
 
 #[macro_export]
 macro_rules! match_handle {
-    ($cond1:expr, $block1:block, $cond2:expr, $block2:block, default, $block3:block) => {
+    ($cond1:expr, $block1:block, $cond2:expr, $block2:block) => {
         if $cond1 {
             $block1
         } else if $cond2 {
             $block2
-        } else {
-            $block3
         }
     };
 }
