@@ -46,7 +46,6 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
         new_message.author.id,
         new_message.channel_id,
         new_message.guild_id,
-        //new_message.attachments.first().cloned()
     );
 
     // inicio broma
@@ -72,7 +71,6 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     // Extraer el link del mensaje si existe
     if let Some(link) = extract_link(&new_message.content) {
         handle_blacklist_link(ctx, new_message, guild_id, link, &data, &admin_role_id, &mut member, time).await?;
-        let _created: Vec<MessageData> = DB.create("messages").content(&data).await?;
     }
 
     if user_id.is_some() {
