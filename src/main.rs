@@ -105,6 +105,11 @@ fn clean_database_loop() {
                 panic!("Could not delete messages: {why}");
             });
 
+            DB.delete("audio").await.unwrap_or_else(|why| -> Vec<MessageData> {
+                log_handle!("Could not delete audio: {why}");
+                panic!("Could not delete audio: {why}");
+            });
+
             sleep_until(Instant::now() + Duration::from_secs(60 * 60 * 24)).await;
         }
     });
