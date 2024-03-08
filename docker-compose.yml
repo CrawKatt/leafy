@@ -12,6 +12,7 @@ services:
     command:
       - start
       - --log=trace
+      - --auth
       - --user=root
       - --pass=file:///run/secrets/DATABASE_PASSWORD
       - file:///data

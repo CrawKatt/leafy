@@ -14,8 +14,8 @@ pub async fn edit_message_embed(
 ) -> serenity::Result<Message> {
     let author_mention = format!("<@{author_id}>");
     let description = format!("Autor del mensaje: {author_mention}\nCanal de origen: <#{delete_channel_id}>\nContenido del mensaje: {message_content}");
-    let footer = "Nota: si hay una parte del mensaje que está en \"Negrita\" significa que es una mención con \"@\" a esa persona.";
-    let author_user = author_id.to_user(&ctx.http).await.unwrap_or_default();
+    let footer = "Nota: Las menciones a usuarios con @ no mencionan a los usuarios si están dentro de un embed.";
+    let author_user = author_id.to_user(&ctx.http).await?;
     let embed = create_embed_common(&author_user, "Mensaje editado", &description, footer);
     log_channel_id.send_message(&ctx.http, create_message_embed(embed, CreateMessage::default())).await
 }
@@ -31,7 +31,7 @@ pub async fn send_embed(
     let author_user = author_id.to_user(&ctx.http).await.unwrap_or_default();
 
     let description = format!("Autor del mensaje: <@{author_id}>\nCanal de origen: <#{delete_channel_id}>\nContenido del mensaje: {message_content}");
-    let footer = "Nota: si hay una parte del mensaje que está en \"Negrita\" significa que es una mención con \"@\" a esa persona.";
+    let footer = "Nota: Las menciones a usuarios con @ no mencionan a los usuarios si están dentro de un embed.";
     let embed = create_embed_common(&author_user, "Mensaje eliminado", &description, footer);
 
     log_channel_id.send_message(&ctx.http, create_message_embed(embed, CreateMessage::default())).await

@@ -14,6 +14,9 @@
 - [x] Cambiar los mensajes de advertencia por embeds
 - [x] Crear tests unitarios para las funciones del Bot
 - [x] Crear una librería con FFMPEG para convertir formatos de audio
+- [x] Mejorar el sistema anti spam
+- [x] Remover los embeds para casos de mención de usuario o rol prohibido (Los embeds no mencionan aunque usen @ en el mensaje)
+- [x] Añadir modo auth al docker-compose (CRÍTICO)
 
 ---
 
