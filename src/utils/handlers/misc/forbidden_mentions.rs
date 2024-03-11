@@ -62,7 +62,7 @@ pub async fn handle_forbidden_user(
 
     // Salir de la función si no hay un admin establecido
     if admin_role_id.is_none() {
-        log_handle!("No hay un admin establecido: `sent_message.rs` {}", line!());
+        log_handle!("No hay un admin establecido: {}", Location::caller());
         return Ok(())
     }
 
@@ -76,15 +76,7 @@ pub async fn handle_forbidden_user(
 
     let mut warns = Warns::new(author_user_id);
     let existing_warns = warns.get_warns().await?;
-
-    if let Some(mut existing_warns) = existing_warns {
-        existing_warns.warns += 1;
-        existing_warns.add_warn().await?;
-        warns = existing_warns;
-    } else {
-        warns.warns += 1;
-        warns.save_to_db().await?;
-    }
+    warns_counter(&mut warns, existing_warns).await?;
 
     let path = "./assets/sugerencia.png";
     let channel_id = new_message.channel_id;
@@ -127,41 +119,29 @@ pub async fn handle_forbidden_role(
         .await?
         .take(0)?;
 
-    let sql_query = "SELECT * FROM time_out_message WHERE guild_id = $guild_id";
-    let time_out_message: Option<TimeOutMessageData> = DB
-        .query(sql_query)
-        .bind(("guild_id", guild_id)) // pasar el valor
-        .await?
-        .take(0)?;
-
     let warn_message = WarnMessageData::get_warn_message(guild_id).await?.unwrap_or_else(|| {
         log_handle!("No se ha establecido un mensaje de advertencia: `sent_message.rs` {}", Location::caller());
         "Por favor no hagas @ a este usuario. Si estás respondiendo un mensaje, considera responder al mensaje sin usar @".to_string()
     });
 
-    // Esto está mal, es para el time_out message no para el warn_message
-    let time_out_message = time_out_message.unwrap_log("No se ha establecido un mensaje de silencio", CURRENT_MODULE, line!())?.time_out_message;
-    let time_out_timer = time_out_timer.unwrap_log("No hay un tiempo de timeout establecido", CURRENT_MODULE, line!())?.time;
+    let time_out_message = TimeOutMessageData::get_time_out_message(guild_id).await?.unwrap_or_else(|| {
+        log_handle!("No se ha establecido un mensaje de silencio: {}", Location::caller());
+        "Has sido silenciado por mencionar a un usuario cuyo rol está prohibido de mencionar".to_string()
+    });
 
+    let time_out_timer = time_out_timer.unwrap_log("No hay un tiempo de timeout establecido", CURRENT_MODULE, line!())?.time;
     let admin_role_id = admin_role.unwrap_log("No hay un rol de administrador establecido", CURRENT_MODULE, line!())?.role_id;
     let admin_exception = check_admin_exception(admin_role_id, &member, ctx);
 
     if admin_exception {
-        println!("Admin exception : `sent_message.rs` {}", line!());
+        println!("Admin exception : {}", Location::caller());
         return Ok(())
     }
 
     let mut warns = Warns::new(author_user_id);
     let existing_warns = warns.get_warns().await?;
 
-    if let Some(mut existing_warns) = existing_warns {
-        existing_warns.warns += 1;
-        existing_warns.add_warn().await?;
-        warns = existing_warns;
-    } else {
-        warns.warns += 1;
-        warns.save_to_db().await?;
-    }
+    warns_counter(&mut warns, existing_warns).await?;
 
     let path = "./assets/sugerencia.png";
     let channel_id = new_message.channel_id;
@@ -176,8 +156,20 @@ pub async fn handle_forbidden_role(
     }
 
     let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
-    let message = Some("Mensaje eliminado por mencionar a un usuario cuyo rol está prohíbido de mencionar");
-    http.delete_message(new_message.channel_id, new_message.id, message).await?;
+    http.delete_message(new_message.channel_id, new_message.id, None).await?;
+
+    Ok(())
+}
+
+async fn warns_counter(warns: &mut Warns, existing_warns: Option<Warns>) -> CommandResult {
+    if let Some(mut existing_warns) = existing_warns {
+        existing_warns.warns += 1;
+        existing_warns.add_warn().await?;
+        *warns = existing_warns;
+    } else {
+        warns.warns += 1;
+        warns.save_to_db().await?;
+    }
 
     Ok(())
 }

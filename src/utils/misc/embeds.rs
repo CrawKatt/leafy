@@ -17,7 +17,8 @@ pub async fn edit_message_embed(
     let footer = "Nota: Las menciones a usuarios con @ no mencionan a los usuarios si están dentro de un embed.";
     let author_user = author_id.to_user(&ctx.http).await?;
     let embed = create_embed_common(&author_user, "Mensaje editado", &description, footer);
-    log_channel_id.send_message(&ctx.http, create_message_embed(embed, CreateMessage::default())).await
+
+    log_channel_id.send_message(&ctx.http, CreateMessage::default().embed(embed)).await
 }
 
 // LOS EMBEDS NO NOTIFICAN SI SE MENCIONA CON @ A UN USUARIO
@@ -28,13 +29,12 @@ pub async fn send_embed(
     author_id: UserId,
     message_content: &String,
 ) -> serenity::Result<Message> {
-    let author_user = author_id.to_user(&ctx.http).await.unwrap_or_default();
-
+    let author_user = author_id.to_user(&ctx.http).await?;
     let description = format!("Autor del mensaje: <@{author_id}>\nCanal de origen: <#{delete_channel_id}>\nContenido del mensaje: {message_content}");
     let footer = "Nota: Las menciones a usuarios con @ no mencionan a los usuarios si están dentro de un embed.";
     let embed = create_embed_common(&author_user, "Mensaje eliminado", &description, footer);
 
-    log_channel_id.send_message(&ctx.http, create_message_embed(embed, CreateMessage::default())).await
+    log_channel_id.send_message(&ctx.http, CreateMessage::default().embed(embed)).await
 }
 
 pub async fn send_embed_with_attachment(
@@ -44,11 +44,7 @@ pub async fn send_embed_with_attachment(
     author_id: UserId,
     attachment_path: &str,
 ) -> serenity::Result<Message> {
-    let author_user = author_id.to_user(&ctx.http).await.unwrap_or_else(|why| {
-        println!("Could not get author user: {why}");
-        User::default()
-    });
-
+    let author_user = author_id.to_user(&ctx.http).await?;
     let author_mention = format!("<@{author_id}>");
     let description = format!("Autor del mensaje: {author_mention}\nCanal de origen: <#{delete_channel_id}>");
     let footer = "Nota: Los audios de Discord no pueden incrustarse dentro de un embed, por lo que el Bot debe enviar dos mensajes al Log.";
@@ -83,9 +79,11 @@ pub async fn send_warn_embed(
     let footer = "En el caso de recibir 3 advertencias serás silenciado por una semana. Si estás respondiendo un mensaje considera responder sin el uso de \"@\".";
     let attachment_image = CreateAttachment::path(tip_image).await?;
     let embed = create_warn_embed(&warn_message,&attachment_image, footer);
-    let message = CreateMessage::default().add_file(attachment_image);
+    let builder = CreateMessage::default()
+        .add_file(attachment_image)
+        .embed(embed);
 
-    channel_id.send_message(&ctx.http, create_message_embed(embed, message)).await
+    channel_id.send_message(&ctx.http, builder).await
 }
 
 fn create_embed_common(author_user: &User, title: &str, description: &str, footer: &str) -> CreateEmbed {
@@ -105,8 +103,4 @@ fn create_warn_embed(warn_message: &str, tip_image_mobile: &CreateAttachment, fo
         .attachment(tip_image_mobile.filename.as_str())
         .color(0x00FF_FF00)
         .footer(CreateEmbedFooter::new(footer))
-}
-
-fn create_message_embed(embed: CreateEmbed, m: CreateMessage) -> CreateMessage {
-    m.embed(embed)
 }

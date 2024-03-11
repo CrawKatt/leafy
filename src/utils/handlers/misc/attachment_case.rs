@@ -9,7 +9,7 @@ pub async fn attachment_handler(new_message: &Message) -> CommandResult {
                 let audio_url = &attachment.url;
                 let data = MessageData::new(
                     new_message.id,
-                    audio_url.to_owned(),
+                    audio_url,
                     new_message.author.id,
                     new_message.channel_id,
                     new_message.guild_id,

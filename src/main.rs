@@ -21,7 +21,7 @@ use utils::MessageData;
 use utils::load_commands;
 use utils::events::event_handler;
 use utils::handlers::error::err_handler;
-use crate::utils::misc::debug::UnwrapResult;
+use utils::misc::debug::UnwrapResult;
 
 #[tokio::main]
 async fn main() -> UnwrapResult<()> {
