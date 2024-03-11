@@ -12,14 +12,15 @@ pub async fn screenshot_this(ctx: Context<'_>) -> CommandResult {
     let messages = ctx.channel_id().messages(&ctx.http(), GetMessages::default()).await?;
     let message = messages.first().unwrap_log("No se pudo obtener el mensaje", module_path!(), line!())?;
     let content = &message.referenced_message.as_ref().unwrap_log("No se pudo obtener el mensaje referenciado", module_path!(), line!())?.content;
-    let author = &message.referenced_message.as_ref().unwrap_log("No se pudo obtener el mensaje referenciado", module_path!(), line!())?.author.name;
+    let author = &message.referenced_message.as_ref().unwrap_log("No se pudo obtener el mensaje referenciado", module_path!(), line!())?.author.global_name;
     let default_avatar = &message.referenced_message.as_ref().unwrap_log("No se pudo obtener el mensaje referenciado", module_path!(), line!())?.author.default_avatar_url();
     let avatar = &message.referenced_message.as_ref().unwrap_log("No se pudo obtener el mensaje referenciado", module_path!(), line!())?.author.avatar_url().unwrap_or_else(|| default_avatar.to_string());
+    let name = author.as_ref().unwrap_log("No se pudo obtener el nombre del autor", module_path!(), line!())?;
 
     let embed = CreateEmbed::default()
         .description(format!("*{content}*"))
-        .author(CreateEmbedAuthor::new(author)
-            .name(author)
+        .author(CreateEmbedAuthor::new(name)
+            .name(name)
             .icon_url(avatar));
 
     let channel_id = ctx.channel_id();
