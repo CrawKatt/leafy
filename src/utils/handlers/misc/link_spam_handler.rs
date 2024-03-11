@@ -1,54 +1,37 @@
-use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
-use std::time::Duration;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use tokio::sync::Mutex;
-use crate::commands::setters::set_to_blacklist::BlackListData;
-use serenity::all::{ChannelId, GetMessages, GuildId, Member, Message, UserId};
+use serenity::all::{ChannelId, GetMessages, Member, Message, UserId};
 use poise::serenity_prelude as serenity;
-use crate::DB;
 use crate::utils::CommandResult;
-use crate::utils::MessageData;
 use crate::utils::handlers::misc::everyone_case::handle_everyone;
+
+#[derive(Debug)]
+struct MessageTracker {
+    author_id: UserId,
+    message_content: String,
+    channel_ids: Vec<ChannelId>,
+}
+
+impl MessageTracker {
+    fn new(author_id: UserId, message_content: String, channel_ids: Vec<ChannelId>) -> Self {
+        Self {
+            author_id,
+            message_content,
+            channel_ids,
+        }
+    }
+}
+
+static MESSAGE_TRACKER: Lazy<Mutex<Vec<MessageTracker>>> = Lazy::new(|| {
+    Mutex::new(Vec::new())
+});
 
 pub fn extract_link(text: &str) -> Option<String> {
     Regex::new(r"(https?://\S+)").map_or(None, |url_re| url_re.find(text).map(|m| m.as_str().to_string()))
 }
 
-static MESSAGE_TRACKER: Lazy<Arc<Mutex<HashMap<UserId, HashMap<String, HashSet<ChannelId>>>>>> = Lazy::new(|| {
-    Arc::new(Mutex::new(HashMap::new()))
-});
-
-pub async fn handle_blacklist_link(
-    ctx: &serenity::Context,
-    new_message: &Message,
-    guild_id: GuildId,
-    link: String,
-    data: &MessageData,
-    admin_role_id: &Option<String>,
-    time: i64
-) -> CommandResult {
-    let member = &mut guild_id.member(&ctx.http, new_message.author.id).await?;
-    let blacklist_link = BlackListData::get_blacklist_link(guild_id, &link).await?;
-    if let Some(blacklist_link) = blacklist_link {
-        if new_message.content.contains(&blacklist_link) {
-            let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
-            handle_everyone(admin_role_id.to_owned(), member, ctx, time, new_message).await?;
-            return Ok(());
-        }
-    }
-
-    // Comienza el seguimiento de mensajes
-    let message_content = new_message.content.clone();
-    let channel_id = new_message.channel_id;
-
-    spam_checker(message_content, channel_id, admin_role_id, member, ctx, time, new_message).await?;
-
-    Ok(())
-}
-
-async fn spam_checker(
+pub async fn spam_checker(
     message_content: String,
     channel_id: ChannelId,
     admin_role_id: &Option<String>,
@@ -60,38 +43,74 @@ async fn spam_checker(
     // Limita el alcance del bloqueo del Mutex
     let author_id = new_message.author.id;
     let mut message_tracker = MESSAGE_TRACKER.lock().await;
-    let user_messages = message_tracker.entry(author_id).or_default();
-    let message_channels = user_messages.entry(message_content.clone()).or_default();
-    message_channels.insert(channel_id);
 
-    // Guarda los ChannelId de los mensajes para borrarlos más tarde
-    let message_channels_to_delete: Vec<ChannelId> = message_channels.iter().copied().collect();
-
-    // Banea al usuario si el límite de mensajes es alcanzado y borra los mensajes
-    if message_channels.len() >= 3 {
-        handle_everyone(admin_role_id.to_owned(), member, ctx, time, new_message).await?;
-
-        // Borra cada mensaje individualmente
-        for channel_id in message_channels_to_delete {
-            let channel = channel_id.to_channel(&ctx).await?;
-            let serenity::Channel::Guild(channel) = channel else {
-                return Ok(())
-            };
-
-            let messages = channel.messages(&ctx.http, GetMessages::new()).await?;
-            for message in messages {
-                if message.author.id == author_id && message.content == message_content {
-                    message.delete(&ctx.http).await?;
-                }
-            }
+    // Comprueba si el último mensaje del usuario es diferente al mensaje actual
+    // Nota: No es posible usar let else aquí porque se sale de la función antes de
+    // que se pueda obtener otro mensaje
+    if let Some(last_message) = message_tracker
+        .iter()
+        .last()
+    {
+        // Si el último mensaje es del mismo autor y el contenido es diferente, borra el rastreador de mensajes
+        if last_message.author_id == author_id && last_message.message_content != message_content {
+            message_tracker.clear();
         }
-
-        // Limpia completamente el HashMap para reiniciar el rastreo de mensajes
-        user_messages.clear();
     }
 
-    // Espera 10 segundos antes de borrar los mensajes en caso de que no sea un link Spam
-    tokio::time::sleep(Duration::from_secs(10)).await;
+    // Busca si el mensaje ya existe en el rastreador de mensajes
+    let Some(message) = message_tracker
+        .iter_mut()
+        .find(|m| m.author_id == author_id && m.message_content == message_content) else
+    {
+        // Si el mensaje no existe, crea un nuevo rastreador de mensajes y añádelo a la lista
+        let message = MessageTracker::new(author_id, message_content.clone(), vec![channel_id]);
+        message_tracker.push(message);
+
+        return Ok(())
+    };
+
+    // Si el mensaje existe, añade el canal a la lista de canales
+    message.channel_ids.push(channel_id);
+    // println aquí para Debug cuando sea necesario
+
+    // Comprueba si el usuario ha enviado el mismo mensaje en 3 canales diferentes
+    let Some(message) = message_tracker
+        .iter()
+        .find(|m| m.author_id == author_id && m.message_content == message_content && m.channel_ids.len() >= 3) else
+    {
+        return Ok(())
+    };
+
+    handle_everyone(admin_role_id.to_owned(), member, ctx, time, new_message).await?;
+    delete_spam_messages(message, ctx, author_id, message_content).await?;
+
+    // Limpia completamente el rastreador de mensajes para reiniciar el rastreo de mensajes
+    message_tracker.retain(|m| m.author_id != author_id);
+    drop(message_tracker);
+
+    Ok(())
+}
+
+async fn delete_spam_messages(
+    message: &MessageTracker,
+    ctx: &serenity::Context,
+    author_id: UserId,
+    message_content: String
+) -> CommandResult {
+    // Borra cada mensaje individualmente
+    for channel_id in &message.channel_ids {
+        let channel = channel_id.to_channel(ctx).await?;
+        let serenity::Channel::Guild(channel) = channel else {
+            return Ok(())
+        };
+
+        let messages = channel.messages(&ctx.http, GetMessages::new()).await?;
+        for message in messages {
+            if message.author.id == author_id && message.content == message_content {
+                message.delete(&ctx.http).await?;
+            }
+        }
+    }
 
     Ok(())
 }
