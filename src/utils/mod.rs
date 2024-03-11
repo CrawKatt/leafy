@@ -13,7 +13,6 @@ use crate::commands::setters::set_admins::set_admins;
 use crate::commands::setters::set_log_channel::set_log_channel;
 use crate::commands::setters::set_joke_channel::set_joke_channel;
 use crate::commands::setters::set_warn_message::set_warn_message;
-use crate::commands::setters::set_to_blacklist::add_to_blacklist;
 use crate::commands::setters::set_timeout_timer::set_timeout_timer;
 use crate::commands::setters::set_forbidden_role::set_forbidden_role;
 use crate::commands::setters::set_forbidden_user::set_forbidden_user;
@@ -29,6 +28,7 @@ use crate::commands::getters::get_forbidden_role::get_forbidden_role;
 use crate::commands::getters::get_forbidden_user::get_forbidden_user;
 use crate::commands::getters::get_joke::get_joke;
 use crate::commands::getters::get_welcome_channel::get_welcome_channel;
+use crate::commands::screenshot_this::screenshot_this;
 use crate::commands::setters::set_welcome_channel::set_welcome_channel;
 use crate::commands::setters::set_welcome_message::set_welcome_message;
 
@@ -51,16 +51,16 @@ pub struct MessageData {
 }
 
 impl MessageData {
-    pub const fn new(
+    pub fn new(
         message_id: MessageId,
-        message_content: String,
+        message_content: &String,
         author_id: UserId,
         channel_id: ChannelId,
         guild_id: Option<GuildId>,
     ) -> Self {
         Self {
             message_id,
-            message_content,
+            message_content: message_content.to_owned(),
             author_id,
             channel_id,
             guild_id,
@@ -179,9 +179,9 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         get_forbidden_role(),
         get_welcome_channel(),
         get_forbidden_exception(),
-        add_to_blacklist(),
         joke(), // Retirar este comando en la próxima versión
         get_joke(), // Retirar este comando en la próxima versión
         set_joke_channel(), // Retirar este comando en la próxima versión
+        screenshot_this(),
     ]
 }

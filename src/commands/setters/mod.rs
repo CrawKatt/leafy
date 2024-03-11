@@ -7,7 +7,6 @@ pub mod set_warn_message;
 pub mod set_timeout_message;
 pub mod set_forbidden_exception;
 pub mod set_joke_channel;
-pub mod set_to_blacklist;
 pub mod set_joke;
 pub mod set_welcome_channel;
 pub mod set_welcome_message;
@@ -19,6 +18,7 @@ use surrealdb::Result as SurrealResult;
 use crate::utils::misc::debug::UnwrapErrors;
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[allow(clippy::struct_field_names)]
 pub struct AdminData {
     pub role_id: Option<String>,
     pub role_2_id: Option<String>,
