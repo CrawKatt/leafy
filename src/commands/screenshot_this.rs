@@ -4,7 +4,7 @@ use crate::utils::misc::debug::UnwrapLog;
 
 #[poise::command(
     prefix_command,
-    category = "Info",
+    category = "Fun",
     guild_only,
     track_edits
 )]
@@ -17,12 +17,10 @@ pub async fn screenshot_this(ctx: Context<'_>) -> CommandResult {
     let avatar = &message.referenced_message.as_ref().unwrap_log("No se pudo obtener el mensaje referenciado", module_path!(), line!())?.author.avatar_url().unwrap_or_else(|| default_avatar.to_string());
 
     let embed = CreateEmbed::default()
+        .description(format!("*{content}*"))
         .author(CreateEmbedAuthor::new(author)
             .name(author)
-            .icon_url(avatar))
-        .title(format!("{author}:"))
-        .description(format!("*{content}*"))
-        .color(0x0000_FF00);
+            .icon_url(avatar));
 
     let channel_id = ctx.channel_id();
     let message = CreateMessage::default().embed(embed);
