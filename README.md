@@ -18,6 +18,7 @@
 - [x] Remover los embeds para casos de mención de usuario o rol prohibido (Los embeds no mencionan aunque usen @ en el mensaje)
 - [x] Añadir modo auth al docker-compose (CRÍTICO)
 - [x] Crear un comando screenshot con embeds para fuera de contexo
+- [ ] Mejorar el comando screenshot utilizando una simulación de captura de pantalla, para eso se utilizará el crate image
 
 ---
 

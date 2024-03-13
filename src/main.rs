@@ -1,3 +1,4 @@
+use std::env;
 use std::sync::Arc;
 use surrealdb::Surreal;
 use std::time::Duration;
@@ -6,11 +7,10 @@ use chrono::Local;
 use once_cell::sync::Lazy;
 use poise::serenity_prelude as serenity;
 use reqwest::Client;
-use surrealdb::opt::auth::Root;
-use surrealdb::engine::remote::ws::{Client as SurrealClient, Ws};
+use surrealdb::engine::local::{Db, File};
 use tokio::time::sleep_until;
 
-pub static DB: Lazy<Surreal<SurrealClient>> = Lazy::new(Surreal::init);
+pub static DB: Lazy<Surreal<Db>> = Lazy::new(Surreal::init);
 
 mod commands;
 mod utils;
@@ -26,16 +26,10 @@ use utils::misc::debug::UnwrapResult;
 #[tokio::main]
 async fn main() -> UnwrapResult<()> {
 
-    let database_url = dotenvy::var("DATABASE_URL").expect("missing SURREAL_URL");
-    let database_password = dotenvy::var("DATABASE_PASSWORD").expect("missing SURREAL_PASSWORD");
-    DB.connect::<Ws>(database_url).await.unwrap_or_else(|why| {
+    let database_path = env::current_dir().unwrap_or_default().join("database/");
+    DB.connect::<File>(database_path).await.unwrap_or_else(|why| {
         panic!("Could not connect to database: {why}");
     });
-
-    DB.signin(Root {
-        username: "root",
-        password: &database_password,
-    }).await.expect("Could not sign in");
 
     // Borrar mensajes de la Base de Datos cada 24 horas
     clean_database_loop();

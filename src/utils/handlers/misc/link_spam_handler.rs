@@ -6,6 +6,8 @@ use poise::serenity_prelude as serenity;
 use crate::utils::CommandResult;
 use crate::utils::handlers::misc::everyone_case::handle_everyone;
 
+/// Estructura que almacena el id de un usuario,
+/// el contenido del mensaje y los canales en los que se ha enviado.
 #[derive(Debug)]
 struct MessageTracker {
     author_id: UserId,
@@ -21,6 +23,18 @@ impl MessageTracker {
             channel_ids,
         }
     }
+
+    async fn add_or_update_message(author_id: UserId, message_content: String, channel_id: ChannelId) {
+        let mut message_tracker = MESSAGE_TRACKER.lock().await;
+        if let Some(message) = message_tracker.iter_mut().find(|m| m.author_id == author_id && m.message_content == message_content) {
+            message.channel_ids.push(channel_id);
+        } else {
+            // Si el mensaje no existe o el contenido es diferente, borra los mensajes antiguos del autor
+            message_tracker.retain(|m| m.author_id != author_id);
+            let message = Self::new(author_id, message_content, vec![channel_id]);
+            message_tracker.push(message);
+        }
+    }
 }
 
 static MESSAGE_TRACKER: Lazy<Mutex<Vec<MessageTracker>>> = Lazy::new(|| {
@@ -31,6 +45,8 @@ pub fn extract_link(text: &str) -> Option<String> {
     Regex::new(r"(https?://\S+)").map_or(None, |url_re| url_re.find(text).map(|m| m.as_str().to_string()))
 }
 
+/// Esta función se encarga de comprobar si un usuario ha enviado el mismo mensaje en
+/// 3 canales diferentes y si es así, borra los mensajes y aplica Timeout al autor.
 pub async fn spam_checker(
     message_content: String,
     channel_id: ChannelId,
@@ -72,6 +88,7 @@ pub async fn spam_checker(
     // Si el mensaje existe, añade el canal a la lista de canales
     message.channel_ids.push(channel_id);
     // println aquí para Debug cuando sea necesario
+    println!("Message Tracker: {message_tracker:?}");
 
     // Comprueba si el usuario ha enviado el mismo mensaje en 3 canales diferentes
     let Some(message) = message_tracker

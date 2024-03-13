@@ -6,19 +6,19 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-poise = "0.6.1-rc1"
-tokio = "1.28.1"
-serenity = "0.12.0"
-serde = "1.0.164"
-reqwest = "0.11.22"
-env_logger = "0.10.0"
-dotenvy = "0.15.7"
-chrono = "0.4.26"
-pretty_env_logger = "0.5.0"
-surrealdb = "1.1"
-once_cell = "1.18.0"
-thiserror = "1.0.49"
-image = "0.24.7"
-regex = "1.10.2"
-plantita_welcomes = { git = "https://github.com/CrawKatt/plantita_welcomes.git" }
-plantita_audio = { git = "https://github.com/CrawKatt/plantita_audio.git" }
+poise = { version = "0.6.1-rc1" }
+tokio = { version = "1.28.1", default-features = false }
+serenity = { version = "0.12.0", features = ["rustls_backend"], default-features = false }
+serde = { version = "1.0.164", default-features = false }
+reqwest = { version = "0.11.22", features = ["rustls"], default-features = false }
+env_logger = { version = "0.10.0", default-features = false }
+dotenvy = { version = "0.15.7", default-features = false }
+chrono = { version = "0.4.26", default-features = false }
+pretty_env_logger = { version = "0.5.0", default-features = false }
+surrealdb = { version = "1.1", features = ["kv-rocksdb", "rustls"], default-features = false }
+once_cell = { version = "1.18.0", default-features = false }
+thiserror = { version = "1.0.49", default-features = false }
+image = { version = "0.24.7", default-features = false }
+regex = { version = "1.10.2", default-features = false }
+plantita_welcomes = { git = "https://github.com/CrawKatt/plantita_welcomes.git", default-features = false }
+plantita_audio = { git = "https://github.com/CrawKatt/plantita_audio.git", default-features = false }
