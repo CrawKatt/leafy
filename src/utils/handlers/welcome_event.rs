@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fs::remove_file;
 use poise::serenity_prelude as serenity;
 use serenity::all::{ChannelId, CreateAttachment, User};
 use crate::commands::setters::set_welcome_channel::WelcomeChannelData;
@@ -40,10 +41,14 @@ pub async fn welcome_handler(
     let mut message_map = HashMap::new();
     message_map.insert("content", format!("Bienvenido {user} a {}. \n{welcome_message}", guild_id.name(ctx.cache.clone()).unwrap_or_default()));
     let http = ctx.http.clone();
-    let attachment = CreateAttachment::path(file).await?;
+    let attachment = CreateAttachment::path(&file).await?;
 
     // En el attachment se puede pasar un archivo de imagen para la bienvenida
     http.send_message(channel_id, vec![attachment], &message_map).await?;
+
+    // Borrar los archivos temporales después de usarlo
+    remove_file(file)?;
+    remove_file(format!("/tmp/{}_avatar.png", user.id))?;
 
     Ok(())
 }
