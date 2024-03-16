@@ -5,8 +5,9 @@ use serenity::all::{ChannelId, GetMessages, Member, Message, UserId};
 use poise::serenity_prelude as serenity;
 use crate::utils::CommandResult;
 use crate::utils::handlers::misc::everyone_case::handle_everyone;
+use crate::utils::misc::debug::UnwrapLog;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct MessageTracker {
     author_id: UserId,
     message_content: String,
@@ -40,52 +41,49 @@ pub async fn spam_checker(
     time: i64,
     new_message: &Message
 ) -> CommandResult {
-    // Limita el alcance del bloqueo del Mutex
     let author_id = new_message.author.id;
     let mut message_tracker = MESSAGE_TRACKER.lock().await;
 
-    // Comprueba si el último mensaje del usuario es diferente al mensaje actual
-    // Nota: No es posible usar let else aquí porque se sale de la función antes de
-    // que se pueda obtener otro mensaje
     if let Some(last_message) = message_tracker
         .iter()
         .last()
     {
-        // Si el último mensaje es del mismo autor y el contenido es diferente, borra el rastreador de mensajes
         if last_message.author_id == author_id && last_message.message_content != message_content {
             message_tracker.clear();
         }
     }
 
-    // Busca si el mensaje ya existe en el rastreador de mensajes
-    let Some(message) = message_tracker
+    let message = if let Some(message) = message_tracker
         .iter_mut()
-        .find(|m| m.author_id == author_id && m.message_content == message_content) else
+        .find(|m| m.author_id == author_id && m.message_content == message_content)
     {
+        // Si el mensaje existe y el canal no está en la lista de canales, añade el canal a la lista de canales
+        if message.channel_ids.contains(&channel_id) {
+            // Si el mensaje se repite en el mismo canal, borra el vector
+            println!("Message repeated in the same channel, clearing the vector");
+            message_tracker.clear();
+
+            return Ok(());
+        }
+        message.channel_ids.push(channel_id);
+
+        message
+    } else {
         // Si el mensaje no existe, crea un nuevo rastreador de mensajes y añádelo a la lista
         let message = MessageTracker::new(author_id, message_content.clone(), vec![channel_id]);
         message_tracker.push(message);
-
-        return Ok(())
+        message_tracker.last_mut().unwrap_log("No se pudo obtener el último mensaje", module_path!(), line!())?
     };
 
-    // Si el mensaje existe, añade el canal a la lista de canales
-    message.channel_ids.push(channel_id);
-    // println aquí para Debug cuando sea necesario
+    if message.channel_ids.len() >= 3 {
+        handle_everyone(admin_role_id.to_owned(), member, ctx, time, new_message).await?;
+        delete_spam_messages(message, ctx, author_id, message_content).await?;
 
-    // Comprueba si el usuario ha enviado el mismo mensaje en 3 canales diferentes
-    let Some(message) = message_tracker
-        .iter()
-        .find(|m| m.author_id == author_id && m.message_content == message_content && m.channel_ids.len() >= 3) else
-    {
-        return Ok(())
-    };
+        // Limpia completamente el rastreador de mensajes para reiniciar el rastreo de mensajes
+        message_tracker.retain(|m| m.author_id != author_id);
+    }
+    // Debug : println!("Tracker: {message_tracker:#?}");
 
-    handle_everyone(admin_role_id.to_owned(), member, ctx, time, new_message).await?;
-    delete_spam_messages(message, ctx, author_id, message_content).await?;
-
-    // Limpia completamente el rastreador de mensajes para reiniciar el rastreo de mensajes
-    message_tracker.retain(|m| m.author_id != author_id);
     drop(message_tracker);
 
     Ok(())

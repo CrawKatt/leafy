@@ -14,7 +14,7 @@ pub async fn handle_everyone(
 ) -> CommandResult {
 
     if check_admin_exception(admin_role_id, member, ctx) { return Ok(()) }
-    let time = Timestamp::from(Utc::now() + Duration::seconds(time_out_timer));
+    let time = Timestamp::from(Utc::now() + Duration::try_seconds(time_out_timer).unwrap_or_default());
     member.disable_communication_until_datetime(&ctx.http, time).await?;
     message.delete(&ctx.http).await?;
 

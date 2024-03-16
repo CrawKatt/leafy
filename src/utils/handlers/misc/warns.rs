@@ -14,7 +14,8 @@ pub async fn handle_warn_system(
     time_out_message: String,
 ) -> CommandResult {
 
-    let time = Timestamp::from(Utc::now() + Duration::seconds(time_out_timer));
+    let try_seconds = Duration::try_seconds(time_out_timer);
+    let time = Timestamp::from(Utc::now() + try_seconds.unwrap_or_default());
     member.disable_communication_until_datetime(&http, time).await?;
 
     message_map.insert("content", format!("{} {}", member.mention(), time_out_message));
