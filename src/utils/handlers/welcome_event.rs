@@ -7,7 +7,7 @@ use crate::commands::setters::set_welcome_message::WelcomeMessageData;
 use crate::DB;
 use crate::utils::CommandResult;
 use crate::utils::misc::debug::{UnwrapErrors, UnwrapLog};
-use plantita_welcomes::image_combiner::combine_images;
+use plantita_welcomes::create_welcome::combine_images;
 use reqwest::get;
 
 pub async fn welcome_handler(
