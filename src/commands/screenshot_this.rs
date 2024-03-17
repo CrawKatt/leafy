@@ -10,6 +10,7 @@ use serenity::builder::CreateAttachment;
 #[poise::command(
     prefix_command,
     category = "Fun",
+    aliases("sst"),
     guild_only,
     track_edits
 )]
