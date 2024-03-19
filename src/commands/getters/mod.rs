@@ -6,3 +6,4 @@ pub mod get_admins;
 pub mod get_forbidden_exception;
 pub mod get_joke;
 pub mod get_welcome_channel;
+pub mod get_ooc_channel;

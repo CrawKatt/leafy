@@ -27,8 +27,10 @@ use crate::commands::getters::get_timeout_timer::get_timeout_timer;
 use crate::commands::getters::get_forbidden_role::get_forbidden_role;
 use crate::commands::getters::get_forbidden_user::get_forbidden_user;
 use crate::commands::getters::get_joke::get_joke;
+use crate::commands::getters::get_ooc_channel::get_ooc_channel;
 use crate::commands::getters::get_welcome_channel::get_welcome_channel;
 use crate::commands::screenshot_this::screenshot_this;
+use crate::commands::setters::set_ooc_channel::set_ooc_channel;
 use crate::commands::setters::set_welcome_channel::set_welcome_channel;
 use crate::commands::setters::set_welcome_message::set_welcome_message;
 
@@ -164,6 +166,7 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         ping(),
         set_admins(),
         set_log_channel(),
+        set_ooc_channel(),
         set_warn_message(),
         set_timeout_timer(),
         set_forbidden_user(),
@@ -174,6 +177,7 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         set_forbidden_exception(),
         get_admins(),
         get_log_channel(),
+        get_ooc_channel(),
         get_timeout_timer(),
         get_forbidden_user(),
         get_forbidden_role(),

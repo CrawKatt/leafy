@@ -1,7 +1,8 @@
-use serenity::all::{CreateMessage, GetMessages};
+use serenity::all::{ChannelId, CreateMessage, GetMessages};
 use crate::utils::{CommandResult, Context};
 use crate::utils::misc::debug::UnwrapLog;
 use serenity::builder::CreateAttachment;
+use crate::commands::setters::set_ooc_channel::OocChannel;
 use plantita_welcomes::generate_phrase::create_image;
 
 #[poise::command(
@@ -11,7 +12,7 @@ use plantita_welcomes::generate_phrase::create_image;
     guild_only,
     track_edits
 )]
-pub async fn screenshot_this(ctx: Context<'_>) -> CommandResult {
+pub async fn screenshot_this(ctx: Context<'_>, ooc: Option<String>) -> CommandResult {
     let messages = ctx.channel_id().messages(&ctx.http(), GetMessages::default()).await?;
     let message = messages.first().unwrap_log("No se pudo obtener el mensaje", module_path!(), line!())?;
     let content = &message.referenced_message.as_ref().unwrap_log("No se pudo obtener el mensaje referenciado", module_path!(), line!())?.content;
@@ -26,6 +27,32 @@ pub async fn screenshot_this(ctx: Context<'_>) -> CommandResult {
     let channel_id = ctx.channel_id();
     let font_path = "assets/PTSerif-Regular.ttf";
     let italic_font_path = "assets/PTSerif-Italic.ttf";
+
+    // Si se proporciona un canal OOC, se enviará la captura de pantalla a ese canal
+    if ooc.is_some() {
+        let sql_query = "SELECT * FROM ooc_channel WHERE guild_id = $guild_id";
+        let existing_data: Option<OocChannel> = crate::DB
+            .query(sql_query)
+            .bind(("guild_id", &guild_id.to_string()))
+            .await?
+            .take(0)?;
+
+        if existing_data.is_none() {
+            poise::say_reply(ctx, "No se ha establecido un canal OOC").await?;
+            return Ok(());
+        }
+
+        let ooc_channel = existing_data.unwrap_log("No se pudo obtener el canal OOC", module_path!(), line!())?;
+        let channel_u64 = ooc_channel.channel_id.parse::<u64>().unwrap_log("No se pudo convertir el canal OOC a un ID", module_path!(), line!())?;
+        let channel_id = ChannelId::new(channel_u64);
+        let create_image = create_image(avatar, &quoted_content, &author_name, font_path, italic_font_path).await?;
+        let attachment = CreateAttachment::path(&create_image).await?;
+
+        channel_id.send_files(&ctx.http(), vec![attachment], CreateMessage::default()).await?;
+
+        return Ok(());
+    }
+
     let create_image = create_image(avatar, &quoted_content, &author_name, font_path, italic_font_path).await?;
     let attachment = CreateAttachment::path(&create_image).await?;
 
