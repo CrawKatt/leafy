@@ -4,6 +4,7 @@ use crate::utils::misc::debug::UnwrapLog;
 use serenity::builder::CreateAttachment;
 use crate::commands::setters::set_ooc_channel::OocChannel;
 use plantita_welcomes::generate_phrase::create_image;
+use std::fs::remove_file;
 
 #[poise::command(
     prefix_command,
@@ -49,6 +50,7 @@ pub async fn screenshot_this(ctx: Context<'_>, ooc: Option<String>) -> CommandRe
         let attachment = CreateAttachment::path(&create_image).await?;
 
         channel_id.send_files(&ctx.http(), vec![attachment], CreateMessage::default()).await?;
+        remove_file(create_image)?;
 
         return Ok(());
     }
@@ -57,6 +59,7 @@ pub async fn screenshot_this(ctx: Context<'_>, ooc: Option<String>) -> CommandRe
     let attachment = CreateAttachment::path(&create_image).await?;
 
     channel_id.send_files(&ctx.http(), vec![attachment], CreateMessage::default()).await?;
+    remove_file(create_image)?;
 
     Ok(())
 }
