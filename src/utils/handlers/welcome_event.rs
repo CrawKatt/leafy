@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fs::remove_file;
+use image::DynamicImage;
 use poise::serenity_prelude as serenity;
 use serenity::all::{ChannelId, CreateAttachment, User};
 use crate::commands::setters::set_welcome_channel::WelcomeChannelData;
@@ -30,13 +31,8 @@ pub async fn welcome_handler(
     let result = welcome_message.unwrap_log("No se encontró el mensaje de bienvenida", file!(), line!())?;
     let welcome_message = result.message;
 
-    let file = get_welcome_attachment(
-        "./assets/background.png",
-        user,
-        74,
-        74,
-        372,
-    ).await?;
+    let mut background = image::open("assets/background.png")?;
+    let file = get_welcome_attachment(&mut background, user, 74, 74, 372).await?;
 
     let mut message_map = HashMap::new();
     message_map.insert("content", format!("Bienvenido {user} a {}. \n{welcome_message}", guild_id.name(ctx.cache.clone()).unwrap_or_default()));
@@ -46,14 +42,13 @@ pub async fn welcome_handler(
     // En el attachment se puede pasar un archivo de imagen para la bienvenida
     http.send_message(channel_id, vec![attachment], &message_map).await?;
 
-    // Borrar los archivos temporales después de usarlo
+    // Borrar la imágen generada después de usarla
     remove_file(file)?;
-    remove_file(format!("/tmp/{}_avatar.png", user.id))?;
 
     Ok(())
 }
 
-async fn get_welcome_attachment(background: &str, user: &User, x: u32, y: u32, avatar_size: u32) -> Result<String, UnwrapErrors> {
+async fn get_welcome_attachment(background: &mut DynamicImage, user: &User, x: u32, y: u32, avatar_size: u32) -> Result<String, UnwrapErrors> {
     // Obtén la URL del avatar del usuario
     let avatar_url = user.avatar_url().unwrap_or_else(|| user.default_avatar_url());
 
@@ -64,12 +59,11 @@ async fn get_welcome_attachment(background: &str, user: &User, x: u32, y: u32, a
     // Carga la imagen del avatar en memoria y redimensiona a 256x256
     let img = image::load_from_memory(&bytes)?;
     img.resize(256, 256, image::imageops::Lanczos3);
-    img.save_with_format(format!("/tmp/{}_avatar.png", user.id), image::ImageFormat::Png)?;
 
     // Guarda la imagen del avatar en un archivo temporal
-    let avatar_file_path = format!("/tmp/{}_avatar.png", user.id);
     let output_path = format!("/tmp/{}_welcome.png", user.id);
-    combine_images(background, avatar_file_path.as_str(), x, y, avatar_size, output_path.as_str())?;
+    combine_images(background, &img, x, y, avatar_size)?;
+    background.save(&output_path)?;
 
     Ok(output_path)
 }
