@@ -66,10 +66,9 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
 
     // Extraer el link del mensaje si existe
     if extract_link(&new_message.content).is_some() {
-        let member = &mut guild_id.member(&ctx.http, new_message.author.id).await?;
         let message_content = new_message.content.clone();
         let channel_id = new_message.channel_id;
-        spam_checker(message_content, channel_id, &admin_role_id, member, ctx, time, new_message).await?;
+        spam_checker(message_content, channel_id, &admin_role_id, ctx, time, new_message, guild_id).await?;
     }
 
     if user_id.is_some() {

@@ -1,8 +1,10 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
 use tokio::sync::Mutex;
-use serenity::all::{ChannelId, GetMessages, Member, Message, UserId};
+use serenity::all::{ChannelId, CreateEmbedAuthor, CreateMessage, GetMessages, GuildId, Member, Message, UserId};
 use poise::serenity_prelude as serenity;
+use serenity::builder::CreateEmbed;
+use crate::commands::setters::GuildData;
 use crate::utils::CommandResult;
 use crate::utils::handlers::misc::everyone_case::handle_everyone;
 use crate::utils::misc::debug::UnwrapLog;
@@ -36,12 +38,13 @@ pub async fn spam_checker(
     message_content: String,
     channel_id: ChannelId,
     admin_role_id: &Option<String>,
-    member: &mut Member,
     ctx: &serenity::Context,
     time: i64,
-    new_message: &Message
+    new_message: &Message,
+    guild_id: GuildId
 ) -> CommandResult {
     let author_id = new_message.author.id;
+    let mut member = guild_id.member(&ctx.http, new_message.author.id).await?;
     let mut message_tracker = MESSAGE_TRACKER.lock().await;
 
     if let Some(last_message) = message_tracker
@@ -76,13 +79,13 @@ pub async fn spam_checker(
     };
 
     if message.channel_ids.len() >= 3 {
-        handle_everyone(admin_role_id.to_owned(), member, ctx, time, new_message).await?;
-        delete_spam_messages(message, ctx, author_id, message_content).await?;
+        handle_everyone(admin_role_id.to_owned(), &mut member, ctx, time, new_message).await?;
+        delete_spam_messages(message, ctx, author_id, message_content, guild_id).await?;
 
         // Limpia completamente el rastreador de mensajes para reiniciar el rastreo de mensajes
         message_tracker.retain(|m| m.author_id != author_id);
     }
-    // Debug : println!("Tracker: {message_tracker:#?}");
+    println!("Tracker: {message_tracker:#?}");
 
     drop(message_tracker);
 
@@ -93,7 +96,8 @@ async fn delete_spam_messages(
     message: &MessageTracker,
     ctx: &serenity::Context,
     author_id: UserId,
-    message_content: String
+    message_content: String,
+    guild_id: GuildId
 ) -> CommandResult {
     // Borra cada mensaje individualmente
     for channel_id in &message.channel_ids {
@@ -109,6 +113,19 @@ async fn delete_spam_messages(
             }
         }
     }
+
+    let data = GuildData::get_log_channel(guild_id).await?;
+    let log_channel= data.unwrap_log("No se pudo obtener el canal de registro", module_path!(), line!())?.log_channel_id;
+    let author_user = author_id.to_user(&ctx.http).await?;
+    let username = &author_user.name;
+    let embed = CreateEmbed::default()
+        .title("Spam detectado")
+        .author(CreateEmbedAuthor::new(username)
+            .icon_url(author_user.avatar_url().unwrap_or_else(|| author_user.default_avatar_url())))
+        .description(format!("El usuario <@{author_id}> Es sospechoso de enviar spam en el servidor.\nMensaje: {message_content}"))
+        .color(0x00ff_0000);
+
+    log_channel.send_message(&ctx.http, CreateMessage::default().embed(embed)).await?;
 
     Ok(())
 }
