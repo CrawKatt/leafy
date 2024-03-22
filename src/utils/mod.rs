@@ -2,6 +2,7 @@ use poise::Command;
 use serde::{Deserialize, Serialize};
 use serenity::all::{ChannelId, GuildId, MessageId, UserId};
 use surrealdb::Result as SurrealResult;
+use crate::commands::generate_pride::pride;
 
 pub mod handlers;
 pub mod events;
@@ -187,5 +188,6 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         get_joke(), // Retirar este comando en la próxima versión
         set_joke_channel(), // Retirar este comando en la próxima versión
         screenshot_this(),
+        pride(),
     ]
 }
