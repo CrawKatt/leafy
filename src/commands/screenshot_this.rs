@@ -17,6 +17,12 @@ pub async fn screenshot_this(ctx: Context<'_>, ooc: Option<String>) -> CommandRe
     let messages = ctx.channel_id().messages(&ctx.http(), GetMessages::default()).await?;
     let message = messages.first().unwrap_log("No se pudo obtener el mensaje", module_path!(), line!())?;
     let content = &message.referenced_message.as_ref().unwrap_log("No se pudo obtener el mensaje referenciado", module_path!(), line!())?.content;
+
+    if content.len() > 72 {
+        poise::say_reply(ctx, "El mensaje referenciado es demasiado largo").await?;
+        return Ok(());
+    }
+
     let author_id = &message.referenced_message.as_ref().unwrap_log("No se pudo obtener el mensaje referenciado", module_path!(), line!())?.author.id;
     let default_avatar = &message.referenced_message.as_ref().unwrap_log("No se pudo obtener el mensaje referenciado", module_path!(), line!())?.author.default_avatar_url();
     let avatar = &message.referenced_message.as_ref().unwrap_log("No se pudo obtener el mensaje referenciado", module_path!(), line!())?.author.avatar_url().unwrap_or_else(|| default_avatar.to_string());

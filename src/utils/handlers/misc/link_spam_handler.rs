@@ -1,7 +1,7 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
 use tokio::sync::Mutex;
-use serenity::all::{ChannelId, CreateEmbedAuthor, CreateMessage, GetMessages, GuildId, Member, Message, UserId};
+use serenity::all::{ChannelId, CreateEmbedAuthor, CreateMessage, GetMessages, GuildId, Message, UserId};
 use poise::serenity_prelude as serenity;
 use serenity::builder::CreateEmbed;
 use crate::commands::setters::GuildData;
@@ -85,7 +85,7 @@ pub async fn spam_checker(
         // Limpia completamente el rastreador de mensajes para reiniciar el rastreo de mensajes
         message_tracker.retain(|m| m.author_id != author_id);
     }
-    println!("Tracker: {message_tracker:#?}");
+    // Debug: println!("Tracker: {message_tracker:#?}");
 
     drop(message_tracker);
 
