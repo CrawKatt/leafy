@@ -1,6 +1,6 @@
 use serenity::all::{ChannelId, CreateMessage, GetMessages};
 use crate::utils::{CommandResult, Context};
-use crate::utils::misc::debug::UnwrapLog;
+use crate::utils::misc::debug::{UnwrapLog, UnwrapResult};
 use serenity::builder::CreateAttachment;
 use crate::commands::setters::set_ooc_channel::OocChannel;
 use plantita_welcomes::generate_phrase::create_image;
@@ -37,6 +37,11 @@ pub async fn screenshot_this(ctx: Context<'_>, ooc: Option<String>) -> CommandRe
 
     // Si se proporciona un canal OOC, se enviará la captura de pantalla a ese canal
     if ooc.is_some() {
+        if ooc != Some(String::from("ooc")) {
+            poise::say_reply(ctx, "El canal proporcionado no es válido").await?;
+            return Ok(());
+        }
+
         let sql_query = "SELECT * FROM ooc_channel WHERE guild_id = $guild_id";
         let existing_data: Option<OocChannel> = crate::DB
             .query(sql_query)
@@ -50,13 +55,36 @@ pub async fn screenshot_this(ctx: Context<'_>, ooc: Option<String>) -> CommandRe
         }
 
         let ooc_channel = existing_data.unwrap_log("No se pudo obtener el canal OOC", module_path!(), line!())?;
-        let channel_u64 = ooc_channel.channel_id.parse::<u64>().unwrap_log("No se pudo convertir el canal OOC a un ID", module_path!(), line!())?;
+        let channel_u64 = ooc_channel.channel_id.parse::<u64>()?;
         let channel_id = ChannelId::new(channel_u64);
+
+        if content.contains("<@") {
+
+            let fixed_quoted_content = generate_mention(ctx, content, quoted_content).await?;
+            let create_image = create_image(avatar, &fixed_quoted_content, &author_name, font_path, italic_font_path).await?;
+            let attachment = CreateAttachment::path(&create_image).await?;
+
+            channel_id.send_files(&ctx.http(), vec![attachment], CreateMessage::default()).await?;
+
+            return Ok(());
+        }
+
         let create_image = create_image(avatar, &quoted_content, &author_name, font_path, italic_font_path).await?;
         let attachment = CreateAttachment::path(&create_image).await?;
 
         channel_id.send_files(&ctx.http(), vec![attachment], CreateMessage::default()).await?;
         remove_file(create_image)?;
+
+        return Ok(());
+    }
+
+    if content.contains("<@") {
+
+        let fixed_quoted_content = generate_mention(ctx, content, quoted_content).await?;
+        let create_image = create_image(avatar, &fixed_quoted_content, &author_name, font_path, italic_font_path).await?;
+        let attachment = CreateAttachment::path(&create_image).await?;
+
+        channel_id.send_files(&ctx.http(), vec![attachment], CreateMessage::default()).await?;
 
         return Ok(());
     }
@@ -68,4 +96,28 @@ pub async fn screenshot_this(ctx: Context<'_>, ooc: Option<String>) -> CommandRe
     remove_file(create_image)?;
 
     Ok(())
+}
+
+async fn extract_username(ctx: Context<'_>, user_id: &serenity::model::id::UserId) -> UnwrapResult<String> {
+    let guild_id = ctx.guild_id().unwrap(); // SAFETY: Si el mensaje no es de un servidor, no se ejecutará el comando
+    let member = guild_id.member(&ctx.http(), user_id).await?;
+    let author_name = member.nick.unwrap_or_else(|| member.user.global_name.unwrap_or(member.user.name));
+    let mention = format!("@{author_name}");
+
+    Ok(mention)
+}
+
+async fn generate_mention(ctx: Context<'_>, content: &str, quoted_content: String) -> UnwrapResult<String> {
+    let user_id = content.split("<@")
+        .collect::<Vec<&str>>()[1]
+        .split(">")
+        .collect::<Vec<&str>>()[0]
+        .parse::<u64>()?;
+
+    let user_id = serenity::model::id::UserId::from(user_id);
+    let extracted_username = extract_username(ctx, &user_id).await?;
+    let mention = format!("<@{user_id}>");
+    let fixed_quoted_content = quoted_content.replace(&mention, &extracted_username);
+
+    Ok(fixed_quoted_content)
 }
