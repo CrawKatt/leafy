@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use serenity::all::{GuildId, Message, UserId};
 use poise::serenity_prelude as serenity;
 use crate::DB;
@@ -15,6 +16,14 @@ use crate::utils::handlers::misc::link_spam_handler::{extract_link, spam_checker
 
 const CURRENT_MODULE: &str = file!();
 
+/// # Esta función maneja los mensajes enviados en un servidor
+///
+/// ## Funciones relacionadas:
+/// - manejo de archivos adjuntos
+/// - manejo de menciones a roles y usuarios prohibidos
+/// - manejo de menciones a @everyone y @here
+/// - manejo de spam de links
+/// - guardar el mensaje en la base de datos
 pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> CommandResult {
     // Si el autor del mensaje es un Bot, no hace falta hacer ninguna acción
     if new_message.author.bot { return Ok(()) }
@@ -66,7 +75,7 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
 
     // Extraer el link del mensaje si existe
     if extract_link(&new_message.content).is_some() {
-        let message_content = new_message.content.clone();
+        let message_content = Arc::new(new_message.content.to_string());
         let channel_id = new_message.channel_id;
         spam_checker(message_content, channel_id, &admin_role_id, ctx, time, new_message, guild_id).await?;
     }
@@ -88,6 +97,13 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     Ok(())
 }
 
+/// # Esta función maneja las menciones a usuarios y roles prohibidos
+///
+/// ## Funciones relacionadas:
+/// - manejo de menciones a usuarios prohibidos
+/// - manejo de menciones a roles prohibidos
+/// - silenciar al autor del mensaje
+/// - guardar el mensaje en la base de datos
 async fn handle_user_id(
     ctx: &serenity::Context,
     new_message: &Message,
