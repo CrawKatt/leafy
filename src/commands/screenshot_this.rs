@@ -81,19 +81,12 @@ async fn handle_content(
     channel_id: ChannelId
 ) -> CommandResult {
 
-    if content.contains("<@") {
-        let fixed_quoted_content = generate_mention(ctx, content, quoted_content).await?;
+    let quoted_content = match content.contains("<@") {
+        true => generate_mention(ctx, content, quoted_content).await?,
+        false => quoted_content
+    };
 
-        if fixed_quoted_content.len() > 72 {
-            poise::say_reply(ctx, "El mensaje referenciado es demasiado largo").await?;
-            return Ok(());
-        }
-        send_image(ctx, channel_id, author_avatar, &fixed_quoted_content, author_name).await?;
-
-        return Ok(())
-    }
-
-    if content.len() > 72 {
+    if quoted_content.len() > 72 {
         poise::say_reply(ctx, "El mensaje referenciado es demasiado largo").await?;
         return Ok(());
     }
