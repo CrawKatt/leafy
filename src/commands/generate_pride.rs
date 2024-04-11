@@ -1,4 +1,4 @@
-use serenity::all::{CreateMessage, GetMessages};
+use serenity::all::{CreateMessage, GetMessages, Member};
 use crate::utils::{CommandResult, Context};
 use crate::utils::misc::debug::{UnwrapLog, UnwrapResult};
 use serenity::builder::CreateAttachment;
@@ -13,32 +13,32 @@ use reqwest::get;
     guild_only,
     track_edits
 )]
-pub async fn pride(ctx: Context<'_>) -> CommandResult {
+pub async fn pride(ctx: Context<'_>, target: Option<Member>) -> CommandResult {
+    let guild_id = ctx.guild_id().unwrap(); // SAFETY: Si el mensaje no es de un servidor, no se ejecutará el comando
+
+    if target.is_some() {
+        let target_member = target.unwrap_log("No se pudo obtener el miembro", module_path!(), line!())?;
+        let target_avatar = target_member.face(); // el método face devuelve el avatar si existe, de lo contrario, el avatar predeterminado
+        let channel_id = ctx.channel_id();
+        let output_path = apply_overlay_to_avatar(&target_avatar, "./assets/pride.png").await?;
+        let attachment = CreateAttachment::path(&output_path).await?;
+
+        channel_id.send_files(&ctx.http(), vec![attachment], CreateMessage::default()).await?;
+        remove_file(output_path)?;
+
+        return Ok(())
+    }
+
     let messages = ctx.channel_id().messages(&ctx.http(), GetMessages::default()).await?;
     let message = messages
         .first()
         .unwrap_log("No se pudo obtener el mensaje", module_path!(), line!())?;
 
-    let default_avatar = &message
-        .referenced_message
-        .as_ref()
-        .unwrap_log("No se pudo obtener el mensaje referenciado", module_path!(), line!())?
-        .author
-        .default_avatar_url();
-
-    let avatar = &message
-        .referenced_message
-        .as_ref()
-        .unwrap_log("No se pudo obtener el mensaje referenciado", module_path!(), line!())?
-        .author
-        .avatar_url()
-        .unwrap_or_else(|| default_avatar.to_string());
-
+    let target_id = &message.referenced_message.as_ref().unwrap_log("No se pudo obtener el mensaje referenciado", module_path!(), line!())?.author.id;
+    let target_member = guild_id.member(&ctx.http(), target_id).await?;
+    let target_avatar = target_member.face(); // el método face devuelve el avatar si existe, de lo contrario, el avatar predeterminado
     let channel_id = ctx.channel_id();
-
-    // Obtener la imágen de pride para aplicar
-    let overlay_path = "./assets/pride.png";
-    let output_path = apply_overlay_to_avatar(avatar, overlay_path).await?;
+    let output_path = apply_overlay_to_avatar(&target_avatar, "./assets/pride.png").await?;
 
     let attachment = CreateAttachment::path(&output_path).await?;
     channel_id.send_files(&ctx.http(), vec![attachment], CreateMessage::default()).await?;
