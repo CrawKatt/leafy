@@ -1,12 +1,12 @@
 [package]
 name = "plantita_ayudante"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-poise = "0.6.1-rc1"
+poise = { git = "https://github.com/serenity-rs/poise.git", branch = "current" }
 tokio = "1.28.1"
 serenity = "0.12.0"
 serde = "1.0.164"
