@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use tokio::sync::Mutex;
@@ -8,21 +9,53 @@ use crate::commands::setters::GuildData;
 use crate::utils::CommandResult;
 use crate::utils::handlers::misc::everyone_case::handle_everyone;
 use crate::utils::misc::debug::UnwrapLog;
+use std::time::Instant;
+use tokio::time::{Duration, sleep};
 
-#[derive(Debug, Default)]
-struct MessageTracker {
+#[derive(Debug)]
+pub struct MessageTracker {
     author_id: UserId,
-    message_content: String,
+    message_content: Arc<String>,
     channel_ids: Vec<ChannelId>,
+    last_message_time: Instant,
 }
 
 impl MessageTracker {
-    fn new(author_id: UserId, message_content: String, channel_ids: Vec<ChannelId>) -> Self {
-        Self {
-            author_id,
-            message_content,
-            channel_ids,
-        }
+    pub fn builder() -> MessageTrackerBuilder {
+        MessageTrackerBuilder::default()
+    }
+}
+
+#[derive(Default)]
+pub struct MessageTrackerBuilder {
+    author_id: Option<UserId>,
+    message_content: Option<Arc<String>>,
+    channel_ids: Option<Vec<ChannelId>>,
+}
+
+impl MessageTrackerBuilder {
+    pub fn author_id(mut self, author_id: UserId) -> Self {
+        self.author_id = Some(author_id);
+        self
+    }
+
+    pub fn message_content(mut self, message_content: Arc<String>) -> Self {
+        self.message_content = Some(message_content);
+        self
+    }
+
+    pub fn channel_ids(mut self, channel_ids: Vec<ChannelId>) -> Self {
+        self.channel_ids = Some(channel_ids);
+        self
+    }
+
+    pub fn build(self) -> Result<MessageTracker, &'static str> {
+        Ok(MessageTracker {
+            author_id: self.author_id.ok_or("Author id is missing")?,
+            message_content: self.message_content.ok_or("Message content is missing")?,
+            channel_ids: self.channel_ids.ok_or("Channel ids are missing")?,
+            last_message_time: Instant::now(),
+        })
     }
 }
 
@@ -35,7 +68,7 @@ pub fn extract_link(text: &str) -> Option<String> {
 }
 
 pub async fn spam_checker(
-    message_content: String,
+    message_content: Arc<String>,
     channel_id: ChannelId,
     admin_role_id: &Option<String>,
     ctx: &serenity::Context,
@@ -60,6 +93,9 @@ pub async fn spam_checker(
         .iter_mut()
         .find(|m| m.author_id == author_id && m.message_content == message_content)
     {
+        // Inicializa el tiempo del último mensaje
+        message.last_message_time = Instant::now();
+
         // Si el mensaje existe y el canal no está en la lista de canales, añade el canal a la lista de canales
         if message.channel_ids.contains(&channel_id) {
             // Si el mensaje se repite en el mismo canal, borra el vector
@@ -73,7 +109,12 @@ pub async fn spam_checker(
         message
     } else {
         // Si el mensaje no existe, crea un nuevo rastreador de mensajes y añádelo a la lista
-        let message = MessageTracker::new(author_id, message_content.clone(), vec![channel_id]);
+        let message = MessageTracker::builder()
+            .author_id(author_id)
+            .message_content(message_content.clone())
+            .channel_ids(vec![channel_id])
+            .build()?;
+
         message_tracker.push(message);
         message_tracker.last_mut().unwrap_log("No se pudo obtener el último mensaje", module_path!(), line!())?
     };
@@ -96,7 +137,7 @@ async fn delete_spam_messages(
     message: &MessageTracker,
     ctx: &serenity::Context,
     author_id: UserId,
-    message_content: String,
+    message_content: Arc<String>,
     guild_id: GuildId
 ) -> CommandResult {
     // Borra cada mensaje individualmente
@@ -108,24 +149,51 @@ async fn delete_spam_messages(
 
         let messages = channel.messages(&ctx.http, GetMessages::new()).await?;
         for message in messages {
-            if message.author.id == author_id && message.content == message_content {
+            if message.author.id == author_id && &*message.content == &*message_content {
                 message.delete(&ctx.http).await?;
             }
         }
     }
 
+    create_embed(ctx, guild_id, author_id, &message_content).await?;
+
+    Ok(())
+}
+
+async fn create_embed(
+    ctx: &serenity::Context,
+    guild_id: GuildId,
+    author_id: UserId,
+    message_content: &str,
+) -> CommandResult {
+
     let data = GuildData::get_log_channel(guild_id).await?;
     let log_channel= data.unwrap_log("No se pudo obtener el canal de registro", module_path!(), line!())?.log_channel_id;
     let author_user = author_id.to_user(&ctx.http).await?;
-    let username = &author_user.name;
+    let author_member = guild_id.member(&ctx.http, author_id).await?;
+    let username = author_member.distinct();
     let embed = CreateEmbed::default()
         .title("Spam detectado")
         .author(CreateEmbedAuthor::new(username)
-            .icon_url(author_user.avatar_url().unwrap_or_else(|| author_user.default_avatar_url())))
+            .icon_url(author_user.face()))
         .description(format!("El usuario <@{author_id}> Es sospechoso de enviar spam en el servidor.\nMensaje: {message_content}"))
         .color(0x00ff_0000);
+    let builder = CreateMessage::default().embed(embed);
 
-    log_channel.send_message(&ctx.http, CreateMessage::default().embed(embed)).await?;
+    log_channel.send_message(&ctx.http, builder).await?;
 
     Ok(())
+}
+
+pub fn message_tracker_cleaner() {
+    tokio::spawn(async {
+        loop {
+            sleep(Duration::from_secs(1)).await;
+
+            let mut message_tracker = MESSAGE_TRACKER.lock().await;
+            if !message_tracker.is_empty() {
+                message_tracker.retain(|m| m.last_message_time.elapsed() < Duration::from_secs(5));
+            }
+        }
+    });
 }
