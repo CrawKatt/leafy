@@ -35,8 +35,8 @@ pub async fn welcome_handler(
     let file = get_welcome_attachment(&mut background, user, 74, 74, 372).await?;
 
     let mut message_map = HashMap::new();
-    message_map.insert("content", format!("Bienvenido {user} a {}. \n{welcome_message}", guild_id.name(ctx.cache.clone()).unwrap_or_default()));
-    let http = ctx.http.clone();
+    message_map.insert("content", format!("Bienvenido {user} a {}. \n{welcome_message}", guild_id.name(&ctx.cache).unwrap_or_default()));
+    let http = &ctx.http;
     let attachment = CreateAttachment::path(&file).await?;
 
     // En el attachment se puede pasar un archivo de imagen para la bienvenida
@@ -50,7 +50,7 @@ pub async fn welcome_handler(
 
 async fn get_welcome_attachment(background: &mut DynamicImage, user: &User, x: u32, y: u32, avatar_size: u32) -> Result<String, UnwrapErrors> {
     // Obtén la URL del avatar del usuario
-    let avatar_url = user.avatar_url().unwrap_or_else(|| user.default_avatar_url());
+    let avatar_url = user.face();
 
     // Descarga la imagen del avatar
     let response = get(avatar_url).await?;

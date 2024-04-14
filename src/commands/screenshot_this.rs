@@ -99,7 +99,7 @@ async fn handle_content(
 async fn extract_username(ctx: Context<'_>, user_id: &serenity::model::id::UserId) -> UnwrapResult<String> {
     let guild_id = ctx.guild_id().unwrap(); // SAFETY: Si el mensaje no es de un servidor, no se ejecutará el comando
     let member = guild_id.member(&ctx.http(), user_id).await?;
-    let author_name = member.nick.unwrap_or_else(|| member.user.global_name.unwrap_or(member.user.name));
+    let author_name = member.distinct();
     let mention = format!("@{author_name}");
 
     Ok(mention)
