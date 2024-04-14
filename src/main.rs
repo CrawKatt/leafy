@@ -20,8 +20,9 @@ use utils::Data;
 use utils::MessageData;
 use utils::load_commands;
 use utils::events::event_handler;
-use utils::handlers::error::err_handler;
 use utils::misc::debug::UnwrapResult;
+use utils::handlers::error::err_handler;
+use utils::handlers::misc::link_spam_handler::message_tracker_cleaner;
 
 #[tokio::main]
 async fn main() -> UnwrapResult<()> {
@@ -39,6 +40,9 @@ async fn main() -> UnwrapResult<()> {
 
     // Borrar mensajes de la Base de Datos cada 24 horas
     clean_database_loop();
+
+    // Limpiar el Tracker de mensajes de spam cada 5 segundos
+    message_tracker_cleaner();
 
     let token = dotenvy::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN");
     let intents = serenity::GatewayIntents::all() | serenity::GatewayIntents::MESSAGE_CONTENT;
