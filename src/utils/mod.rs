@@ -2,7 +2,6 @@ use poise::Command;
 use serde::{Deserialize, Serialize};
 use serenity::all::{ChannelId, GuildId, MessageId, UserId};
 use surrealdb::Result as SurrealResult;
-use crate::commands::generate_pride::pride;
 
 pub mod handlers;
 pub mod events;
@@ -10,6 +9,8 @@ pub mod misc;
 
 use crate::DB;
 use crate::commands::ping::ping;
+use crate::commands::top_words::top_words;
+use crate::commands::generate_pride::pride;
 use crate::commands::setters::set_admins::set_admins;
 use crate::commands::setters::set_log_channel::set_log_channel;
 use crate::commands::setters::set_joke_channel::set_joke_channel;
@@ -165,6 +166,7 @@ impl Warns {
 pub fn load_commands() -> Vec<Command<Data, Error>> {
     vec![
         ping(),
+        top_words(),
         set_admins(),
         set_log_channel(),
         set_ooc_channel(),
