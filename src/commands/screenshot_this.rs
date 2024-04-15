@@ -1,4 +1,4 @@
-use serenity::all::{ChannelId, CreateMessage, GetMessages};
+use serenity::all::{ChannelId, CreateMessage, EmojiId, GetMessages, ReactionType};
 use crate::utils::{CommandResult, Context};
 use crate::utils::misc::debug::{UnwrapLog, UnwrapResult};
 use serenity::builder::CreateAttachment;
@@ -72,6 +72,7 @@ async fn send_image(
     let attachment = CreateAttachment::path(&create_image).await?;
     let message = channel_id.send_files(&ctx.http(), vec![attachment], CreateMessage::default()).await?;
 
+    message.react(&ctx.http(), '✅').await?;
     message.react(&ctx.http(), '❌').await?;
     remove_file(create_image)?;
 
