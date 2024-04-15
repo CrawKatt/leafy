@@ -2,22 +2,10 @@
 
 ---
 
-- (**POST PRODUCCIÓN**)
 - [ ] Refactorizar el código para que sea más legible
+- [ ] Normalizar la Base de Datos para que sea más eficiente y evitar la repetición de datos
 - [ ] Enviar un sticker de "que dijiste @muteado"
-- [x] Crear un mensaje de bienvenida para los miembros nuevos en el canal de Bienvenida
-    - [x] Crear un sistema de edición de imágen para añadir el avatar del usuario nuevo en una plantilla de bienvenida
-    - [x] Crear un comando para establecer el canal de Bienvenida
-    - [x] Crear un comando para obtener el canal de Bienvenida establecido
-    - [x] Crear un comando para establecer el mensaje de Bienvenida
-- [x] Crear un sistema anti-spam para impedir el envío de links maliciosos
-- [x] Cambiar los mensajes de advertencia por embeds
-- [x] Crear tests unitarios para las funciones del Bot
-- [x] Crear una librería con FFMPEG para convertir formatos de audio
-- [x] Mejorar el sistema anti spam
-- [x] Remover los embeds para casos de mención de usuario o rol prohibido (Los embeds no mencionan aunque usen @ en el mensaje)
-- [x] Añadir modo auth al docker-compose (CRÍTICO)
-- [x] Crear un comando screenshot con embeds para fuera de contexo
+- [ ] Crear un sistema de reacciones para borrar un ooc si se reacciona con un emoji 10 veces
 
 ---
 
@@ -63,4 +51,18 @@
 - [x] Corregir Bug en el comando get_admins que no muestra todos los roles de administrador
 - [x] Corregir Bug en el comando set_admins que reptie el primer rol de administrador cuando se establecen dos roles
 - [x] Cambiar método de sanción de rol a `timeout`
+- [x] Crear un sistema anti-spam para impedir el envío de links maliciosos
+- [x] Cambiar los mensajes de advertencia por embeds
+- [x] Crear tests unitarios para las funciones del Bot
+- [x] Crear una librería con FFMPEG para convertir formatos de audio
+- [x] Mejorar el sistema anti spam
+- [x] Remover los embeds para casos de mención de usuario o rol prohibido (Los embeds no mencionan aunque usen @ en el mensaje)
+- [x] Añadir modo auth al docker-compose (CRÍTICO)
+- [x] Crear un comando screenshot con embeds para fuera de contexo
+- [x] Crear un comando para obtener el top de palabras usadas por un usuario
+- [x] Crear un mensaje de bienvenida para los miembros nuevos en el canal de Bienvenida
+  - [x] Crear un sistema de edición de imágen para añadir el avatar del usuario nuevo en una plantilla de bienvenida
+  - [x] Crear un comando para establecer el canal de Bienvenida
+  - [x] Crear un comando para obtener el canal de Bienvenida establecido
+  - [x] Crear un comando para establecer el mensaje de Bienvenida
 ---
