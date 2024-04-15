@@ -11,17 +11,17 @@ use crate::utils::{CommandResult, Context};
     guild_only,
 )]
 pub async fn top_words(ctx: Context<'_>, target: Member) -> CommandResult {
-
     let user_id = target.user.id;
-
-    println!("Top words for user {}", user_id);
     let mut word_counts = HashMap::new();
 
-    // Get the guild from the context
-    let guild = ctx.guild().unwrap().clone(); // clone necesario para evitar el error de hilos por no implementar Send
+    // `.clone()` necesario para evitar el error de hilos por no implementar Send
+    // SAFTETY: el comando solo funciona en un servidor, por lo que siempre habrá un guild
+    let guild = ctx.guild().unwrap().clone();
 
     // Get the channels of the guild
     let channels = guild.channels(ctx.http()).await?;
+
+    // Enviar el mensaje de carga y obtener el ID del mensaje para editarlo más tarde.
     let loading = ctx.say("Cargando...").await?;
     let loading_id = loading.message().await?.id;
 
@@ -29,14 +29,12 @@ pub async fn top_words(ctx: Context<'_>, target: Member) -> CommandResult {
     for channel in channels.values() {
         // Get the messages from the channel
         let messages = channel.messages(ctx.http(), GetMessages::new().limit(100)).await?;
-
         // Iterate over each message
         for message in messages {
             // Check if the message is from the specified user
             if message.author.id == user_id {
                 // Split the message content into words
                 let words = message.content.split_whitespace();
-
                 // Count each word
                 words.for_each(|word| *word_counts.entry(word.to_lowercase()).or_insert(0) += 1);
             }
@@ -56,10 +54,12 @@ pub async fn top_words(ctx: Context<'_>, target: Member) -> CommandResult {
         .description(top_words.iter().map(|(word, count)| format!("- {}: {}", word, count)).collect::<Vec<_>>().join("\n"))
         .color(GREEN);
 
+    // Builder del mensaje (necesario para editar el mensaje en el método `.edit_message()`)
     let builder = EditMessage::default()
         .content("")
         .embed(embed);
 
+    // Obtener el ID del canal y editar el mensaje
     let channel_id = ctx.channel_id();
     channel_id.edit_message(&ctx.http(), loading_id, builder).await?;
 

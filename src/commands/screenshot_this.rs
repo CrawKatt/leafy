@@ -1,4 +1,4 @@
-use serenity::all::{ChannelId, CreateMessage, GetMessages};
+use serenity::all::{ChannelId, CreateMessage, EmojiId, GetMessages, ReactionType};
 use crate::utils::{CommandResult, Context};
 use crate::utils::misc::debug::{UnwrapLog, UnwrapResult};
 use serenity::builder::CreateAttachment;
@@ -48,7 +48,7 @@ pub async fn screenshot_this(ctx: Context<'_>, ooc: Option<String>) -> CommandRe
         return Ok(());
     }
 
-    let ooc_channel = existing_data.unwrap_log("No se pudo obtener el canal OOC", module_path!(), line!())?;
+    let ooc_channel = existing_data.unwrap_log("No se pudo obtener el canal OOC o no ha sido establecido", module_path!(), line!())?;
     let channel_u64 = ooc_channel.channel_id.parse::<u64>()?;
 
     handle_content(ctx, content, quoted_content, &*author_avatar, &author_name, ChannelId::new(channel_u64)).await?;
@@ -56,6 +56,11 @@ pub async fn screenshot_this(ctx: Context<'_>, ooc: Option<String>) -> CommandRe
     Ok(())
 }
 
+/// # Genera y envía la imagen generada al canal
+///
+/// - Se genera la imagen con el contenido del mensaje referenciado
+/// - Se envía la imagen al canal
+/// - Se elimina la imagen generada después de enviarla
 async fn send_image(
     ctx: Context<'_>,
     channel_id: ChannelId,
@@ -65,13 +70,21 @@ async fn send_image(
 ) -> CommandResult {
     let create_image = create_image(author_avatar, quoted_content, author_name, "assets/PTSerif-Regular.ttf", "assets/PTSerif-Italic.ttf").await?;
     let attachment = CreateAttachment::path(&create_image).await?;
+    let message = channel_id.send_files(&ctx.http(), vec![attachment], CreateMessage::default()).await?;
 
-    channel_id.send_files(&ctx.http(), vec![attachment], CreateMessage::default()).await?;
+    message.react(&ctx.http(), '❌').await?;
     remove_file(create_image)?;
 
     Ok(())
 }
 
+/// # Maneja el contenido del mensaje referenciado
+///
+/// - Si el mensaje referenciado contiene una mención a un usuario, se reemplazará la mención por el nombre de usuario
+///
+/// # Errores
+/// - Si el mensaje referenciado es demasiado largo, se enviará un mensaje de error
+/// - El mensaje referenciado no puede ser mayor a 72 caracteres
 async fn handle_content(
     ctx: Context<'_>,
     content: &str,
@@ -96,6 +109,10 @@ async fn handle_content(
     Ok(())
 }
 
+/// # Extrae el nombre de usuario de un miembro
+///
+/// - Esto es necesario para evitar sobrepasar el límite de caracteres en la imagen.
+/// - Si el miembro tiene un apodo, se devolverá el apodo, de lo contrario, se devolverá el nombre de usuario
 async fn extract_username(ctx: Context<'_>, user_id: &serenity::model::id::UserId) -> UnwrapResult<String> {
     let guild_id = ctx.guild_id().unwrap(); // SAFETY: Si el mensaje no es de un servidor, no se ejecutará el comando
     let member = guild_id.member(&ctx.http(), user_id).await?;
@@ -105,6 +122,11 @@ async fn extract_username(ctx: Context<'_>, user_id: &serenity::model::id::UserI
     Ok(mention)
 }
 
+/// # Genera una mención a un usuario en el mensaje referenciado
+///
+/// - Esto es necesario para evitar sobrepasar el límite de caracteres en la imagen
+/// ya que las menciones de usuario no son interpretadas como @usuario sino como
+/// <@user_id>
 async fn generate_mention(ctx: Context<'_>, content: &str, quoted_content: String) -> UnwrapResult<String> {
     let user_id = content.split("<@")
         .collect::<Vec<&str>>()[1]
