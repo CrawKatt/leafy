@@ -1,18 +1,17 @@
 use std::cmp::Reverse;
 use std::collections::HashMap;
 use poise::serenity_prelude as serenity;
-use serenity::all::{CreateEmbed, EditMessage, GetMessages, Member};
+use serenity::all::{CreateEmbed, EditMessage, GetMessages};
 use serenity::all::colours::roles::GREEN;
 use crate::utils::{CommandResult, Context};
 
 #[poise::command(
-    slash_command,
-    prefix_command,
-    guild_only,
+slash_command,
+prefix_command,
+guild_only,
 )]
-pub async fn top_words(ctx: Context<'_>, target: Member) -> CommandResult {
-    let user_id = target.user.id;
-    let mut word_counts = HashMap::new();
+pub async fn top(ctx: Context<'_>, target_word: String) -> CommandResult {
+    let mut user_counts = HashMap::new();
 
     // `.clone()` necesario para evitar el error de hilos por no implementar Send
     // SAFTETY: el comando solo funciona en un servidor, por lo que siempre habrá un guild
@@ -31,27 +30,30 @@ pub async fn top_words(ctx: Context<'_>, target: Member) -> CommandResult {
         let messages = channel.messages(ctx.http(), GetMessages::new().limit(100)).await?;
         // Iterate over each message
         for message in messages {
-            // Check if the message is from the specified user
-            if message.author.id == user_id {
-                // Split the message content into words
-                let words = message.content.split_whitespace();
-                // Count each word
-                words.for_each(|word| *word_counts.entry(word.to_lowercase()).or_insert(0) += 1);
+            // Check if the message contains the target word
+            if message.content.contains(&target_word) {
+                // Count each occurrence
+                *user_counts.entry(message.author.id).or_insert(0) += 1;
             }
         }
     }
 
-    // Sort the words by their counts
-    let mut word_counts: Vec<_> = word_counts.into_iter().collect();
-    word_counts.sort_unstable_by_key(|&(_, count)| Reverse(count));
+    // Sort the users by their counts
+    let mut user_counts: Vec<_> = user_counts.into_iter().collect();
+    user_counts.sort_unstable_by_key(|&(_, count)| Reverse(count));
 
-    // Get the top words
-    let top_words = word_counts.into_iter().take(10).collect::<Vec<_>>();
+    // Get the top users
+    let top_users = user_counts.into_iter().take(10).collect::<Vec<_>>();
 
-    // Send the top words
+    // Send the top users
     let embed = CreateEmbed::default()
-        .title(format!("Top Palabras usadas por {}", target.distinct()))
-        .description(top_words.iter().map(|(word, count)| format!("- {}: {}", word, count)).collect::<Vec<_>>().join("\n"))
+        .title(format!("Top Usuarios que usaron la palabra \"{}\"", target_word))
+        .description(top_users
+            .iter()
+            .map(|(user_id, count)| format!("- <@{user_id}>: {count}"))
+            .collect::<Vec<_>>()
+            .join("\n")
+        )
         .color(GREEN);
 
     // Builder del mensaje (necesario para editar el mensaje en el método `.edit_message()`)
