@@ -1,9 +1,9 @@
 use poise::serenity_prelude as serenity;
-use serenity::all::{Reaction, ReactionType};
+use serenity::all::{Message, Reaction, ReactionType};
 
 use crate::utils::CommandResult;
 use crate::commands::setters::set_ooc_channel::OocChannel;
-
+use crate::utils::misc::debug::UnwrapResult;
 
 /// # Esta función maneja las reacciones con un sistema de votación
 ///
@@ -12,7 +12,8 @@ use crate::commands::setters::set_ooc_channel::OocChannel;
 pub async fn vote_react(ctx: &serenity::Context, add_reaction: &Reaction) -> CommandResult {
     let guild_id = add_reaction.guild_id.ok_or("error")?;
     let message = add_reaction.message(&ctx.http).await?;
-    let tarjet_emoji = ReactionType::try_from('❌')?;
+    let target_emoji_negative = ReactionType::try_from('❌')?;
+    let target_emoji_positive = ReactionType::try_from('✅')?;
 
     let sql_query = "SELECT * FROM ooc_channel WHERE guild_id = $guild_id";
     let existing_data: Option<OocChannel> = crate::DB
@@ -24,20 +25,37 @@ pub async fn vote_react(ctx: &serenity::Context, add_reaction: &Reaction) -> Com
     let ooc_channel = existing_data.ok_or("No se pudo obtener el canal OOC o no ha sido establecido")?;
     let channel_u64 = ooc_channel.channel_id.parse::<u64>()?;
 
-    // Filtra si el emoji es el correcto y si el mensaje está en el canal OOC
-    // Nota: (Se hace uso de cláusulas de guardia para evitar el anidamiento de if)
-    if add_reaction.emoji != tarjet_emoji || message.channel_id != channel_u64 {
+    if message.channel_id != channel_u64 {
         return Ok(())
     }
 
-    let reaction_count = message
-        .reaction_users(&ctx.http, add_reaction.emoji.clone(), None, None)
-        .await?
-        .len();
+    let (reaction_count_positive, reaction_count_negative) = get_reaction_counts(ctx, &message, target_emoji_positive, target_emoji_negative).await?;
+    let mut message_approved = false;
 
-    if reaction_count >= 5 {
+    if reaction_count_positive >= 2 {
+        message_approved = true;
+    }
+
+    if reaction_count_negative >= 2 && !message_approved {
         message.delete(&ctx.http).await?;
     }
 
     Ok(())
+}
+
+/// # Esta función obtiene el conteo de reacciones
+///
+/// - Obtiene el conteo de reacciones positivas y negativas
+async fn get_reaction_counts(ctx: &serenity::Context, message: &Message, target_emoji_positive: ReactionType, target_emoji_negative: ReactionType) -> UnwrapResult<(usize, usize)> {
+    let reaction_count_negative = message
+        .reaction_users(&ctx.http, target_emoji_negative.clone(), None, None)
+        .await?
+        .len();
+
+    let reaction_count_positive = message
+        .reaction_users(&ctx.http, target_emoji_positive.clone(), None, None)
+        .await?
+        .len();
+
+    Ok((reaction_count_positive, reaction_count_negative))
 }
