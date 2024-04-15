@@ -9,6 +9,15 @@ use crate::utils::handlers::misc::reaction_add::vote_react;
 use crate::utils::handlers::sent_messages::message_handler;
 use crate::utils::handlers::welcome_event::welcome_handler;
 
+/// # Esta función maneja los eventos de Discord
+///
+/// ## Eventos manejados:
+/// - Ready: Imprime el nombre del Bot al iniciar sesión
+/// - Message: Maneja los mensajes enviados en un servidor
+/// - MessageDelete: Maneja los mensajes eliminados en un servidor
+/// - MessageUpdate: Maneja los mensajes editados en un servidor
+/// - GuildMemberAddition: Maneja la llegada de un nuevo miembro a un servidor
+/// - ReactionAdd: Maneja las reacciones a los mensajes
 pub async fn event_handler(
     ctx: &serenity::Context,
     event: &serenity::FullEvent,
@@ -37,7 +46,10 @@ pub async fn event_handler(
         }
         */
 
-        _ => println!("Unhandled event: {:?}", event.snake_case_name())
+        _ => {
+            #[cfg(debug_assertions)] // Macro para imprimir solo en modo Debug
+            println!("Unhandled event: {:?}", event.snake_case_name())
+        }
     }
 
     Ok(())

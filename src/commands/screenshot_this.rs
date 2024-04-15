@@ -1,4 +1,4 @@
-use serenity::all::{ChannelId, CreateMessage, EmojiId, GetMessages, ReactionType};
+use serenity::all::{ChannelId, CreateMessage, GetMessages};
 use crate::utils::{CommandResult, Context};
 use crate::utils::misc::debug::{UnwrapLog, UnwrapResult};
 use serenity::builder::CreateAttachment;
