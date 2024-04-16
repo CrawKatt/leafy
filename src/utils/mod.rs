@@ -9,7 +9,6 @@ pub mod misc;
 
 use crate::DB;
 use crate::commands::ping::ping;
-use crate::commands::top_words::top;
 use crate::commands::generate_pride::pride;
 use crate::commands::setters::set_admins::set_admins;
 use crate::commands::setters::set_log_channel::set_log_channel;
@@ -166,7 +165,6 @@ impl Warns {
 pub fn load_commands() -> Vec<Command<Data, Error>> {
     vec![
         ping(),
-        top(),
         set_admins(),
         set_log_channel(),
         set_ooc_channel(),
