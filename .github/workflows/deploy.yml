@@ -1,0 +1,27 @@
+name: Deploy Plantita Ayudante Bot
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - name: Deploy to VPS
+        run: |
+          ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} << 'EOF'
+          cd ~/plantita_ayudante
+          git pull
+          cargo build --release
+          cp target/release/plantita_ayudante ~/plantita_ayudante/
+          systemctl restart plantita_ayudante.service
+          EOF
