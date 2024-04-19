@@ -23,5 +23,5 @@ jobs:
           git pull
           cargo build --release
           cp target/release/plantita_ayudante ~/plantita_ayudante/
-          systemctl restart plantita_ayudante.service
+          sudo systemctl restart plantita_ayudante.service
           EOF
