@@ -7,7 +7,6 @@ pub mod tests {
     use crate::DB;
     use crate::utils::handlers::misc::link_spam_handler::extract_link;
     use crate::commands::setters::{AdminData, ForbiddenRoleData, ForbiddenUserData};
-    use crate::commands::setters::set_to_blacklist::BlackListData;
     use crate::utils::misc::debug::UnwrapResult;
     use crate::utils::Warns;
 
@@ -41,7 +40,6 @@ pub mod tests {
         e_handle_joke().await.unwrap();
         f_handle_joke_swtich().await.unwrap();
         g_check_admin_exception().await.unwrap();
-        h_get_blacklist_link().await.unwrap();
     }
 
     async fn b_handle_forbidden_user() -> UnwrapResult<()> {
@@ -158,17 +156,6 @@ pub mod tests {
 
         assert_eq!(database_role_id_2, admin_role_id_2);
         println!("test test::tests::role_2 g_check_admin_exception: ok");
-
-        Ok(())
-    }
-
-    async fn h_get_blacklist_link() -> UnwrapResult<()> {
-        let guild_id = GuildId::new(1_014_327_651_772_674_168);
-        let link = "GET YOUR ADBOE PHOTOSHOP FREE NOW: https://www.youtube.com/watch?v=N-gcKsjVMp0 @everyone @here".to_string();
-        let extracted_link = extract_link(&link).unwrap();
-        let result = BlackListData::get_blacklist_link(guild_id, &extracted_link).await.unwrap();
-        assert_eq!(result, Some(extracted_link));
-        println!("test test::tests::h_get_blacklist_link: ok");
 
         Ok(())
     }

@@ -37,7 +37,7 @@ pub async fn delete_message_handler(ctx: &serenity::Context, channel_id: &Channe
         return Ok(());
     }
 
-    send_embed(ctx,log_channel, &message_channel_id, author_id, &message_content).await?;
+    send_embed(ctx, result_database, log_channel, &message_channel_id, author_id, &message_content).await?;
 
     Ok(())
 }
@@ -64,7 +64,7 @@ async fn handle_audio(ctx: &serenity::Context, deleted_message_id: &MessageId, d
         return Ok(());
     }
 
-    send_embed_with_attachment(ctx,log_channel, &database_message.channel_id, database_message.author_id, &filename).await?;
+    send_embed_with_attachment(ctx, result_database, log_channel, &database_message.channel_id, database_message.author_id, &filename).await?;
 
     Ok(())
 }
