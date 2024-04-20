@@ -33,7 +33,7 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
     let log_channel_id = GuildData::get_log_channel(result_database).await?;
 
     let log_channel = log_channel_id.unwrap_log("No se pudo obtener el canal de Logs", current_module, line!())?.log_channel_id;
-    let message_content = format!("\n**Antes:** {old_content}\n**Después:** {new_content}");
+    let message_content = format!("\n**Antes:** \n> {old_content}\n**Después:** \n> {new_content}");
 
     // Bug: Resolver, un unwrap_or_default() está devolviendo 1
     let user_id = event.mentions
@@ -66,7 +66,7 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
         );
     }
 
-    edit_message_embed(ctx, log_channel, &database_message.channel_id, database_message.author_id, &message_content).await?;
+    edit_message_embed(ctx, guild_id,log_channel, &database_message.channel_id, database_message.author_id, &message_content).await?;
 
     Ok(())
 }
