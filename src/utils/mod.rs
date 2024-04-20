@@ -35,11 +35,7 @@ use crate::commands::setters::set_ooc_channel::set_ooc_channel;
 use crate::commands::setters::set_welcome_channel::set_welcome_channel;
 use crate::commands::setters::set_welcome_message::set_welcome_message;
 
-pub struct Data {
-    pub poise_mentions: String,
-    pub client: reqwest::Client,
-}
-
+pub struct Data;
 pub type CommandResult = Result<(), Error>;
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;

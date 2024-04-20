@@ -25,6 +25,12 @@ const CURRENT_MODULE: &str = file!();
 /// - manejo de spam de links
 /// - guardar el mensaje en la base de datos
 pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> CommandResult {
+
+    // Crear un objeto Arc<String> con el contenido del mensaje para utilizar cheap cloning (clonación barata)
+    // La clonación barata consiste en utilizar Arc<T> o Rc<T> para clonar un objeto sin copiar su contenido
+    // Rc<T> es para usar en hilos de ejecución y Arc<T> es para usar en hilos de ejecución concurrentes (async)
+    let message_content = Arc::new(String::from(&new_message.content));
+
     // Si el autor del mensaje es un Bot, no hace falta hacer ninguna acción
     if new_message.author.bot { return Ok(()) }
 
@@ -48,7 +54,7 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     // Crear un objeto MessageData con la información del mensaje
     let data = MessageData::new(
         new_message.id,
-        &new_message.content,
+        &message_content,
         new_message.author.id,
         new_message.channel_id,
         new_message.guild_id,
@@ -74,10 +80,9 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     // fin broma
 
     // Extraer el link del mensaje si existe
-    if extract_link(&new_message.content).is_some() {
-        let message_content = Arc::new(new_message.content.to_string());
+    if extract_link(&message_content).is_some() {
         let channel_id = new_message.channel_id;
-        spam_checker(message_content, channel_id, &admin_role_id, ctx, time, new_message, guild_id).await?;
+        spam_checker(&message_content, channel_id, &admin_role_id, ctx, time, new_message, guild_id).await?;
     }
 
     if user_id.is_some() {
@@ -85,7 +90,7 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     }
 
     // @everyone no tiene id, por lo que no es necesario el <@id>
-    if new_message.content.contains("@everyone") || new_message.content.contains("@here") {
+    if message_content.contains("@everyone") || message_content.contains("@here") {
         let _created: Vec<MessageData> = DB.create("messages").content(&data).await?;
         handle_everyone(admin_role_id, &mut member, ctx, time, new_message).await?;
 
@@ -124,14 +129,15 @@ async fn handle_user_id(
     // Si el mensaje contiene una mención a un rol prohibido, silenciar al autor del mensaje
     let database_data = ForbiddenRoleData::get_role_id(guild_id).await?;
     let forbidden_role_id = database_data.unwrap_log("No se ha establecido un rol prohibido de mencionar", CURRENT_MODULE, line!())?;
-    let mentioned_user = guild_id.member(&ctx.http, user_id.unwrap()).await?;
-    let mentioned_user_roles = mentioned_user.roles(&ctx.cache).unwrap_log("Could not get mentioned user roles", CURRENT_MODULE, line!())?;
+    let has_role = user_id
+        .unwrap()
+        .to_user(&ctx.http).await?
+        .has_role(&ctx.http, guild_id, forbidden_role_id).await?;
 
-    if mentioned_user_roles.iter().any(|role| role.id == forbidden_role_id) {
+    if has_role {
         handle_forbidden_role(ctx, new_message, guild_id, data).await?;
         let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
-        return Ok(());
-    }
+    };
 
     Ok(())
 }

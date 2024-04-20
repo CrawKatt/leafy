@@ -1,4 +1,3 @@
-use chrono::{Duration, Utc};
 use serenity::all::{Member, Message, Timestamp};
 use poise::serenity_prelude as serenity;
 use crate::utils::CommandResult;
@@ -14,7 +13,9 @@ pub async fn handle_everyone(
 ) -> CommandResult {
 
     if check_admin_exception(admin_role_id, member, ctx) { return Ok(()) }
-    let time = Timestamp::from(Utc::now() + Duration::try_seconds(time_out_timer).unwrap_or_default());
+    let time = Timestamp::now().unix_timestamp() + time_out_timer;
+    let time = Timestamp::from_unix_timestamp(time)?;
+
     member.disable_communication_until_datetime(&ctx.http, time).await?;
     message.delete(&ctx.http).await?;
 
