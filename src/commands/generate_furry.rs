@@ -1,9 +1,10 @@
-use serenity::all::{CreateMessage, GetMessages, Member};
+use serenity::all::{CreateMessage, GetMessages, Member, UserId};
 use crate::utils::{CommandResult, Context};
 use crate::utils::misc::debug::{UnwrapLog, UnwrapResult};
 use serenity::builder::CreateAttachment;
 use std::fs::remove_file;
-use image::imageops::overlay;
+use image::DynamicImage;
+use plantita_welcomes::create_welcome::combine_images;
 use reqwest::get;
 
 #[poise::command(
@@ -12,18 +13,20 @@ use reqwest::get;
     guild_only,
     track_edits
 )]
-pub async fn pride(ctx: Context<'_>, target: Option<Member>) -> CommandResult {
+pub async fn furry(ctx: Context<'_>, target: Option<Member>) -> CommandResult {
     let guild_id = ctx.guild_id().unwrap(); // SAFETY: Si el mensaje no es de un servidor, no se ejecutará el comando
 
     if target.is_some() {
         let target_member = target.unwrap_log("No se pudo obtener el miembro", module_path!(), line!())?;
         let target_avatar = target_member.face(); // el método face devuelve el avatar si existe, de lo contrario, el avatar predeterminado
+        let target_id = &target_member.user.id;
         let channel_id = ctx.channel_id();
-        let output_path = apply_overlay_to_avatar(&target_avatar, "./assets/pride.png").await?;
-        let attachment = CreateAttachment::path(&output_path).await?;
+        let mut background = image::open("./assets/furry_backgorund.jpg").unwrap();
+        let file = generate_furry(&mut background, target_avatar, target_id, 550, 280, 250).await?;
+        let attachment = CreateAttachment::path(&file).await?;
 
         channel_id.send_files(&ctx.http(), vec![attachment], CreateMessage::default()).await?;
-        remove_file(output_path)?;
+        remove_file(file)?;
 
         return Ok(())
     }
@@ -37,34 +40,38 @@ pub async fn pride(ctx: Context<'_>, target: Option<Member>) -> CommandResult {
     let target_member = guild_id.member(&ctx.http(), target_id).await?;
     let target_avatar = target_member.face(); // el método face devuelve el avatar si existe, de lo contrario, el avatar predeterminado
     let channel_id = ctx.channel_id();
-    let output_path = apply_overlay_to_avatar(&target_avatar, "./assets/pride.png").await?;
 
-    let attachment = CreateAttachment::path(&output_path).await?;
+    let mut background = image::open("./assets/furry_backgorund.jpg").unwrap();
+    let file = generate_furry(&mut background, target_avatar, target_id, 550, 280, 250).await?;
+
+    let attachment = CreateAttachment::path(&file).await?;
     channel_id.send_files(&ctx.http(), vec![attachment], CreateMessage::default()).await?;
 
-    remove_file(output_path)?;
+    remove_file(file)?;
 
     Ok(())
 }
 
-async fn apply_overlay_to_avatar(avatar_url: &str, overlay_path: &str) -> UnwrapResult<String> {
+async fn generate_furry(
+    background: &mut DynamicImage,
+    target_avatar_url: String,
+    target_id: &UserId,
+    x: u32,
+    y: u32,
+    avatar_size: u32
+) -> UnwrapResult<String> {
     // Descarga la imagen del avatar
-    let resp = get(avatar_url).await?;
-    let bytes = resp.bytes().await?;
-    let avatar_img = image::load_from_memory(&bytes)?.to_rgba8();
+    let response = get(target_avatar_url).await?;
+    let bytes= response.bytes().await?;
 
-    // Redimensiona el avatar a 256x256
-    let mut avatar_img = image::imageops::resize(&avatar_img, 256, 256, image::imageops::FilterType::Nearest);
+    // Carga la imagen del avatar en memoria y redimensiona a 256x256
+    let img = image::load_from_memory(&bytes)?;
+    img.resize(256, 256, image::imageops::Lanczos3);
 
-    // Abre la imagen semi-transparente
-    let overlay_img = image::open(overlay_path)?.to_rgba8();
+    // Guarda la imagen del avatar en un archivo temporal
+    let output_path = format!("/tmp/{target_id}_furry.jpg");
+    combine_images(background, &img, x, y, avatar_size)?;
+    background.save(&output_path)?;
 
-    // Dibuja la imagen semi-transparente en el avatar
-    overlay(&mut avatar_img, &overlay_img, 0, 0);
-
-    // Guarda la imagen resultante
-    let output_path = "/tmp/avatar_output.png";
-    avatar_img.save(output_path)?;
-
-    Ok(output_path.to_string())
+    Ok(output_path)
 }

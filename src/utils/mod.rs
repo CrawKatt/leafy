@@ -10,6 +10,7 @@ pub mod misc;
 use crate::DB;
 use crate::commands::ping::ping;
 use crate::commands::generate_pride::pride;
+use crate::commands::generate_furry::furry;
 use crate::commands::setters::set_admins::set_admins;
 use crate::commands::setters::set_log_channel::set_log_channel;
 use crate::commands::setters::set_joke_channel::set_joke_channel;
@@ -185,5 +186,6 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         set_joke_channel(), // Retirar este comando en la próxima versión
         screenshot_this(),
         pride(),
+        furry(),
     ]
 }
