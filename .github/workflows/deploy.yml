@@ -21,7 +21,10 @@ jobs:
           ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} << 'EOF'
           cd ~/plantita_ayudante
           git pull
-          cargo build --release
+          if ! cargo build --release; then
+            echo "Compilation failed, stopping deployment"
+            exit 1
+          fi
           cp -fu target/release/plantita_ayudante ~/plantita_ayudante/
           sudo systemctl restart plantita_ayudante.service
           EOF
