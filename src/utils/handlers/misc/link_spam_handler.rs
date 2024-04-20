@@ -1,5 +1,4 @@
-use std::sync::Arc;
-use once_cell::sync::Lazy;
+use std::sync::{Arc, LazyLock};
 use regex::Regex;
 use tokio::sync::Mutex;
 use serenity::all::{ChannelId, CreateEmbedAuthor, CreateMessage, GetMessages, GuildId, Message, UserId};
@@ -13,7 +12,7 @@ use std::time::Instant;
 use tokio::time::{Duration, sleep};
 
 #[derive(Debug)]
-pub struct MessageTracker {
+struct MessageTracker {
     author_id: UserId,
     message_content: Arc<String>,
     channel_ids: Vec<ChannelId>,
@@ -27,14 +26,14 @@ impl MessageTracker {
 }
 
 #[derive(Default)]
-pub struct MessageTrackerBuilder {
+struct MessageTrackerBuilder {
     author_id: Option<UserId>,
     message_content: Option<Arc<String>>,
     channel_ids: Option<Vec<ChannelId>>,
 }
 
 impl MessageTrackerBuilder {
-    pub fn author_id(mut self, author_id: UserId) -> Self {
+    pub const fn author_id(mut self, author_id: UserId) -> Self {
         self.author_id = Some(author_id);
         self
     }
@@ -59,16 +58,26 @@ impl MessageTrackerBuilder {
     }
 }
 
-static MESSAGE_TRACKER: Lazy<Mutex<Vec<MessageTracker>>> = Lazy::new(|| {
+///
+static MESSAGE_TRACKER: LazyLock<Mutex<Vec<MessageTracker>>> = LazyLock::new(|| {
     Mutex::new(Vec::new())
 });
 
+/// # Esta función extrae un enlace de un mensaje
+///
+/// - Si el mensaje contiene un enlace, devuelve el enlace
 pub fn extract_link(text: &str) -> Option<String> {
     Regex::new(r"(https?://\S+)").map_or(None, |url_re| url_re.find(text).map(|m| m.as_str().to_string()))
 }
 
+/// # Esta función comprueba si un mensaje es spam
+///
+/// - Si el mensaje se repite en el mismo canal, borra el vector
+/// - Si el mensaje no existe, crea un nuevo rastreador de mensajes y añádelo a la lista
+/// - Si el siguiente mensaje no coincide con el mensaje anterior, borra el vector
+/// - Si se detecta spam, se envía un mensaje al canal de registro, se borran los mensajes de spam y se limpia el vector
 pub async fn spam_checker(
-    message_content: Arc<String>,
+    message_content: &Arc<String>,
     channel_id: ChannelId,
     admin_role_id: &Option<String>,
     ctx: &serenity::Context,
@@ -84,14 +93,14 @@ pub async fn spam_checker(
         .iter()
         .last()
     {
-        if last_message.author_id == author_id && last_message.message_content != message_content {
+        if last_message.author_id == author_id && last_message.message_content != *message_content {
             message_tracker.clear();
         }
     }
 
     let message = if let Some(message) = message_tracker
         .iter_mut()
-        .find(|m| m.author_id == author_id && m.message_content == message_content)
+        .find(|m| m.author_id == author_id && m.message_content == *message_content)
     {
         // Inicializa el tiempo del último mensaje
         message.last_message_time = Instant::now();
@@ -99,7 +108,7 @@ pub async fn spam_checker(
         // Si el mensaje existe y el canal no está en la lista de canales, añade el canal a la lista de canales
         if message.channel_ids.contains(&channel_id) {
             // Si el mensaje se repite en el mismo canal, borra el vector
-            println!("Message repeated in the same channel, clearing the vector");
+            // Debug: println!("Message repeated in the same channel, clearing the vector");
             message_tracker.clear();
 
             return Ok(());
@@ -121,7 +130,7 @@ pub async fn spam_checker(
 
     if message.channel_ids.len() >= 3 {
         handle_everyone(admin_role_id.to_owned(), &mut member, ctx, time, new_message).await?;
-        delete_spam_messages(message, ctx, author_id, message_content, guild_id).await?;
+        delete_spam_messages(message, ctx, author_id, message_content.clone(), guild_id).await?;
 
         // Limpia completamente el rastreador de mensajes para reiniciar el rastreo de mensajes
         message_tracker.retain(|m| m.author_id != author_id);
@@ -149,7 +158,7 @@ async fn delete_spam_messages(
 
         let messages = channel.messages(&ctx.http, GetMessages::new()).await?;
         for message in messages {
-            if message.author.id == author_id && &*message.content == &*message_content {
+            if message.author.id == author_id && message.content == *message_content {
                 message.delete(&ctx.http).await?;
             }
         }
@@ -173,7 +182,7 @@ async fn create_embed(
     let author_member = guild_id.member(&ctx.http, author_id).await?;
     let username = author_member.distinct();
     let embed = CreateEmbed::default()
-        .title("Spam detectado")
+        .title("⚠️ Spam detectado")
         .author(CreateEmbedAuthor::new(username)
             .icon_url(author_user.face()))
         .description(format!("El usuario <@{author_id}> Es sospechoso de enviar spam en el servidor.\nMensaje: {message_content}"))

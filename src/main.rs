@@ -1,16 +1,15 @@
-use std::sync::Arc;
+#![feature(lazy_cell)]
+use std::sync::{Arc, LazyLock};
 use surrealdb::Surreal;
 use std::time::Duration;
 use tokio::time::Instant;
 use chrono::Local;
-use once_cell::sync::Lazy;
 use poise::serenity_prelude as serenity;
-use reqwest::Client;
 use surrealdb::opt::auth::Root;
 use surrealdb::engine::remote::ws::{Client as SurrealClient, Ws};
 use tokio::time::sleep_until;
 
-pub static DB: Lazy<Surreal<SurrealClient>> = Lazy::new(Surreal::init);
+pub static DB: LazyLock<Surreal<SurrealClient>> = LazyLock::new(Surreal::init);
 
 mod commands;
 mod utils;
@@ -68,10 +67,7 @@ async fn main() -> UnwrapResult<()> {
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(Data {
-                    poise_mentions: String::default(),
-                    client: Client::default(),
-                })
+                Ok(Data)
             })
         })
         .build();
