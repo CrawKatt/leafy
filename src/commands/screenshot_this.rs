@@ -1,10 +1,11 @@
-use serenity::all::{ChannelId, CreateMessage, GetMessages};
+use serenity::all::{ChannelId, CreateMessage, GetMessages, UserId};
 use crate::utils::{CommandResult, Context};
 use crate::utils::misc::debug::{UnwrapLog, UnwrapResult};
 use serenity::builder::CreateAttachment;
 use crate::commands::setters::set_ooc_channel::OocChannel;
 use plantita_welcomes::generate_phrase::create_image;
 use std::fs::remove_file;
+use regex::Regex;
 
 #[poise::command(
     prefix_command,
@@ -128,12 +129,14 @@ async fn handle_content(
         quoted_content
     };
 
+    let quoted_content = &*remove_discord_emojis(&quoted_content)?;
+
     if quoted_content.len() > 72 {
         poise::say_reply(ctx, "El mensaje referenciado es demasiado largo").await?;
         return Ok(());
     }
 
-    send_image(ctx, channel_id, author_avatar, &quoted_content, author_name).await?;
+    send_image(ctx, channel_id, author_avatar, quoted_content, author_name).await?;
 
     Ok(())
 }
@@ -142,7 +145,7 @@ async fn handle_content(
 ///
 /// - Esto es necesario para evitar sobrepasar el límite de caracteres en la imagen.
 /// - Si el miembro tiene un apodo, se devolverá el apodo, de lo contrario, se devolverá el nombre de usuario
-async fn extract_username(ctx: Context<'_>, user_id: &serenity::model::id::UserId) -> UnwrapResult<String> {
+async fn extract_username(ctx: Context<'_>, user_id: &UserId) -> UnwrapResult<String> {
     let guild_id = ctx.guild_id().unwrap(); // SAFETY: Si el mensaje no es de un servidor, no se ejecutará el comando
     let member = guild_id.member(&ctx.http(), user_id).await?;
     let author_name = member.distinct();
@@ -151,11 +154,24 @@ async fn extract_username(ctx: Context<'_>, user_id: &serenity::model::id::UserI
     Ok(mention)
 }
 
+fn remove_discord_emojis(content: &str) -> UnwrapResult<String> {
+    let emoji_pattern = Regex::new(r"<a?:.+:\d+>")?;
+    let words: Vec<&str> = content.split_whitespace().collect();
+    let result: Vec<&str> = words
+        .iter()
+        .filter(|&word| !emoji_pattern.is_match(word))
+        .copied()
+        .collect();
+
+    Ok(result.join(" "))
+}
+
 /// # Genera una mención a un usuario en el mensaje referenciado
 ///
 /// - Esto es necesario para evitar sobrepasar el límite de caracteres en la imagen
 /// ya que las menciones de usuario no son interpretadas como @usuario sino como
 /// `<@user_id>`
+///
 async fn generate_mention(ctx: Context<'_>, content: &str, quoted_content: String) -> UnwrapResult<String> {
     let user_id = content.split("<@")
         .collect::<Vec<&str>>()[1]
@@ -163,7 +179,7 @@ async fn generate_mention(ctx: Context<'_>, content: &str, quoted_content: Strin
         .collect::<Vec<&str>>()[0]
         .parse::<u64>()?;
 
-    let user_id = serenity::model::id::UserId::from(user_id);
+    let user_id = UserId::from(user_id);
     let extracted_username = extract_username(ctx, &user_id).await?;
     let mention = format!("<@{user_id}>");
     let fixed_quoted_content = quoted_content.replace(&mention, &extracted_username);

@@ -28,6 +28,9 @@ pub enum UnwrapErrors {
 
     #[error(transparent)]
     Tokio(#[from] tokio::io::Error),
+
+    #[error(transparent)]
+    Regex(#[from] regex::Error),
 }
 
 #[derive(Error, Debug)]
