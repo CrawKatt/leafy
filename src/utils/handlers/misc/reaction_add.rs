@@ -12,8 +12,8 @@ use crate::utils::misc::debug::UnwrapResult;
 pub async fn vote_react(ctx: &serenity::Context, add_reaction: &Reaction) -> CommandResult {
     let guild_id = add_reaction.guild_id.ok_or("error")?;
     let message = add_reaction.message(&ctx.http).await?;
-    let target_emoji_negative = ReactionType::try_from('❌')?;
-    let target_emoji_positive = ReactionType::try_from('✅')?;
+    let target_emoji_negative = ReactionType::from('🔻');
+    let target_emoji_positive = ReactionType::from('🔺');
 
     let sql_query = "SELECT * FROM ooc_channel WHERE guild_id = $guild_id";
     let existing_data: Option<OocChannel> = crate::DB
@@ -30,13 +30,13 @@ pub async fn vote_react(ctx: &serenity::Context, add_reaction: &Reaction) -> Com
     }
 
     let (reaction_count_positive, reaction_count_negative) = get_reaction_counts(ctx, &message, target_emoji_positive, target_emoji_negative).await?;
+    
     let mut message_approved = false;
-
-    if reaction_count_positive >= 2 {
+    if reaction_count_positive >= 5 {
         message_approved = true;
     }
 
-    if reaction_count_negative >= 2 && !message_approved {
+    if reaction_count_negative >= 5 && !message_approved {
         message.delete(&ctx.http).await?;
     }
 

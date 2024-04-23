@@ -30,16 +30,10 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     // La clonación barata consiste en utilizar Arc<T> o Rc<T> para clonar un objeto sin copiar su contenido
     // Rc<T> es para usar en hilos de ejecución y Arc<T> es para usar en hilos de ejecución concurrentes (async)
     let message_content = Arc::new(String::from(&new_message.content));
-
-    // Si el autor del mensaje es un Bot, no hace falta hacer ninguna acción
     if new_message.author.bot { return Ok(()) }
-
-    // Obtenemos los datos necesarios para guardar el mensaje en la base de datos y para manejar las menciones
     let guild_id = new_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", CURRENT_MODULE, line!())?;
     let mut member = guild_id.member(&ctx.http, new_message.author.id).await?;
     let user_id = new_message.mentions.first().map(|user| user.id);
-
-    // Obtenemos el rol de administrador y el tiempo de silencio del servidor desde la base de datos
     let admin_role_id = AdminData::get_admin_role(guild_id).await?;
 
     // Mover a la función de handle_warns y handle_everyone?
@@ -51,7 +45,6 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
         println!("Error handling attachment: {why:?} {CURRENT_MODULE} : {}", line!());
     }
 
-    // Crear un objeto MessageData con la información del mensaje
     let data = MessageData::new(
         new_message.id,
         &message_content,
