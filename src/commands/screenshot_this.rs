@@ -98,8 +98,8 @@ async fn send_image(
         .parse::<u64>()?;
 
     if channel_id == ooc_channel_id {
-        message.react(&ctx.http(), '✅').await?;
-        message.react(&ctx.http(), '❌').await?;
+        message.react(&ctx.http(), '🔺').await?;
+        message.react(&ctx.http(), '🔻').await?;
     }
 
     remove_file(create_image)?;
@@ -154,6 +154,10 @@ async fn extract_username(ctx: Context<'_>, user_id: &UserId) -> UnwrapResult<St
     Ok(mention)
 }
 
+/// # Extrae y remueve los emojis de Discord en el mensaje
+/// 
+/// - Esto es necesario para evitar sobrepasar el límite de caracteres en la imagen
+/// - Si el mensaje contiene emojis de Discord, se eliminarán del mensaje y se devolverá el mensaje sin emojis
 fn remove_discord_emojis(content: &str) -> UnwrapResult<String> {
     let emoji_pattern = Regex::new(r"<a?:.+:\d+>")?;
     let words: Vec<&str> = content.split_whitespace().collect();
