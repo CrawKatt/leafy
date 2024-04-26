@@ -2,7 +2,6 @@ use std::sync::Arc;
 use serenity::all::{GuildId, Message, UserId};
 use poise::serenity_prelude as serenity;
 use crate::DB;
-use crate::commands::setters::set_joke::Joke;
 use crate::utils::CommandResult;
 use crate::utils::MessageData;
 use crate::commands::setters::{AdminData, ForbiddenUserData, SetTimeoutTimer};
@@ -11,7 +10,6 @@ use crate::utils::misc::debug::UnwrapLog;
 use crate::utils::handlers::misc::attachment_case::attachment_handler;
 use crate::utils::handlers::misc::everyone_case::handle_everyone;
 use crate::utils::handlers::misc::forbidden_mentions::{handle_forbidden_role, handle_forbidden_user};
-use crate::utils::handlers::misc::joke_call::handle_joke;
 use crate::utils::handlers::misc::link_spam_handler::{extract_link, spam_checker};
 
 const CURRENT_MODULE: &str = file!();
@@ -52,25 +50,6 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
         new_message.channel_id,
         new_message.guild_id,
     );
-
-    // inicio broma
-    let sql_query = "SELECT * FROM joke WHERE guild_id = $guild_id";
-    let joke: Option<Joke> = DB
-        .query(sql_query)
-        .bind(("guild_id", guild_id)) // pasar el valor
-        .await?
-        .take(0)?;
-
-    // match necesario para continuar la función en caso de que el canal de broma no esté establecido
-    if let Some(joke) = joke {
-        match handle_joke(joke, new_message, ctx).await {
-            Ok(()) => (),
-            Err(why) => {
-                println!("Error handling joke: {why:?}");
-            },
-        }
-    }
-    // fin broma
 
     // Extraer el link del mensaje si existe
     if extract_link(&message_content).is_some() {
