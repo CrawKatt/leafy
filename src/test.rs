@@ -3,7 +3,6 @@ pub mod tests {
     use serenity::all::{GuildId, RoleId, UserId};
     use surrealdb::engine::remote::ws::Ws;
     use surrealdb::opt::auth::Root;
-    use crate::commands::setters::set_joke::Joke;
     use crate::DB;
     use crate::utils::handlers::misc::link_spam_handler::extract_link;
     use crate::commands::setters::{AdminData, ForbiddenRoleData, ForbiddenUserData};
@@ -37,8 +36,6 @@ pub mod tests {
         b_handle_forbidden_user().await.unwrap();
         c_handle_forbidden_role().await.unwrap();
         d_handle_warn_system().await.unwrap();
-        e_handle_joke().await.unwrap();
-        f_handle_joke_swtich().await.unwrap();
         g_check_admin_exception().await.unwrap();
     }
 
@@ -85,47 +82,6 @@ pub mod tests {
                 assert_eq!(warns.get_warns().await?.unwrap().warns, 0);
                 println!("test test::tests::d_handle_warn_system: ok");
             }
-        }
-
-        Ok(())
-    }
-
-    async fn e_handle_joke() -> UnwrapResult<()> {
-        // Objeto Joke simulando ser obtenido desde la Base de Datos
-        let guild_id = GuildId::new(983_473_640_387_518_504);
-        let joke = Joke::get_joke_target_id(guild_id).await?;
-
-        // user_id obtenido desde Discord
-        let user_id: u64 = 1_076_623_900_697_448_478;
-
-        // Comparamos el target del objeto Joke con el user_id hardcodeado
-        assert_eq!(joke, user_id);
-        println!("test test::tests::e_handle_joke ok");
-
-        Ok(())
-    }
-
-    async fn f_handle_joke_swtich() -> UnwrapResult<()> {
-        let database_password = dotenvy::var("DATABASE_PASSWORD").expect("missing SURREAL_PASSWORD");
-        DB.signin(Root {
-            username: "root",
-            password: &database_password,
-        }).await.expect("Could not sign in");
-
-        // Objeto Joke simulando ser obtenido desde la Base de Datos
-        let guild_id = GuildId::new(983_473_640_387_518_504);
-        let joke = Joke::get_joke_status(guild_id).await?;
-
-        let mut joke = Joke::new(guild_id.to_string(), joke, String::new());
-
-        if joke.is_active {
-            joke.switch(false).await?;
-            assert!(!joke.is_active);
-            println!("test test::tests::true f_handle_joke_swtich: ok");
-        } else {
-            joke.switch(true).await?;
-            assert!(joke.is_active);
-            println!("test test::tests::false f_handle_joke_swtich: ok");
         }
 
         Ok(())

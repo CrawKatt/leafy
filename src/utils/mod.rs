@@ -3,38 +3,34 @@ use serde::{Deserialize, Serialize};
 use serenity::all::{ChannelId, GuildId, MessageId, UserId};
 use surrealdb::Result as SurrealResult;
 
+use crate::commands::generate_furry::furry;
+use crate::commands::generate_pride::pride;
+use crate::commands::getters::get_admins::get_admins;
+use crate::commands::getters::get_forbidden_exception::get_forbidden_exception;
+use crate::commands::getters::get_forbidden_role::get_forbidden_role;
+use crate::commands::getters::get_forbidden_user::get_forbidden_user;
+use crate::commands::getters::get_log_channel::get_log_channel;
+use crate::commands::getters::get_ooc_channel::get_ooc_channel;
+use crate::commands::getters::get_timeout_timer::get_timeout_timer;
+use crate::commands::getters::get_welcome_channel::get_welcome_channel;
+use crate::commands::ping::ping;
+use crate::commands::screenshot_this::screenshot_this;
+use crate::commands::setters::set_admins::set_admins;
+use crate::commands::setters::set_forbidden_exception::set_forbidden_exception;
+use crate::commands::setters::set_forbidden_role::set_forbidden_role;
+use crate::commands::setters::set_forbidden_user::set_forbidden_user;
+use crate::commands::setters::set_log_channel::set_log_channel;
+use crate::commands::setters::set_ooc_channel::set_ooc_channel;
+use crate::commands::setters::set_timeout_message::set_time_out_message;
+use crate::commands::setters::set_timeout_timer::set_timeout_timer;
+use crate::commands::setters::set_warn_message::set_warn_message;
+use crate::commands::setters::set_welcome_channel::set_welcome_channel;
+use crate::commands::setters::set_welcome_message::set_welcome_message;
+use crate::DB;
+
 pub mod handlers;
 pub mod events;
 pub mod misc;
-
-use crate::DB;
-use crate::commands::ping::ping;
-use crate::commands::generate_pride::pride;
-use crate::commands::generate_furry::furry;
-use crate::commands::setters::set_admins::set_admins;
-use crate::commands::setters::set_log_channel::set_log_channel;
-use crate::commands::setters::set_joke_channel::set_joke_channel;
-use crate::commands::setters::set_warn_message::set_warn_message;
-use crate::commands::setters::set_timeout_timer::set_timeout_timer;
-use crate::commands::setters::set_forbidden_role::set_forbidden_role;
-use crate::commands::setters::set_forbidden_user::set_forbidden_user;
-use crate::commands::setters::set_timeout_message::set_time_out_message;
-use crate::commands::setters::set_forbidden_exception::set_forbidden_exception;
-use crate::commands::setters::set_joke::joke;
-
-use crate::commands::getters::get_admins::get_admins;
-use crate::commands::getters::get_forbidden_exception::get_forbidden_exception;
-use crate::commands::getters::get_log_channel::get_log_channel;
-use crate::commands::getters::get_timeout_timer::get_timeout_timer;
-use crate::commands::getters::get_forbidden_role::get_forbidden_role;
-use crate::commands::getters::get_forbidden_user::get_forbidden_user;
-use crate::commands::getters::get_joke::get_joke;
-use crate::commands::getters::get_ooc_channel::get_ooc_channel;
-use crate::commands::getters::get_welcome_channel::get_welcome_channel;
-use crate::commands::screenshot_this::screenshot_this;
-use crate::commands::setters::set_ooc_channel::set_ooc_channel;
-use crate::commands::setters::set_welcome_channel::set_welcome_channel;
-use crate::commands::setters::set_welcome_message::set_welcome_message;
 
 pub struct Data;
 pub type CommandResult = Result<(), Error>;
@@ -181,9 +177,6 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         get_forbidden_role(),
         get_welcome_channel(),
         get_forbidden_exception(),
-        joke(), // Retirar este comando en la próxima versión
-        get_joke(), // Retirar este comando en la próxima versión
-        set_joke_channel(), // Retirar este comando en la próxima versión
         screenshot_this(),
         pride(),
         furry(),
