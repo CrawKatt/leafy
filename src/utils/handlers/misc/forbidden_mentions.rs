@@ -55,6 +55,8 @@ pub async fn handle_forbidden_user(
         log_handle!("No se ha establecido un mensaje de advertencia: `sent_message.rs` {}", Location::caller());
         "Por favor no hagas @ a este usuario. Si estás respondiendo un mensaje, considera responder al mensaje sin usar @".to_string()
     });
+    
+    let warn_message = format!("{} {warn_message}", member.distinct());
 
     let time_out_message = unwrap_log!(TimeOutMessageData::get_time_out_message(guild_id).await?, "No se ha establecido un mensaje de silencio");
     let admin_role_id = unwrap_log!(admin_role.clone(), "No se ha establecido un rol de administrador").role_id;
@@ -123,6 +125,8 @@ pub async fn handle_forbidden_role(
         log_handle!("No se ha establecido un mensaje de advertencia: `sent_message.rs` {}", Location::caller());
         "Por favor no hagas @ a este usuario. Si estás respondiendo un mensaje, considera responder al mensaje sin usar @".to_string()
     });
+
+    let warn_message = format!("{} {warn_message}", member.distinct());
 
     let time_out_message = TimeOutMessageData::get_time_out_message(guild_id).await?.unwrap_or_else(|| {
         log_handle!("No se ha establecido un mensaje de silencio: {}", Location::caller());
