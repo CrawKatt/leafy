@@ -1,18 +1,17 @@
+use std::panic::Location;
 use std::sync::Arc;
-use serenity::all::{GuildId, Message, UserId};
+use serenity::all::{GuildId, Message, RoleId, UserId};
 use poise::serenity_prelude as serenity;
-use crate::DB;
-use crate::utils::CommandResult;
-use crate::utils::MessageData;
-use crate::commands::setters::{AdminData, ForbiddenUserData, SetTimeoutTimer};
-use crate::commands::setters::ForbiddenRoleData;
-use crate::utils::misc::debug::UnwrapLog;
-use crate::utils::handlers::misc::attachment_case::attachment_handler;
-use crate::utils::handlers::misc::everyone_case::handle_everyone;
-use crate::utils::handlers::misc::forbidden_mentions::{handle_forbidden_role, handle_forbidden_user};
-use crate::utils::handlers::misc::link_spam_handler::{extract_link, spam_checker};
 
-const CURRENT_MODULE: &str = file!();
+use crate::DB;
+use crate::utils::MessageData;
+use crate::utils::CommandResult;
+use crate::utils::misc::config::GuildData;
+use crate::utils::misc::debug::IntoUnwrapResult;
+use crate::utils::handlers::misc::everyone_case::handle_everyone;
+use crate::utils::handlers::misc::attachment_case::attachment_handler;
+use crate::utils::handlers::misc::link_spam_handler::{extract_link, spam_checker};
+use crate::utils::handlers::misc::forbidden_mentions::{handle_forbidden_role, handle_forbidden_user};
 
 /// # Esta función maneja los mensajes enviados en un servidor
 ///
@@ -29,18 +28,24 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     // Rc<T> es para usar en hilos de ejecución y Arc<T> es para usar en hilos de ejecución concurrentes (async)
     let message_content = Arc::new(String::from(&new_message.content));
     if new_message.author.bot { return Ok(()) }
-    let guild_id = new_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", CURRENT_MODULE, line!())?;
+    let guild_id = new_message.guild_id.into_result()?;
     let mut member = guild_id.member(&ctx.http, new_message.author.id).await?;
     let user_id = new_message.mentions.first().map(|user| user.id);
-    let admin_role_id = AdminData::get_admin_role(guild_id).await?;
-
-    // Mover a la función de handle_warns y handle_everyone?
-    let time_out_timer = SetTimeoutTimer::get_time_out_timer(guild_id).await?;
-    let time = time_out_timer.unwrap_or_default(); // SAFETY: Si se establece en 0, es porque no se ha establecido un tiempo de silencio
+    let admin_role_id = GuildData::verify_data(guild_id).await?
+        .into_result()?
+        .admins
+        .role_id;
+    
+    let time = GuildData::verify_data(guild_id).await?
+        .into_result()?
+        .time_out_config
+        .time
+        .into_result()?
+        .parse::<i64>()?;
 
     // Si hay un error al manejar un archivo adjunto, imprimir el error pero no terminar la función
     if let Err(why) = attachment_handler(new_message).await {
-        println!("Error handling attachment: {why:?} {CURRENT_MODULE} : {}", line!());
+        println!("Error handling attachment: {why:?} {}", Location::caller());
     }
 
     let data = MessageData::new(
@@ -62,6 +67,8 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     }
 
     // @everyone no tiene id, por lo que no es necesario el <@id>
+    // Si bien hay un método para comprobar si se menciona @everyone o @here, este método devuelve
+    // `false` en servidores donde @everyone y @here están deshabilitados
     if message_content.contains("@everyone") || message_content.contains("@here") {
         let _created: Vec<MessageData> = DB.create("messages").content(&data).await?;
         handle_everyone(admin_role_id, &mut member, ctx, time, new_message).await?;
@@ -88,28 +95,34 @@ async fn handle_user_id(
     data: &MessageData,
     user_id: Option<UserId>
 ) -> CommandResult {
-    // Si el mensaje contiene una mención a un usuario prohibido, silenciar al autor del mensaje
-    let forbidden_user_id = ForbiddenUserData::get_forbidden_user_id(guild_id).await?;
-    if let Some(forbidden_user_id_some) = forbidden_user_id {
-        if new_message.mentions_user_id(forbidden_user_id_some) {
-            handle_forbidden_user(ctx, new_message, guild_id, data, forbidden_user_id_some).await?;
-            let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
-            return Ok(())
-        }
+    
+    let forbidden_user_id = GuildData::verify_data(guild_id).await?
+        .into_result()?
+        .forbidden_config
+        .user_id
+        .into_result()?
+        .parse::<UserId>()?;
+
+    if new_message.mentions_user_id(forbidden_user_id) {
+        handle_forbidden_user(ctx, new_message, guild_id, data, forbidden_user_id.into()).await?;
+        DB.query("DEFINE INDEX guild_id ON TABLE messages COLUMNS message_id UNIQUE").await?;
+        let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
+        return Ok(())
     }
 
-    // Si el mensaje contiene una mención a un rol prohibido, silenciar al autor del mensaje
-    let database_data = ForbiddenRoleData::get_role_id(guild_id).await?;
-    let forbidden_role_id = database_data.unwrap_log("No se ha establecido un rol prohibido de mencionar", CURRENT_MODULE, line!())?;
+    let forbidden_role_id = GuildData::verify_data(guild_id).await?
+        .into_result()?
+        .forbidden_config
+        .role_id
+        .into_result()?
+        .parse::<RoleId>()?;
+    
     let has_role = user_id
-        .unwrap()
+        .into_result()?
         .to_user(&ctx.http).await?
         .has_role(&ctx.http, guild_id, forbidden_role_id).await?;
 
-    if has_role {
-        handle_forbidden_role(ctx, new_message, guild_id, data).await?;
-        let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
-    };
+    if has_role { handle_forbidden_role(ctx, new_message, guild_id).await? };
 
     Ok(())
 }
