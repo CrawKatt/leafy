@@ -1,9 +1,9 @@
 use poise::serenity_prelude as serenity;
-use serenity::all::{Message, Reaction, ReactionType};
+use serenity::all::{ChannelId, Message, Reaction, ReactionType};
 
 use crate::utils::CommandResult;
-use crate::commands::setters::set_ooc_channel::OocChannel;
-use crate::utils::misc::debug::UnwrapResult;
+use crate::utils::misc::config::GuildData;
+use crate::utils::misc::debug::{IntoUnwrapResult, UnwrapResult};
 
 /// # Esta función maneja las reacciones con un sistema de votación
 ///
@@ -15,17 +15,14 @@ pub async fn vote_react(ctx: &serenity::Context, add_reaction: &Reaction) -> Com
     let target_emoji_negative = ReactionType::from('🔻');
     let target_emoji_positive = ReactionType::from('🔺');
 
-    let sql_query = "SELECT * FROM ooc_channel WHERE guild_id = $guild_id";
-    let existing_data: Option<OocChannel> = crate::DB
-        .query(sql_query)
-        .bind(("guild_id", &guild_id.to_string()))
-        .await?
-        .take(0)?;
+    let channel_id = GuildData::verify_data(guild_id).await?
+        .into_result()?
+        .channel_config
+        .ooc_channel_id
+        .into_result()?
+        .parse::<ChannelId>()?;
 
-    let ooc_channel = existing_data.ok_or("No se pudo obtener el canal OOC o no ha sido establecido")?;
-    let channel_u64 = ooc_channel.channel_id.parse::<u64>()?;
-
-    if message.channel_id != channel_u64 {
+    if message.channel_id != channel_id {
         return Ok(())
     }
 
