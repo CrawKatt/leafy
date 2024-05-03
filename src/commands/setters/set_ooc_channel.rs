@@ -1,54 +1,8 @@
-use serde::{Deserialize, Serialize};
-use serenity::all::{ChannelId, GuildId};
-use crate::utils::{CommandResult, Context};
-use surrealdb::Result as SurrealResult;
+use serenity::all::Channel;
+
 use crate::DB;
-
-#[derive(Serialize, Deserialize)]
-pub struct OocChannel {
-    pub channel_id: String,
-    pub guild_id: String
-}
-
-impl OocChannel {
-    pub fn new(channel_id: ChannelId, guild_id: GuildId) -> Self {
-        Self {
-            channel_id: channel_id.to_string(),
-            guild_id: guild_id.to_string()
-        }
-    }
-
-    pub async fn save_to_db(&self) -> SurrealResult<()> {
-        DB.use_ns("discord-namespace").use_db("discord").await?;
-        let _created: Vec<Self> = DB
-            .create("ooc_channel")
-            .content(self)
-            .await?;
-
-        Ok(())
-    }
-
-    pub async fn verify_data(&self) -> SurrealResult<Option<Self>> {
-        let sql_query = "SELECT * FROM ooc_channel";
-        let existing_data: Option<Self> = DB
-            .query(sql_query)
-            .await?
-            .take(0)?;
-
-        Ok(existing_data)
-    }
-
-    pub async fn update_in_db(&self) -> SurrealResult<()> {
-        let sql_query = "UPDATE ooc_channel SET channel_id = $channel_id";
-        let _updated: Vec<Self> = DB
-            .query(sql_query)
-            .bind(("channel_id", &self.channel_id))
-            .await?
-            .take(0)?;
-
-        Ok(())
-    }
-}
+use crate::utils::{CommandResult, Context};
+use crate::utils::misc::config::{Channels, GuildData};
 
 #[poise::command(
     prefix_command,
@@ -58,21 +12,33 @@ impl OocChannel {
     guild_only,
     ephemeral
 )]
-pub async fn set_ooc_channel(ctx: Context<'_>, ooc_channel: ChannelId) -> CommandResult {
+pub async fn set_ooc_channel(
+    ctx: Context<'_>,
+    #[description = "The channel to set as the log channel"]
+    ooc_channel: Channel,
+) -> CommandResult {
+    DB.use_ns("discord-namespace").use_db("discord").await?;
     let guild_id = ctx.guild_id().unwrap();
-    let data = OocChannel::new(ooc_channel, guild_id);
-    let existing_data = data.verify_data().await?;
+    let channel_id = ooc_channel.id().to_string();
 
+    let existing_data = GuildData::verify_data(guild_id).await?;
     if existing_data.is_none() {
+        let data = GuildData::default()
+            .guild_id(guild_id)
+            .channel_config(Channels::default()
+                .ooc_channel_id(&channel_id)
+            );
         data.save_to_db().await?;
-        ctx.say(format!("Canal de Fuera de Contexto establecido en: <#{ooc_channel}>")).await?;
+        ctx.say(format!("OOC channel set to: <#{channel_id}>")).await?;
+
         return Ok(())
     }
 
-    data.update_in_db().await?;
+    let data = Channels::default()
+        .log_channel_id(&channel_id);
 
-    let message = format!("Canal de Fuera de Contexto establecido en: <#{ooc_channel}>");
-    ctx.say(message).await?;
+    data.update_field_in_db("channel_config.ooc_channel_id", &channel_id, &guild_id.to_string()).await?;
+    ctx.say(format!("Canal de Fuera de Contexto establecido en: <#{channel_id}>")).await?;
 
     Ok(())
 }
