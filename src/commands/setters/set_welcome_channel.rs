@@ -1,79 +1,8 @@
-use surrealdb::Result as SurrealResult;
+use serenity::all::Channel;
+
 use crate::DB;
-use crate::utils::misc::debug::{UnwrapLog, UnwrapResult};
-use serde::{Serialize, Deserialize};
-use serenity::all::{ChannelId, GuildId};
 use crate::utils::{CommandResult, Context};
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct WelcomeChannelData {
-    pub guild_id: String,
-    pub channel_id: String,
-}
-
-impl WelcomeChannelData {
-    pub fn new(
-        guild_id: GuildId,
-        channel_id: ChannelId,
-    ) -> Self {
-        Self {
-            guild_id: guild_id.to_string(),
-            channel_id: channel_id.to_string(),
-        }
-    }
-
-    /// Guarda el link en la base de datos
-    pub async fn save_to_db(&self) -> SurrealResult<()> {
-        DB.use_ns("discord-namespace").use_db("discord").await?;
-        let _created: Vec<Self> = DB
-            .create("welcome_channel")
-            .content(self)
-            .await?;
-
-        Ok(())
-    }
-
-    pub async fn update_to_db(&self) -> SurrealResult<()> {
-        DB.use_ns("discord-namespace").use_db("discord").await?;
-        //let sql_query = "UPDATE welcome_channel SET channel_id = $channel_id WHERE guild_id = $guild_id";
-        let sql_query = "UPDATE welcome_channel SET channel_id = $channel_id";
-        let _updated: Vec<Self> = DB
-            .query(sql_query)
-            .bind(("channel_id", self.channel_id.to_string()))
-            .bind(("guild_id", self.guild_id.to_string()))
-            .await?
-            .take(0)?;
-
-        Ok(())
-    }
-
-    /// Verifica si el link ya se encuentra en la base de datos
-    pub async fn verify_data(&self) -> SurrealResult<Option<Self>> {
-        DB.use_ns("discord-namespace").use_db("discord").await?;
-        let sql_query = "SELECT * FROM welcome_channel WHERE guild_id = $guild_id";
-        let existing_data: Option<Self> = DB
-            .query(sql_query)
-            .bind(("guild_id", self.guild_id.to_string()))
-            .await?
-            .take(0)?;
-
-        Ok(existing_data)
-    }
-
-    pub async fn get_welcome_channel(guild_id: GuildId) -> UnwrapResult<String> {
-        DB.use_ns("discord-namespace").use_db("discord").await?;
-        let sql_query = "SELECT * FROM welcome_channel WHERE guild_id = $guild_id";
-        let existing_data: Option<Self> = DB
-            .query(sql_query)
-            .bind(("guild_id", guild_id))
-            .await?
-            .take(0)?;
-
-        let result = existing_data.unwrap_log("No se encontró el canal de bienvenida", file!(), line!())?.channel_id;
-
-        Ok(result)
-    }
-}
+use crate::utils::misc::config::{Channels, GuildData};
 
 #[poise::command(
     prefix_command,
@@ -85,21 +14,32 @@ impl WelcomeChannelData {
 )]
 pub async fn set_welcome_channel(
     ctx: Context<'_>,
-    #[description = "Canal de bienvenida"] channel: ChannelId,
+    #[description = "The channel to set as the Welcome channel"]
+    welcome_channel: Channel,
 ) -> CommandResult {
-    let guild_id = ctx.guild_id().unwrap_log("Could not get guild id", file!(), line!())?;
-    let welcome_channel = WelcomeChannelData::new(guild_id, channel);
-    let data = welcome_channel.verify_data().await?;
+    DB.use_ns("discord-namespace").use_db("discord").await?;
+    let guild_id = ctx.guild_id().unwrap();
+    let channel_id = welcome_channel.id().to_string();
+    let existing_data = GuildData::verify_data(guild_id).await?;
 
-    if data.is_some() {
-        welcome_channel.update_to_db().await?;
-        poise::say_reply(ctx, format!("Canal de bienvenida actualizado en <#{channel}>")).await?;
+    if existing_data.is_none() {
+        let data = GuildData::default()
+            .guild_id(guild_id)
+            .channel_config(Channels::default()
+                .welcome_channel_id(&channel_id)
+            );
+
+        data.save_to_db().await?;
+        ctx.say(format!("Welcome channel set to: <#{channel_id}>")).await?;
 
         return Ok(())
     }
 
-    welcome_channel.save_to_db().await?;
-    poise::say_reply(ctx, format!("Canal de bienvenida establecido en <#{channel}>")).await?;
+    let data = Channels::default()
+        .welcome_channel_id(&channel_id);
+
+    data.update_field_in_db("channel_config.welcome_channel_id", &channel_id, &guild_id.to_string()).await?;
+    ctx.say(format!("Canal de bienvenida establecido en <#{channel_id}>")).await?;
 
     Ok(())
 }
