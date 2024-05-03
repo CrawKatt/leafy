@@ -1,6 +1,6 @@
-use crate::utils::{CommandResult, Context};
-use crate::commands::setters::set_ooc_channel::OocChannel;
 use crate::DB;
+use crate::utils::misc::config::GuildData;
+use crate::utils::{CommandResult, Context};
 
 #[poise::command(
     prefix_command,
@@ -12,8 +12,8 @@ use crate::DB;
 )]
 pub async fn get_ooc_channel(ctx: Context<'_>) -> CommandResult {
     let guild_id = ctx.guild_id().unwrap();
-    let sql_query = "SELECT * FROM ooc_channel WHERE guild_id = $guild_id";
-    let existing_data: Option<OocChannel> = DB
+    let sql_query = "SELECT * FROM guild_config WHERE guild_id = $guild_id";
+    let existing_data: Option<GuildData> = DB
         .query(sql_query)
         .bind(("guild_id", guild_id))
         .await?
@@ -24,7 +24,11 @@ pub async fn get_ooc_channel(ctx: Context<'_>) -> CommandResult {
         return Ok(())
     };
 
-    let ooc_channel_id = existing_data.channel_id;
+    let ooc_channel_id = existing_data
+        .channel_config
+        .ooc_channel_id
+        .ok_or("No se encontró un canal de OOC o no ha sido establecido")?;
+    
     ctx.say(format!("El canal de Fuera de Contexto establecido es: <#{ooc_channel_id}>")).await?;
 
     Ok(())
