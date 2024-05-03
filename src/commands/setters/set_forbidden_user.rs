@@ -1,11 +1,10 @@
 use serenity::all::User;
-use crate::DB;
-use crate::utils::misc::debug::UnwrapLog;
-use crate::utils::{CommandResult, Context};
-use crate::commands::setters::ForbiddenUserData;
-use crate::utils::misc::autocomplete::args_set_forbidden_user;
 
-/// Establece el usuario prohibido de mencionar
+use crate::DB;
+use crate::utils::{CommandResult, Context};
+use crate::utils::misc::autocomplete::args_set_forbidden_user;
+use crate::utils::misc::config::{GuildData, Forbidden};
+
 #[poise::command(
     prefix_command,
     slash_command,
@@ -16,22 +15,30 @@ use crate::utils::misc::autocomplete::args_set_forbidden_user;
 )]
 pub async fn set_forbidden_user(
     ctx: Context<'_>,
+    #[description = "The user to set as the forbidden user"]
     #[autocomplete = "args_set_forbidden_user"]
-    #[description = "The user to set as the forbidden user"] user: User,
+    forbidden_user: User,
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
+    let guild_id = ctx.guild_id().unwrap();
+    let user_id = forbidden_user.id.to_string();
 
-    let guild_id = ctx.guild_id().unwrap_log("Could not get the guild id", module_path!(), line!())?;
-    let data = ForbiddenUserData::new(user.id, guild_id);
-    let existing_data = data.verify_data().await?;
-
+    let existing_data = GuildData::verify_data(guild_id).await?;
     if existing_data.is_none() {
+        let data = GuildData::default()
+            .guild_id(guild_id)
+            .forbidden_config(Forbidden::default()
+                .user_id(user_id)
+            );
+
         data.save_to_db().await?;
-        ctx.say(format!("Se ha prohibido mencionar a: **{}**", user.name)).await?;
-    } else {
-        data.update_in_db().await?;
-        ctx.say(format!("Se ha actualizado el usuario prohibido a: **{}**", user.name)).await?;
+        ctx.say(format!("Se ha prohibido mencionar a: **{}**", forbidden_user.name)).await?;
+        return Ok(())
     }
+
+    let data = Forbidden::default().user_id(&user_id);
+    data.update_field_in_db("forbidden_config.user_id", &user_id, &guild_id.to_string()).await?;
+    ctx.say(format!("Se ha prohibido mencionar a: **{}**", forbidden_user.name)).await?;
 
     Ok(())
 }
