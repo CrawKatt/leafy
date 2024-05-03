@@ -36,8 +36,7 @@ impl ForbiddenException {
         let sql_query = "SELECT * FROM forbidden_exception WHERE guild_id = $guild_id AND user_id = $user_id";
         let existing_data: Option<Self> = DB
             .query(sql_query)
-            .bind(("guild_id", self.guild_id))
-            .bind(("user_id", self.user_id))
+            .bind(self)
             .await?
             .take(0)?;
 
@@ -52,12 +51,7 @@ impl ForbiddenException {
         };
 
         let sql_query = "UPDATE forbidden_exception SET is_active = $is_active WHERE guild_id = $guild_id AND user_id = $user_id";
-        DB.query(sql_query)
-            .bind(("is_active", self.is_active))
-            .bind(("guild_id", self.guild_id))
-            .bind(("user_id", self.user_id))
-            .await?;
-
+        DB.query(sql_query).bind(&self).await?;
         self.is_active = Some(!is_active);
 
         Ok(())
