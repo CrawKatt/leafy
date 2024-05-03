@@ -1,9 +1,9 @@
 use serenity::all::RoleId;
-use crate::utils::{CommandResult, Context};
-use crate::commands::setters::AdminData;
-use crate::utils::misc::debug::UnwrapLog;
 
-/// Obtiene el rol de administrador establecido en el servidor
+use crate::DB;
+use crate::utils::misc::config::GuildData;
+use crate::utils::{CommandResult, Context};
+
 #[poise::command(
     prefix_command,
     slash_command,
@@ -15,27 +15,55 @@ use crate::utils::misc::debug::UnwrapLog;
 pub async fn get_admins(
     ctx: Context<'_>,
 ) -> CommandResult {
-    let guild_id = ctx.guild_id().unwrap_log("Error getting guild id", module_path!(), line!())?;
-    let role_id_1 = AdminData::get_admin_role(guild_id).await?;
-    let role_id_2 = AdminData::get_admin_role_2(guild_id).await?; // Obtén el segundo rol de administrador
+    let guild_id = ctx.guild_id().unwrap();
+    
+    let sql_query = "SELECT * FROM guild_config WHERE guild_id = $guild_id";
+    let database_info: Option<GuildData> = DB
+        .query(sql_query)
+        .bind(("guild_id", guild_id)) // pasar el valor
+        .await?
+        .take(0)?;
+    
+    let Some(database_info) = database_info else {
+        poise::say_reply(ctx, "No se han establecido roles de administrador").await?;
+        return Ok(())
+    };
+    
+    let role_id_1 = database_info
+        .admins
+        .role_id;
+    
+    let role_id_2 = database_info
+        .admins
+        .role_2_id;
 
     let mut role_names = String::new();
 
     if let Some(role_id) = role_id_1 {
-        let parse = role_id.parse::<u64>().unwrap();
+        let parse = role_id.parse::<u64>()?;
         let role_id = RoleId::new(parse);
-        let role_name = ctx.cache().role(guild_id, role_id).ok_or("No se han establecido roles de moderador")?.name.clone();
-        role_names.push_str(&role_name);
+        let role_name = &*ctx
+            .cache()
+            .role(guild_id, role_id)
+            .ok_or("No se han establecido roles de moderador")?
+            .name;
+        
+        role_names.push_str(role_name);
     }
 
     if let Some(role_id) = role_id_2 {
-        let parse = role_id.parse::<u64>().unwrap();
+        let parse = role_id.parse::<u64>()?;
         let role_id = RoleId::new(parse);
-        let role_name = ctx.cache().role(guild_id, role_id).ok_or("No se han establecido roles de moderador")?.name.clone();
+        let role_name = &*ctx
+            .cache()
+            .role(guild_id, role_id)
+            .ok_or("No se han establecido roles de moderador")?
+            .name;
+        
         if !role_names.is_empty() {
             role_names.push_str(", ");
         }
-        role_names.push_str(&role_name);
+        role_names.push_str(role_name);
     }
 
     if role_names.is_empty() {
