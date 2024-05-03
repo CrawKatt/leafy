@@ -1,16 +1,14 @@
-use serenity::all::MessageUpdateEvent;
+use serenity::all::{ChannelId, MessageUpdateEvent};
 use poise::serenity_prelude as serenity;
-use crate::commands::setters::ForbiddenRoleData;
-use crate::commands::setters::ForbiddenUserData;
-use crate::commands::setters::GuildData;
-use crate::utils::misc::debug::UnwrapLog;
-use crate::utils::Error;
+use crate::utils::misc::config::GuildData;
+use crate::utils::misc::debug::{IntoUnwrapResult, UnwrapLog};
+use crate::utils::CommandResult;
 use crate::utils::misc::embeds::{edit_message_embed};
 use crate::utils::handlers::misc::forbidden_mentions::{handle_forbidden_user, handle_forbidden_role};
 use crate::utils::MessageData;
 use crate::match_handle;
 
-pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> Result<(), Error> {
+pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> CommandResult {
     let current_module = file!();
 
     if event.author.as_ref().map_or(false, |author| author.bot) {
@@ -23,16 +21,20 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
     let Some(database_message) = old_message else { return Ok(()) };
 
     let old_content = &database_message.message_content;
-    let new_content = event.content.as_deref().unwrap_log("No se pudo obtener el contenido del mensaje", current_module, line!())?;
+    let new_content = event.content.as_deref().into_result()?;
+    if old_content == new_content { return Ok(()) }
 
-    if old_content == new_content {
-        return Ok(());
-    }
+    //let result_database = database_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", current_module, line!())?;
+    //let log_channel_id = GuildData::get_log_channel(result_database).await?;
 
-    let result_database = database_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", current_module, line!())?;
-    let log_channel_id = GuildData::get_log_channel(result_database).await?;
-
-    let log_channel = log_channel_id.unwrap_log("No se pudo obtener el canal de Logs", current_module, line!())?.log_channel_id;
+    //let log_channel = log_channel_id.unwrap_log("No se pudo obtener el canal de Logs", current_module, line!())?;
+    let log_channel = GuildData::verify_data(guild_id).await?
+        .into_result()?
+        .channel_config
+        .log_channel_id
+        .into_result()?
+        .parse::<ChannelId>()?;
+    
     let message_content = format!("\n**Antes:** \n> {old_content}\n**Después:** \n> {new_content}");
 
     // Bug: Resolver, un unwrap_or_default() está devolviendo 1
@@ -43,11 +45,24 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
         .map(|user| user.id);
 
     if let Some(user_id) = user_id {
-        let forbidden_user_id = ForbiddenUserData::get_forbidden_user_id(guild_id).await?;
-        let forbidden_user_id = forbidden_user_id.unwrap_log("No se pudo obtener el id del usuario", current_module, line!())?;
+        //let forbidden_user_id = ForbiddenUserData::get_forbidden_user_id(guild_id).await?;
+        //let forbidden_user_id = forbidden_user_id.unwrap_log("No se pudo obtener el id del usuario", current_module, line!())?;
+        let forbidden_user_id = GuildData::verify_data(guild_id).await?
+            .into_result()?
+            .forbidden_config
+            .user_id
+            .into_result()?
+            .parse::<u64>()?;
 
-        let forbidden_role_id = ForbiddenRoleData::get_role_id(guild_id).await?;
-        let forbidden_role_id = forbidden_role_id.unwrap_log("No se pudo obtener el id del rol prohíbido o no está configurado", current_module, line!())?;
+        //let forbidden_role_id = ForbiddenRoleData::get_role_id(guild_id).await?;
+        //let forbidden_role_id = forbidden_role_id.unwrap_log("No se pudo obtener el id del rol prohíbido o no está configurado", current_module, line!())?;
+        let forbidden_role_id = GuildData::verify_data(guild_id).await?
+            .into_result()?
+            .forbidden_config
+            .role_id
+            .into_result()?
+            .parse::<u64>()?;
+        
         let mentioned_user = guild_id.member(&ctx.http, user_id).await?; // SAFETY: El GuildId siempre está disponible
         let mentioned_user_roles = mentioned_user.roles(&ctx.cache).unwrap_log("Could not get the roles", current_module, line!())?;
 
@@ -61,7 +76,7 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
             },
             contains_forbidden_role, {
                 let message = ctx.http.get_message(database_message.channel_id, database_message.message_id).await?;
-                handle_forbidden_role(ctx, &message, guild_id, &database_message).await?;
+                handle_forbidden_role(ctx, &message, guild_id).await?;
             }
         );
     }

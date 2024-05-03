@@ -8,6 +8,9 @@ pub type UnwrapResult<T> = Result<T, UnwrapErrors>;
 
 #[derive(Error, Debug)]
 pub enum UnwrapErrors {
+    #[error("Value was None")]
+    NoneError,
+    
     #[error(transparent)]
     Unwrap(#[from] UnwrapLogError),
 
@@ -31,6 +34,16 @@ pub enum UnwrapErrors {
 
     #[error(transparent)]
     Regex(#[from] regex::Error),
+}
+
+pub trait IntoUnwrapResult<T> {
+    fn into_result(self) -> UnwrapResult<T>;
+}
+
+impl<T> IntoUnwrapResult<T> for Option<T> {
+    fn into_result(self) -> UnwrapResult<T> {
+        self.ok_or(UnwrapErrors::NoneError)
+    }
 }
 
 #[derive(Error, Debug)]

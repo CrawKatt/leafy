@@ -1,10 +1,9 @@
 use serenity::all::Role;
 use crate::{DB, unwrap_log};
+use crate::utils::misc::config::{Admin, GuildData};
 use crate::utils::{CommandResult, Context};
 use crate::utils::misc::autocomplete::args_set_admins;
-use crate::commands::setters::AdminData;
 
-/// Establece los roles de administrador
 #[poise::command(
     prefix_command,
     slash_command,
@@ -17,24 +16,47 @@ pub async fn set_admins(
     ctx: Context<'_>,
     #[description = "El rol para establecer como administrador"]
     #[autocomplete = "args_set_admins"]
-    role: Option<Role>,
-    #[description = "El segundo rol para establecer como administrador (opcional)"]
+    role: Role,
+    #[description = "El rol para establecer un administrador secundario (opcional)"]
     role_2: Option<Role>,
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
 
+    let guild_name = ctx.guild().unwrap().name.clone();
     let guild_id = unwrap_log!(ctx.guild_id(), "No se pudo obtener el guild_id");
-    let role_id = role.as_ref().map(|role| role.id);
-    let role_2_id = role_2.as_ref().map(|role| role.id);
-
-    let admin_data = AdminData::new(role_id, role_2_id, guild_id);
-    admin_data.save_to_db().await?;
-
-    let role_name = unwrap_log!(role, "No se pudo obtener el nombre del rol").name;
-    ctx.say(format!("Admin role set to: **{role_name}**")).await?;
+    let role_id = role.id.to_string();
+    let role_2_id = role_2.as_ref().map(|role| role.id.to_string());
+    let existing_data = GuildData::verify_data(guild_id).await?;
     
-    let role_2 = unwrap_log!(role_2, "No se pudo obtener el nombre del segundo rol").name;
-    ctx.say(format!("Admin role set to: **{role_2}**")).await?;
+    if existing_data.is_none() {
+        let data = GuildData::default()
+            .guild_id(guild_id)
+            .admins(Admin::default()
+                .role_id(&role_id)
+            );
+        data.save_to_db().await?;
+        ctx.say(format!("Config data created for {guild_name} stablished admin to: {}", role.name)).await?;
+        
+        return Ok(())
+    }
+
+    let Some(role_2_id) = role_2_id else {
+        let data = Admin::default()
+            .role_id(&role_id);
+        data.update_field_in_db("admins.role_id", &role_id, &guild_id.to_string()).await?;
+        ctx.say(format!("Admin role set to: **{role_id}**")).await?;
+
+        return Ok(())
+    };
+
+    let data = Admin::default()
+        .role_id(&role_id)
+        .role_2_id(&role_2_id);
+
+    data.update_field_in_db("admins.role_id", &role_id, &guild_id.to_string()).await?;
+    data.update_field_in_db("admins.role_2_id", &role_2_id, &guild_id.to_string()).await?;
+
+    ctx.say(format!("Admin roles set to: **{role_id}** and **{role_2_id}**")).await?;
 
     Ok(())
 }

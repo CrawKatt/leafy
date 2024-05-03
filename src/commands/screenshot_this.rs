@@ -1,11 +1,12 @@
-use serenity::all::{ChannelId, CreateMessage, GetMessages, UserId};
-use crate::utils::{CommandResult, Context};
-use crate::utils::misc::debug::{UnwrapLog, UnwrapResult};
-use serenity::builder::CreateAttachment;
-use crate::commands::setters::set_ooc_channel::OocChannel;
-use plantita_welcomes::generate_phrase::create_image;
-use std::fs::remove_file;
 use regex::Regex;
+use std::fs::remove_file;
+use serenity::builder::CreateAttachment;
+use plantita_welcomes::generate_phrase::create_image;
+use serenity::all::{ChannelId, CreateMessage, GetMessages, UserId};
+
+use crate::utils::misc::config::GuildData;
+use crate::utils::{CommandResult, Context};
+use crate::utils::misc::debug::{IntoUnwrapResult, UnwrapLog, UnwrapResult};
 
 #[poise::command(
     prefix_command,
@@ -50,22 +51,20 @@ pub async fn screenshot_this(ctx: Context<'_>, ooc: Option<String>) -> CommandRe
         return Ok(());
     }
 
-    let sql_query = "SELECT * FROM ooc_channel WHERE guild_id = $guild_id";
-    let existing_data: Option<OocChannel> = crate::DB
-        .query(sql_query)
-        .bind(("guild_id", &guild_id.to_string()))
-        .await?
-        .take(0)?;
+    let ooc_channel = GuildData::verify_data(guild_id).await?
+        .into_result()?
+        .channel_config
+        .ooc_channel_id;
 
-    if existing_data.is_none() {
+    if ooc_channel.is_none() {
         poise::say_reply(ctx, "No se ha establecido un canal OOC").await?;
         return Ok(());
     }
 
-    let ooc_channel = existing_data.unwrap_log("No se pudo obtener el canal OOC o no ha sido establecido", module_path!(), line!())?;
-    let channel_u64 = ooc_channel.channel_id.parse::<u64>()?;
+    let ooc_channel = ooc_channel.unwrap_log("No se pudo obtener el canal OOC o no ha sido establecido", module_path!(), line!())?;
+    let channel_id = ooc_channel.parse::<ChannelId>()?;
 
-    handle_content(ctx, content.as_str(), quoted_content, &author_avatar, &author_name, ChannelId::new(channel_u64)).await?;
+    handle_content(ctx, content.as_str(), quoted_content, &author_avatar, &author_name, channel_id).await?;
 
     Ok(())
 }
@@ -82,20 +81,16 @@ async fn send_image(
     quoted_content: &str,
     author_name: &str
 ) -> CommandResult {
+    let guild_id = ctx.guild_id().unwrap();
     let create_image = create_image(author_avatar, quoted_content, author_name, "assets/PTSerif-Regular.ttf", "assets/PTSerif-Italic.ttf").await?;
     let attachment = CreateAttachment::path(&create_image).await?;
     let message = channel_id.send_files(&ctx.http(), vec![attachment], CreateMessage::default()).await?;
-    let sql_query = "SELECT * FROM ooc_channel WHERE guild_id = $guild_id";
-    let existing_data: Option<OocChannel> = crate::DB
-        .query(sql_query)
-        .bind(("guild_id", &ctx.guild_id().unwrap().to_string()))
-        .await?
-        .take(0)?;
-
-    let ooc_channel_id = existing_data
-        .unwrap_log("No se pudo obtener el canal OOC o no ha sido establecido", module_path!(), line!())?
-        .channel_id
-        .parse::<u64>()?;
+    let ooc_channel_id = GuildData::verify_data(guild_id).await?
+        .into_result()?
+        .channel_config
+        .ooc_channel_id
+        .into_result()?
+        .parse::<ChannelId>()?;
 
     if channel_id == ooc_channel_id {
         message.react(&ctx.http(), '🔺').await?;

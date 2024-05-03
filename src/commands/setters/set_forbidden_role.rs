@@ -1,11 +1,10 @@
 use serenity::all::Role;
+
 use crate::DB;
 use crate::utils::{CommandResult, Context};
 use crate::utils::misc::autocomplete::args_set_forbidden_role;
-use crate::utils::misc::debug::UnwrapLog;
-use crate::commands::setters::ForbiddenRoleData;
+use crate::utils::misc::config::{GuildData, Forbidden};
 
-/// Establece el rol de usuario prohibido de mencionar
 #[poise::command(
     prefix_command,
     slash_command,
@@ -16,24 +15,32 @@ use crate::commands::setters::ForbiddenRoleData;
 )]
 pub async fn set_forbidden_role(
     ctx: Context<'_>,
+    #[description = "The role to set as the forbidden role"]
     #[autocomplete = "args_set_forbidden_role"]
-    #[description = "The role to set as the forbidden role"] role: Role,
+    forbidden_role: Role,
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
-    let guild_id = ctx.guild_id().unwrap_log("Could not get the guild_id", module_path!(), line!())?;
-    let data = ForbiddenRoleData::new(role.id, guild_id);
-    let existing_data = data.verify_data().await?;
-    
-    let Some(_) = existing_data else {
+    let guild_id = ctx.guild_id().unwrap();
+    let role_id = forbidden_role.id.to_string();
+    let existing_data = GuildData::verify_data(guild_id).await?;
+    if existing_data.is_none() {
+        let data = GuildData::default()
+            .guild_id(guild_id)
+            .forbidden_config(Forbidden::default()
+                .role_id(role_id)
+            );
         data.save_to_db().await?;
-        ctx.say(format!("Set forbidden role to: **{}**", role.name)).await?;
+        ctx.say(format!("Set forbidden role to: **{}**", forbidden_role.name)).await?;
+
         return Ok(())
     };
+    let data = Forbidden::default().role_id(&role_id);
     
-    data.update_in_db().await?;
-
-    let message = format!("Set forbidden role to: **{}**", role.name);
-    ctx.say(message).await?;
+    // NOTA: Se debe utilizar el nombre del objeto junto con el campo a actualizar
+    // Ejemplo: `forbidden.role_id`
+    // Actualizar usando `role_id` creará un nuevo campo en la base de datos fuera del objeto
+    data.update_field_in_db("forbidden_config.role_id", &role_id, &guild_id.to_string()).await?;
+    ctx.say(format!("Set forbidden role to: **{}**", forbidden_role.name)).await?;
 
     Ok(())
 }

@@ -1,15 +1,15 @@
-use std::collections::HashMap;
 use std::fs::remove_file;
+use std::collections::HashMap;
+
+use reqwest::get;
 use image::DynamicImage;
 use poise::serenity_prelude as serenity;
-use serenity::all::{ChannelId, CreateAttachment, User};
-use crate::commands::setters::set_welcome_channel::WelcomeChannelData;
-use crate::commands::setters::set_welcome_message::WelcomeMessageData;
-use crate::DB;
-use crate::utils::CommandResult;
-use crate::utils::misc::debug::{UnwrapErrors, UnwrapLog};
 use plantita_welcomes::create_welcome::combine_images;
-use reqwest::get;
+use serenity::all::{ChannelId, CreateAttachment, User};
+
+use crate::utils::CommandResult;
+use crate::utils::misc::config::GuildData;
+use crate::utils::misc::debug::{IntoUnwrapResult, UnwrapErrors};
 
 pub async fn welcome_handler(
     ctx: &serenity::Context,
@@ -17,19 +17,18 @@ pub async fn welcome_handler(
 ) -> CommandResult {
     let guild_id = new_member.guild_id;
     let user = &new_member.user;
-    let data = WelcomeChannelData::get_welcome_channel(guild_id).await?;
-    let channel_u64 = data.parse::<u64>().unwrap_log("No se pudo convertir el canal de bienvenida a u64", file!(), line!())?;
-    let channel_id = ChannelId::new(channel_u64);
+    let channel_id = GuildData::verify_data(guild_id).await?
+        .into_result()?
+        .channel_config
+        .welcome_channel_id
+        .into_result()?
+        .parse::<ChannelId>()?;
 
-    let sql_query = "SELECT * FROM welcome_message WHERE guild_id = $guild_id";
-    let welcome_message: Option<WelcomeMessageData> = DB
-        .query(sql_query)
-        .bind(("guild_id", guild_id))
-        .await?
-        .take(0)?;
-
-    let result = welcome_message.unwrap_log("No se encontró el mensaje de bienvenida", file!(), line!())?;
-    let welcome_message = result.message;
+    let welcome_message = GuildData::verify_data(guild_id).await?
+        .into_result()?
+        .messages_config
+        .welcome
+        .into_result()?;
 
     let mut background = image::open("assets/background.png")?;
     let file = get_welcome_attachment(&mut background, user, 74, 74, 372).await?;
