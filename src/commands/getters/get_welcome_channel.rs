@@ -1,6 +1,6 @@
 use crate::DB;
+use crate::utils::misc::config::GuildData;
 use crate::utils::misc::debug::UnwrapLog;
-use crate::commands::setters::set_welcome_channel::WelcomeChannelData;
 use crate::utils::{CommandResult, Context};
 
 #[poise::command(
@@ -18,8 +18,8 @@ pub async fn get_welcome_channel(
     DB.use_ns("discord-namespace").use_db("discord").await?;
 
     let guild_id = ctx.guild_id().unwrap_log("No se pudo obtener el guild_id", file!(), line!())?;
-    let sql_query = "SELECT * FROM welcome_channel WHERE guild_id = $guild_id";
-    let existing_data: Option<WelcomeChannelData> = DB
+    let sql_query = "SELECT * FROM guild_config WHERE guild_id = $guild_id";
+    let existing_data: Option<GuildData> = DB
         .query(sql_query)
         .bind(("guild_id", guild_id))
         .await?
@@ -30,7 +30,12 @@ pub async fn get_welcome_channel(
         return Ok(())
     }
 
-    let result = existing_data.unwrap_log("No se encontró el canal de bienvenida", file!(), line!())?.channel_id;
+    let result = existing_data
+        .unwrap_log("No se encontró el canal de bienvenida", file!(), line!())?
+        .channel_config
+        .welcome_channel_id
+        .ok_or("No se encontró un canal de bienvenida o no ha sido establecido")?;
+    
     poise::say_reply(ctx, format!("El canal de bienvenida está establecido en <#{result}>")).await?;
 
     Ok(())
