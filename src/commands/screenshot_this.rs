@@ -1,12 +1,13 @@
-use regex::Regex;
 use std::fs::remove_file;
-use serenity::builder::CreateAttachment;
-use plantita_welcomes::generate_phrase::create_image;
-use serenity::all::{ChannelId, CreateMessage, GetMessages, UserId};
 
-use crate::utils::misc::config::GuildData;
+use plantita_welcomes::generate_phrase::create_image;
+use regex::Regex;
+use serenity::all::{ChannelId, CreateMessage, GetMessages, UserId};
+use serenity::builder::CreateAttachment;
+
 use crate::utils::{CommandResult, Context};
-use crate::utils::misc::debug::{IntoUnwrapResult, UnwrapLog, UnwrapResult};
+use crate::utils::misc::config::GuildData;
+use crate::utils::misc::debug::{IntoUnwrapResult, UnwrapResult};
 
 #[poise::command(
     prefix_command,
@@ -61,7 +62,7 @@ pub async fn screenshot_this(ctx: Context<'_>, ooc: Option<String>) -> CommandRe
         return Ok(());
     }
 
-    let ooc_channel = ooc_channel.unwrap_log("No se pudo obtener el canal OOC o no ha sido establecido", module_path!(), line!())?;
+    let ooc_channel = ooc_channel.into_result()?;
     let channel_id = ooc_channel.parse::<ChannelId>()?;
 
     handle_content(ctx, content.as_str(), quoted_content, &author_avatar, &author_name, channel_id).await?;
@@ -176,9 +177,8 @@ async fn generate_mention(ctx: Context<'_>, content: &str, quoted_content: Strin
         .collect::<Vec<&str>>()[1]
         .split('>')
         .collect::<Vec<&str>>()[0]
-        .parse::<u64>()?;
+        .parse::<UserId>()?;
 
-    let user_id = UserId::from(user_id);
     let extracted_username = extract_username(ctx, &user_id).await?;
     let mention = format!("<@{user_id}>");
     let fixed_quoted_content = quoted_content.replace(&mention, &extracted_username);
