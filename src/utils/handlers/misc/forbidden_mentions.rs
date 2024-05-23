@@ -2,31 +2,30 @@ use std::collections::HashMap;
 use std::panic::Location;
 
 use poise::serenity_prelude as serenity;
-use serenity::all::{GuildId, Message};
+use serenity::all::{GuildId, Message, UserId};
 
 use crate::{DB, log_handle};
+use crate::commands::setters::set_forbidden_exception::ForbiddenException;
+use crate::utils::{CommandResult, MessageData, Warns};
+use crate::utils::handlers::misc::exceptions::check_admin_exception;
+use crate::utils::handlers::misc::warns::handle_warn_system;
 use crate::utils::misc::config::GuildData;
 use crate::utils::misc::debug::IntoUnwrapResult;
 use crate::utils::misc::embeds::send_warn_embed;
-use crate::utils::{CommandResult, MessageData, Warns};
-use crate::utils::handlers::misc::warns::handle_warn_system;
-use crate::utils::handlers::misc::exceptions::check_admin_exception;
-use crate::commands::setters::set_forbidden_exception::ForbiddenException;
-
 
 pub async fn handle_forbidden_user(
     ctx: &serenity::Context,
     new_message: &Message,
     guild_id: GuildId,
     data: &MessageData,
-    forbidden_user_id: u64
+    forbidden_user_id: UserId
 ) -> CommandResult {
     let author_user_id = new_message.author.id;
     if author_user_id == forbidden_user_id {
         return Ok(())
     }
 
-    let forbidden_user_exception = ForbiddenException::have_exception(forbidden_user_id.into()).await?;
+    let forbidden_user_exception = ForbiddenException::have_exception(forbidden_user_id).await?;
     if let Some(forbidden_user_exception) = forbidden_user_exception {
         if forbidden_user_exception {
             println!("El usuario ha solicitado una excepción : {}", Location::caller());
@@ -93,20 +92,15 @@ pub async fn handle_forbidden_user(
     let mut warns = Warns::new(author_user_id);
     let existing_warns = warns.get_warns().await?;
     warns_counter(&mut warns, existing_warns).await?;
-
-    let path = "./assets/sugerencia.png";
     let channel_id = new_message.channel_id;
     let warnings = warns.warns;
-
-    send_warn_embed(ctx, warnings,path, channel_id, &warn_message).await?;
-
+    send_warn_embed(ctx, warnings, "./assets/sugerencia.png", channel_id, &warn_message).await?;
     let message_map = HashMap::new();
     let http = ctx.http.clone();
     if warns.warns >= 3 {
         handle_warn_system(&mut member, new_message, message_map, &http, warns, time_out_timer, time_out_message).await?;
     }
-
-    println!("Creating message in database 4 : {}", Location::caller());
+    
     let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
     http.delete_message(new_message.channel_id, new_message.id, None).await?;
 

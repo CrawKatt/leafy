@@ -40,8 +40,7 @@ pub async fn get_admins(
     let mut role_names = String::new();
 
     if let Some(role_id) = role_id_1 {
-        let parse = role_id.parse::<u64>()?;
-        let role_id = RoleId::new(parse);
+        let role_id = role_id.parse::<RoleId>()?;
         let role_name = &*ctx
             .cache()
             .role(guild_id, role_id)
@@ -52,8 +51,7 @@ pub async fn get_admins(
     }
 
     if let Some(role_id) = role_id_2 {
-        let parse = role_id.parse::<u64>()?;
-        let role_id = RoleId::new(parse);
+        let role_id = role_id.parse::<RoleId>()?;
         let role_name = &*ctx
             .cache()
             .role(guild_id, role_id)

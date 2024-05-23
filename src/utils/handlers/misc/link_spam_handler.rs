@@ -1,16 +1,17 @@
 use std::sync::{Arc, LazyLock};
-use regex::Regex;
-use tokio::sync::Mutex;
-use serenity::all::{ChannelId, CreateEmbedAuthor, CreateMessage, GetMessages, GuildId, Message, UserId};
-use poise::serenity_prelude as serenity;
-use serenity::builder::CreateEmbed;
 use std::time::Instant;
+
+use poise::serenity_prelude as serenity;
+use regex::Regex;
+use serenity::all::{ChannelId, CreateEmbedAuthor, CreateMessage, GetMessages, GuildId, Message, UserId};
+use serenity::builder::CreateEmbed;
+use tokio::sync::Mutex;
 use tokio::time::{Duration, sleep};
 
-use crate::utils::misc::config::GuildData;
 use crate::utils::CommandResult;
 use crate::utils::handlers::misc::everyone_case::handle_everyone;
-use crate::utils::misc::debug::{IntoUnwrapResult, UnwrapLog};
+use crate::utils::misc::config::GuildData;
+use crate::utils::misc::debug::IntoUnwrapResult;
 
 /// # Estructura de rastreador de mensajes
 /// 
@@ -152,7 +153,7 @@ pub async fn spam_checker(
             .channel_ids(vec![channel_id]);
 
         message_tracker.push(message);
-        message_tracker.last_mut().unwrap_log("No se pudo obtener el último mensaje", module_path!(), line!())?
+        message_tracker.last_mut().into_result()?
     };
 
     if message.channel_ids.len() >= 3 {

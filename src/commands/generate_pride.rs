@@ -1,10 +1,12 @@
-use serenity::all::{CreateMessage, GetMessages, Member};
-use crate::utils::{CommandResult, Context};
-use crate::utils::misc::debug::{UnwrapLog, UnwrapResult};
-use serenity::builder::CreateAttachment;
 use std::fs::remove_file;
+
 use image::imageops::overlay;
 use reqwest::get;
+use serenity::all::{CreateMessage, GetMessages, Member};
+use serenity::builder::CreateAttachment;
+
+use crate::utils::{CommandResult, Context};
+use crate::utils::misc::debug::{IntoUnwrapResult, UnwrapResult};
 
 #[poise::command(
     prefix_command,
@@ -16,7 +18,7 @@ pub async fn pride(ctx: Context<'_>, target: Option<Member>) -> CommandResult {
     let guild_id = ctx.guild_id().unwrap(); // SAFETY: Si el mensaje no es de un servidor, no se ejecutará el comando
 
     if target.is_some() {
-        let target_member = target.unwrap_log("No se pudo obtener el miembro", module_path!(), line!())?;
+        let target_member = target.into_result()?;
         let target_avatar = target_member.face(); // el método face devuelve el avatar si existe, de lo contrario, el avatar predeterminado
         let channel_id = ctx.channel_id();
         let output_path = apply_overlay_to_avatar(&target_avatar, "./assets/pride.png").await?;
@@ -31,9 +33,9 @@ pub async fn pride(ctx: Context<'_>, target: Option<Member>) -> CommandResult {
     let messages = ctx.channel_id().messages(&ctx.http(), GetMessages::default()).await?;
     let message = messages
         .first()
-        .unwrap_log("No se pudo obtener el mensaje", module_path!(), line!())?;
+        .into_result()?;
 
-    let target_id = &message.referenced_message.as_ref().unwrap_log("No se pudo obtener el mensaje referenciado", module_path!(), line!())?.author.id;
+    let target_id = &message.referenced_message.as_ref().into_result()?.author.id;
     let target_member = guild_id.member(&ctx.http(), target_id).await?;
     let target_avatar = target_member.face(); // el método face devuelve el avatar si existe, de lo contrario, el avatar predeterminado
     let channel_id = ctx.channel_id();

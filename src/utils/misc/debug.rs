@@ -1,18 +1,17 @@
-use std::fmt;
 use std::num::ParseIntError;
+
 use serde::ser::StdError;
 use thiserror::Error;
-use crate::log_handle;
 
 pub type UnwrapResult<T> = Result<T, UnwrapErrors>;
 
 #[derive(Error, Debug)]
 pub enum UnwrapErrors {
+    #[error("Value was None: {0}")]
+    DebugNone(String),
+    
     #[error("Value was None")]
     NoneError,
-    
-    #[error(transparent)]
-    Unwrap(#[from] UnwrapLogError),
 
     #[error(transparent)]
     Surreal(#[from] surrealdb::Error),
@@ -46,26 +45,14 @@ impl<T> IntoUnwrapResult<T> for Option<T> {
     }
 }
 
-#[derive(Error, Debug)]
-pub struct UnwrapLogError {
-    pub msg: &'static str,
-}
-
-impl fmt::Display for UnwrapLogError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "UnwrapLogError: {}", self.msg)
-    }
-}
-
 pub trait UnwrapLog<T> {
-    fn unwrap_log(self, msg: &'static str, module: &str, line: u32) -> Result<T, UnwrapLogError>;
+    fn unwrap_log(self, caller: String) -> UnwrapResult<T>;
 }
 
 impl<T> UnwrapLog<T> for Option<T> {
-    fn unwrap_log(self, msg: &'static str, module: &str, line: u32) -> Result<T, UnwrapLogError> {
+    fn unwrap_log(self, caller: String) -> UnwrapResult<T> {
         self.map_or_else(move || {
-            log_handle!("{msg} : Caller: `{module}` Line {line}");
-            Err(UnwrapLogError { msg })
+            Err(UnwrapErrors::DebugNone(caller))
         }, move |t| Ok(t))
     }
 }
@@ -75,45 +62,13 @@ impl<T, E> UnwrapLog<T> for Result<T, E>
         T: Default,
         E: StdError,
 {
-    fn unwrap_log(self, msg: &'static str, module: &str, line: u32) -> Result<T, UnwrapLogError> {
+    fn unwrap_log(self, caller: String) -> UnwrapResult<T> {
         match self {
             Ok(t) => Ok(t),
             Err(why) => {
-                log_handle!("{msg}: {why} : `{module}` Line {line}");
-                Err(UnwrapLogError { msg })
+                println!("Error: {why}");
+                Err(UnwrapErrors::DebugNone(caller))
             }
         }
     }
-}
-
-#[macro_export]
-macro_rules! unwrap_log {
-    ($expr:expr, $msg:expr) => {
-        {
-            use $crate::utils::misc::debug::UnwrapLogError;
-            use $crate::log_handle;
-
-            match $expr {
-                Some(val) => val,
-                None => {
-                    log_handle!("{} : Caller: `{}` Line {}", $msg, file!(), line!());
-                    return Err(Box::new(UnwrapLogError { msg: $msg }));
-                }
-            }
-        }
-    };
-    ($expr:expr, $msg:expr) => {
-        {
-            use $crate::utils::misc::debug::UnwrapLogError;
-            use $crate::log_handle;
-
-            match $expr {
-                Ok(val) => val,
-                Err(why) => {
-                    log_handle!("{}: {} : `{}` Line {}", $msg, why, file!(), line!());
-                    return Err(UnwrapLogError { msg: $msg });
-                }
-            }
-        }
-    };
 }

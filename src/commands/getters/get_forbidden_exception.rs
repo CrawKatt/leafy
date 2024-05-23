@@ -2,7 +2,7 @@ use serenity::all::UserId;
 use crate::commands::setters::set_forbidden_exception::ForbiddenException;
 use crate::utils::{CommandResult, Context};
 use crate::utils::misc::debug::UnwrapLog;
-use crate::DB;
+use crate::{DB, location};
 
 /// Obtiene el estado de excepción de un usuario si es que tiene uno.
 #[poise::command(
@@ -34,9 +34,9 @@ pub async fn get_forbidden_exception(
         .await?
         .take(0)?;
 
-    let existing_data = existing_data.unwrap_log("Failed to get forbidden exception", module_path!(), line!())?;
+    let existing_data = existing_data.unwrap_log(location!())?;
     let forbidden_user = existing_data.user_id;
-    let is_active = existing_data.is_active.unwrap_log("No se encontró un estado", module_path!(), line!())?;
+    let is_active = existing_data.is_active.unwrap_log(location!())?;
 
     let status = if is_active { "Activa" } else { "Inactiva" };
     let user = forbidden_user.to_user(ctx.http()).await?;

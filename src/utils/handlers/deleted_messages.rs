@@ -3,9 +3,11 @@ use reqwest::Url;
 use serenity::all::{ChannelId, MessageId};
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
-use crate::utils::misc::config::GuildData;
+use crate::location;
+
 use crate::utils::CommandResult;
 use crate::utils::MessageData;
+use crate::utils::misc::config::GuildData;
 use crate::utils::misc::debug::{IntoUnwrapResult, UnwrapLog};
 use crate::utils::misc::embeds::{send_embed, send_embed_with_attachment};
 
@@ -25,7 +27,7 @@ pub async fn delete_message_handler(ctx: &serenity::Context, channel_id: &Channe
     }
 
     // Obtener el canal de logs de la base de datos
-    let result_database = database_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", file!(), line!())?;
+    let result_database = database_message.guild_id.unwrap_log(location!())?;
     let log_channel = GuildData::verify_data(result_database).await?
         .into_result()?
         .channel_config
@@ -52,7 +54,7 @@ async fn handle_audio(ctx: &serenity::Context, deleted_message_id: &MessageId, d
     let mut out = File::create(&filename).await?;
     out.write_all(&bytes).await?;
 
-    let result_database = database_message.guild_id.unwrap_log("No se pudo obtener el id del servidor", file!(), line!())?;
+    let result_database = database_message.guild_id.into_result()?;
     let log_channel = GuildData::verify_data(result_database).await?
         .into_result()?
         .channel_config

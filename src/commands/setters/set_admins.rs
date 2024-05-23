@@ -1,8 +1,9 @@
 use serenity::all::Role;
-use crate::{DB, unwrap_log};
+use crate::DB;
 use crate::utils::misc::config::{Admin, GuildData};
 use crate::utils::{CommandResult, Context};
 use crate::utils::misc::autocomplete::args_set_admins;
+use crate::utils::misc::debug::IntoUnwrapResult;
 
 #[poise::command(
     prefix_command,
@@ -22,8 +23,8 @@ pub async fn set_admins(
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
 
-    let guild_name = ctx.guild().unwrap().name.clone();
-    let guild_id = unwrap_log!(ctx.guild_id(), "No se pudo obtener el guild_id");
+    let guild_name = ctx.guild().into_result()?.name.clone();
+    let guild_id = ctx.guild_id().into_result()?;
     let role_id = role.id.to_string();
     let role_2_id = role_2.as_ref().map(|role| role.id.to_string());
     let existing_data = GuildData::verify_data(guild_id).await?;

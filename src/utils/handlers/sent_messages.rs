@@ -1,17 +1,18 @@
 use std::panic::Location;
 use std::sync::Arc;
-use serenity::all::{GuildId, Message, RoleId, UserId};
-use poise::serenity_prelude as serenity;
 
-use crate::DB;
-use crate::utils::MessageData;
+use poise::serenity_prelude as serenity;
+use serenity::all::{GuildId, Message, RoleId, UserId};
+
+use crate::{DB, location};
 use crate::utils::CommandResult;
-use crate::utils::misc::config::GuildData;
-use crate::utils::misc::debug::IntoUnwrapResult;
-use crate::utils::handlers::misc::everyone_case::handle_everyone;
 use crate::utils::handlers::misc::attachment_case::attachment_handler;
-use crate::utils::handlers::misc::link_spam_handler::{extract_link, spam_checker};
+use crate::utils::handlers::misc::everyone_case::handle_everyone;
 use crate::utils::handlers::misc::forbidden_mentions::{handle_forbidden_role, handle_forbidden_user};
+use crate::utils::handlers::misc::link_spam_handler::{extract_link, spam_checker};
+use crate::utils::MessageData;
+use crate::utils::misc::config::GuildData;
+use crate::utils::misc::debug::{IntoUnwrapResult, UnwrapLog};
 
 /// # Esta función maneja los mensajes enviados en un servidor
 ///
@@ -32,7 +33,7 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     let mut member = guild_id.member(&ctx.http, new_message.author.id).await?;
     let user_id = new_message.mentions.first().map(|user| user.id);
     let admin_role_id = GuildData::verify_data(guild_id).await?
-        .into_result()?
+        .unwrap_log(location!())?
         .admins
         .role_id;
     
@@ -100,12 +101,12 @@ async fn handle_user_id(
         .into_result()?
         .forbidden_config
         .user_id
-        .into_result()?
+        .unwrap_log(location!())?
         .parse::<UserId>()?;
 
     if new_message.mentions_user_id(forbidden_user_id) {
-        handle_forbidden_user(ctx, new_message, guild_id, data, forbidden_user_id.into()).await?;
-        DB.query("DEFINE INDEX guild_id ON TABLE messages COLUMNS message_id UNIQUE").await?;
+        handle_forbidden_user(ctx, new_message, guild_id, data, forbidden_user_id).await?;
+        DB.query("DEFINE INDEX message_id ON TABLE messages COLUMNS message_id UNIQUE").await?;
         let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
         return Ok(())
     }
