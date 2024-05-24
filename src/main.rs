@@ -14,14 +14,15 @@ pub static DB: LazyLock<Surreal<SurrealClient>> = LazyLock::new(Surreal::init);
 mod commands;
 mod utils;
 mod test;
+mod handlers;
 
 use utils::Data;
 use utils::MessageData;
 use utils::load_commands;
-use utils::events::event_handler;
-use utils::misc::debug::UnwrapResult;
-use utils::handlers::error::err_handler;
-use utils::handlers::misc::link_spam_handler::message_tracker_cleaner;
+use utils::debug::UnwrapResult;
+use handlers::error::err_handler;
+use handlers::events::event_handler;
+use handlers::misc::link_spam_handler::message_tracker_cleaner;
 
 #[tokio::main]
 async fn main() -> UnwrapResult<()> {
