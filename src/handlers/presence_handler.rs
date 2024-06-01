@@ -37,12 +37,18 @@ pub async fn handler(event: &TypingStartEvent) -> CommandResult {
         .unwrap_log(location!())?
         .parse::<UserId>()?;
 
-    let exception_channel_id = GuildData::verify_data(guild_id).await?
+    let database_data = GuildData::verify_data(guild_id).await?
         .unwrap_log(location!())?
         .channels
-        .exceptions
-        .unwrap_log(location!())?
-        .parse::<ChannelId>()?;
+        .exceptions;
+    
+    println!("exception_channel_id: {database_data:?}");
+    let Some(exception_channel_id) = database_data else {
+        println!("No exception channel found for guild_id: {guild_id}");
+        return Ok(())
+    };
+    
+    let exception_channel_id = exception_channel_id.parse::<ChannelId>()?;
 
     if user_id == forbidden_user_id && channel_id == exception_channel_id {
         ForbiddenException::manual_switch(user_id, guild_id, true).await?;
