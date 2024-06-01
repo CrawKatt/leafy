@@ -56,6 +56,17 @@ impl ForbiddenException {
 
         Ok(())
     }
+    
+    pub async fn manual_switch(user_id: UserId, guild_id: GuildId, state: bool) -> SurrealResult<()> {
+        DB.use_ns("discord-namespace").use_db("discord").await?;
+        let sql_query = "UPDATE forbidden_exception SET is_active = $state WHERE guild_id = $guild_id AND user_id = $user_id";
+        DB.query(sql_query)
+            .bind(("state", state))
+            .bind(("guild_id", guild_id))
+            .bind(("user_id", user_id)).await?;
+
+        Ok(())
+    }
 
     pub async fn have_exception(user_id: UserId) -> SurrealResult<Option<bool>> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
