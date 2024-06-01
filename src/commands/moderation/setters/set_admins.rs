@@ -1,8 +1,8 @@
 use serenity::all::Role;
 use crate::DB;
-use crate::utils::config::{Admin, GuildData};
 use crate::utils::{CommandResult, Context};
 use crate::utils::autocomplete::args_set_admins;
+use crate::utils::config::{Admin, GuildData};
 use crate::utils::debug::IntoUnwrapResult;
 
 #[poise::command(
@@ -33,7 +33,7 @@ pub async fn set_admins(
         let data = GuildData::default()
             .guild_id(guild_id)
             .admins(Admin::default()
-                .role_id(&role_id)
+                .role(&role_id)
             );
         data.save_to_db().await?;
         ctx.say(format!("Config data created for {guild_name} stablished admin to: {}", role.name)).await?;
@@ -43,7 +43,7 @@ pub async fn set_admins(
 
     let Some(role_2_id) = role_2_id else {
         let data = Admin::default()
-            .role_id(&role_id);
+            .role(&role_id);
         data.update_field_in_db("admins.role_id", &role_id, &guild_id.to_string()).await?;
         ctx.say(format!("Admin role set to: **{role_id}**")).await?;
 
@@ -51,8 +51,8 @@ pub async fn set_admins(
     };
 
     let data = Admin::default()
-        .role_id(&role_id)
-        .role_2_id(&role_2_id);
+        .role(&role_id)
+        .role_2(&role_2_id);
 
     data.update_field_in_db("admins.role_id", &role_id, &guild_id.to_string()).await?;
     data.update_field_in_db("admins.role_2_id", &role_2_id, &guild_id.to_string()).await?;

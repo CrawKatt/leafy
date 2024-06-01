@@ -21,7 +21,7 @@ pub async fn set_welcome_message(
     if existing_data.is_none() {
         let data = GuildData::default()
             .guild_id(guild_id)
-            .messages_config(Messages::default()
+            .messages(Messages::default()
                 .welcome(&message));
 
         data.save_to_db().await?;
@@ -33,7 +33,7 @@ pub async fn set_welcome_message(
     let data = Messages::default()
         .welcome(&message);
 
-    data.update_field_in_db("messages_config.welcome", &message, &guild_id.to_string()).await?;
+    data.update_field_in_db("messages.welcome", &message, &guild_id.to_string()).await?;
     ctx.say(format!("El mensaje de bienvenida ha sido actualizado a: {message}")).await?;
 
     Ok(())

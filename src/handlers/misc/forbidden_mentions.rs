@@ -41,14 +41,14 @@ pub async fn handle_forbidden_user(
     let mut member = guild_id.member(&ctx.http, author_user_id).await?;
     let time_out_timer = GuildData::verify_data(guild_id).await?
         .into_result()?
-        .time_out_config
+        .time_out
         .time
         .into_result()?
         .parse::<i64>()?;
     
     let warn_message = GuildData::verify_data(guild_id).await?
         .into_result()?
-        .messages_config
+        .messages
         .warn
         .unwrap_or_else(|| {
             log_handle!("No se ha establecido un mensaje de advertencia: `sent_message.rs` {}", Location::caller());
@@ -58,7 +58,7 @@ pub async fn handle_forbidden_user(
     let warn_message = format!("{} {warn_message}", member.distinct());
     let time_out_message = GuildData::verify_data(guild_id).await?
         .into_result()?
-        .messages_config
+        .messages
         .time_out
         .unwrap_or_else(|| {
             log_handle!("No se ha establecido un mensaje de silencio: {}", Location::caller());
@@ -68,12 +68,12 @@ pub async fn handle_forbidden_user(
     let admin_role_id = GuildData::verify_data(guild_id).await?
         .into_result()?
         .admins
-        .role_id;
+        .role;
     
     let admin_role_id_2 = GuildData::verify_data(guild_id).await?
         .into_result()?
         .admins
-        .role_2_id;
+        .role_2;
 
     // Salir de la función si no hay un admin establecido
     if admin_role_id.is_none() {
@@ -101,6 +101,7 @@ pub async fn handle_forbidden_user(
         handle_warn_system(&mut member, new_message, message_map, &http, warns, time_out_timer, time_out_message).await?;
     }
     
+    DB.query("DEFINE INDEX message_id ON TABLE messages COLUMNS message_id UNIQUE").await?;
     let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
     http.delete_message(new_message.channel_id, new_message.id, None).await?;
 
@@ -117,18 +118,18 @@ pub async fn handle_forbidden_role(
     let admin_role_id = GuildData::verify_data(guild_id).await?
         .into_result()?
         .admins
-        .role_id;
+        .role;
     
     let time_out_timer = GuildData::verify_data(guild_id).await?
         .into_result()?
-        .time_out_config
+        .time_out
         .time
         .into_result()?
         .parse::<i64>()?;
 
     let warn_message = GuildData::verify_data(guild_id).await?
         .into_result()?
-        .messages_config
+        .messages
         .warn
         .unwrap_or_else(|| {
             log_handle!("No se ha establecido un mensaje de advertencia: `sent_message.rs` {}", Location::caller());
@@ -138,7 +139,7 @@ pub async fn handle_forbidden_role(
     let warn_message = format!("{} {warn_message}", member.distinct());
     let time_out_message = GuildData::verify_data(guild_id).await?
         .into_result()?
-        .messages_config
+        .messages
         .time_out
         .unwrap_or_else(|| {
             log_handle!("No se ha establecido un mensaje de silencio: {}", Location::caller());

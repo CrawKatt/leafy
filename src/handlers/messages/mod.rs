@@ -1,3 +1,3 @@
-pub mod deleted_messages;
-pub mod edited_messages;
-pub mod sent_messages;
+pub mod deleted;
+pub mod edited;
+pub mod sent;

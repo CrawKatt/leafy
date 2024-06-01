@@ -31,11 +31,11 @@ pub async fn get_admins(
     
     let role_id_1 = database_info
         .admins
-        .role_id;
+        .role;
     
     let role_id_2 = database_info
         .admins
-        .role_2_id;
+        .role_2;
 
     let mut role_names = String::new();
 

@@ -1,3 +1,4 @@
+use serenity::all::RoleId;
 use crate::DB;
 use crate::utils::config::GuildData;
 use crate::utils::{CommandResult, Context};
@@ -30,10 +31,10 @@ pub async fn get_forbidden_role(
     };
     
     let forbidden_role_id = forbidden_role_id
-        .forbidden_config
-        .role_id
+        .forbidden
+        .role
         .ok_or("No se ha establecido un rol prohíbido de mencionar")?
-        .parse::<u64>()?;
+        .parse::<RoleId>()?;
     
     let forbidden_role = ctx.cache().role(guild_id, forbidden_role_id).ok_or("Role not found")?.name.clone();
 

@@ -21,7 +21,7 @@ pub async fn set_warn_message(
     if existing_data.is_none() {
         let data = GuildData::default()
             .guild_id(guild_id)
-            .messages_config(Messages::default()
+            .messages(Messages::default()
                 .warn(&warn_message)
             );
 
@@ -34,7 +34,7 @@ pub async fn set_warn_message(
     let data = Messages::default()
         .warn(&warn_message);
 
-    data.update_field_in_db("messages_config.warn", &warn_message, &guild_id.to_string()).await?;
+    data.update_field_in_db("messages.warn", &warn_message, &guild_id.to_string()).await?;
     ctx.say(format!("El mensaje de advertencia ha sido establecido a: {warn_message}")).await?;
 
     Ok(())

@@ -31,7 +31,7 @@ pub async fn get_timeout_timer(
     };
 
     let time = time_out_timer
-        .time_out_config
+        .time_out
         .time
         .ok_or("No se encontró un tiempo de timeout o no ha sido establecido")?;
     

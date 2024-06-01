@@ -32,8 +32,8 @@ pub async fn get_welcome_channel(
 
     let result = existing_data
         .unwrap_log(location!())?
-        .channel_config
-        .welcome_channel_id
+        .channels
+        .welcome
         .ok_or("No se encontró un canal de bienvenida o no ha sido establecido")?;
     
     poise::say_reply(ctx, format!("El canal de bienvenida está establecido en <#{result}>")).await?;

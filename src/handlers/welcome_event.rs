@@ -19,14 +19,14 @@ pub async fn welcome_handler(
     let user = &new_member.user;
     let channel_id = GuildData::verify_data(guild_id).await?
         .into_result()?
-        .channel_config
-        .welcome_channel_id
+        .channels
+        .welcome
         .into_result()?
         .parse::<ChannelId>()?;
 
     let welcome_message = GuildData::verify_data(guild_id).await?
         .into_result()?
-        .messages_config
+        .messages
         .welcome
         .into_result()?;
 

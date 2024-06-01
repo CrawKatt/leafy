@@ -22,8 +22,8 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
     if old_content == new_content { return Ok(()) }
     let log_channel = GuildData::verify_data(guild_id).await?
         .unwrap_log(location!())?
-        .channel_config
-        .log_channel_id
+        .channels
+        .logs
         .into_result()?
         .parse::<ChannelId>()?;
     
@@ -40,15 +40,15 @@ pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpda
     let user_id = user.id;
     let forbidden_user_id = GuildData::verify_data(guild_id).await?
         .unwrap_log(location!())?
-        .forbidden_config
-        .user_id
+        .forbidden
+        .user
         .into_result()?
         .parse::<UserId>()?;
 
     let forbidden_role_id = GuildData::verify_data(guild_id).await?
         .unwrap_log(location!())?
-        .forbidden_config
-        .role_id
+        .forbidden
+        .role
         .into_result()?
         .parse::<RoleId>()?;
 

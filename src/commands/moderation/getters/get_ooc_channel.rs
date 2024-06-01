@@ -25,8 +25,8 @@ pub async fn get_ooc_channel(ctx: Context<'_>) -> CommandResult {
     };
 
     let ooc_channel_id = existing_data
-        .channel_config
-        .ooc_channel_id
+        .channels
+        .ooc
         .ok_or("No se encontró un canal de OOC o no ha sido establecido")?;
     
     ctx.say(format!("El canal de Fuera de Contexto establecido es: <#{ooc_channel_id}>")).await?;

@@ -1,3 +1,3 @@
 pub mod ping;
-pub(crate) mod fun;
-pub(crate) mod moderation;
+pub mod fun;
+pub mod moderation;

@@ -19,7 +19,7 @@ pub async fn set_time_out_message(
     if existing_data.is_none() {
         let data = GuildData::default()
             .guild_id(guild_id)
-            .messages_config(Messages::default()
+            .messages(Messages::default()
                 .time_out(&time_out_message));
 
         data.save_to_db().await?;
@@ -31,7 +31,7 @@ pub async fn set_time_out_message(
     let data = Messages::default()
         .time_out(&time_out_message);
 
-    data.update_field_in_db("messages_config.time_out", &time_out_message, &guild_id.to_string()).await?;
+    data.update_field_in_db("messages.time_out", &time_out_message, &guild_id.to_string()).await?;
     ctx.say(format!("Time out message actualizado: {time_out_message}")).await?;
 
     Ok(())

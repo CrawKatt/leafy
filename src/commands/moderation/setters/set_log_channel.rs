@@ -28,8 +28,8 @@ pub async fn set_log_channel(
     if existing_data.is_none() {
         let data = GuildData::default()
             .guild_id(guild_id)
-            .channel_config(Channels::default()
-                .log_channel_id(&channel_id)
+            .channels(Channels::default()
+                .logs(&channel_id)
             );
         data.save_to_db().await?;
         ctx.say(format!("Log channel establecido: <#{channel_id}>")).await?;
@@ -38,9 +38,9 @@ pub async fn set_log_channel(
     }
 
     let data = Channels::default()
-        .log_channel_id(&channel_id);
+        .logs(&channel_id);
 
-    data.update_field_in_db("channel_config.log_channel_id", &channel_id, &guild_id.to_string()).await?;
+    data.update_field_in_db("channels.logs", &channel_id, &guild_id.to_string()).await?;
     ctx.say(format!("Log channel establecido: <#{channel_id}>")).await?;
 
     Ok(())

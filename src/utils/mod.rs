@@ -7,6 +7,7 @@ use crate::commands::fun::generate_furry::furry;
 use crate::commands::fun::generate_pride::pride;
 use crate::commands::fun::screenshot_this::screenshot_this;
 use crate::commands::moderation::getters::get_admins::get_admins;
+use crate::commands::moderation::getters::get_exception_channel::get_exception_channel;
 use crate::commands::moderation::getters::get_forbidden_exception::get_forbidden_exception;
 use crate::commands::moderation::getters::get_forbidden_role::get_forbidden_role;
 use crate::commands::moderation::getters::get_forbidden_user::get_forbidden_user;
@@ -16,6 +17,7 @@ use crate::commands::moderation::getters::get_timeout_timer::get_timeout_timer;
 use crate::commands::moderation::getters::get_welcome_channel::get_welcome_channel;
 use crate::commands::ping::ping;
 use crate::commands::moderation::setters::set_admins::set_admins;
+use crate::commands::moderation::setters::set_exception_channel::set_exception_channel;
 use crate::commands::moderation::setters::set_forbidden_exception::set_forbidden_exception;
 use crate::commands::moderation::setters::set_forbidden_role::set_forbidden_role;
 use crate::commands::moderation::setters::set_forbidden_user::set_forbidden_user;
@@ -124,7 +126,7 @@ impl Warns {
         Ok(())
     }
 
-    pub async fn add_warn(&mut self) -> SurrealResult<()> {
+    pub async fn add_warn(&self) -> SurrealResult<()> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
         let sql_query = "UPDATE warns SET warns = $warns WHERE user_id = $user_id";
         let _updated: Vec<Self> = DB
@@ -170,6 +172,7 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         set_welcome_channel(),
         set_time_out_message(),
         set_forbidden_exception(),
+        set_exception_channel(),
         get_admins(),
         get_log_channel(),
         get_ooc_channel(),
@@ -177,6 +180,7 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         get_forbidden_user(),
         get_forbidden_role(),
         get_welcome_channel(),
+        get_exception_channel(),
         get_forbidden_exception(),
         screenshot_this(),
         pride(),

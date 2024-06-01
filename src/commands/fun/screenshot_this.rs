@@ -26,24 +26,21 @@ pub async fn screenshot_this(ctx: Context<'_>, ooc: Option<String>) -> CommandRe
         .first()
         .ok_or("No se encontraron mensajes")?;
 
-    let message_replied = &message.referenced_message.as_ref();
+    let message_replied = &message.referenced_message;
     let Some(message_some) = message_replied else {
         poise::say_reply(ctx, "Debes responder un mensaje para usar este comando").await?;
         return Ok(())
     };
 
-    let content = &message_some.content;
+    let content = format!("\"{}\"", &message_some.content);
     let author_id = &message.referenced_message.as_ref().unwrap().author.id; // SAFETY: El `author_id` siempre está disponible en un mensaje referenciado
     let guild_id = ctx.guild_id().unwrap(); // SAFETY: Si el mensaje no es de un servidor, no se ejecutará el comando
-    let author_member = guild_id.member(&ctx.http(), author_id).await?;
-    let author_avatar = author_member.face(); // el método face devuelve el avatar si existe, de lo contrario, el avatar predeterminado
-    let name = author_member.distinct(); // el método distinct devuelve el apodo si existe, de lo contrario, el nombre de usuario
-    let author_name = format!("- {name}");
-    let quoted_content = format!("\"{content}\"");
+    let author_avatar = generate_author_avatar(ctx, author_id).await?;
+    let author_name = generate_author_name(ctx, author_id).await?;
 
     // Si se proporciona un canal OOC, se enviará la captura de pantalla a ese canal
     let Some(ooc_channel) = ooc else {
-        handle_content(ctx, content.as_str(), quoted_content, &author_avatar, &author_name, ctx.channel_id()).await?;
+        handle_content(ctx, &content, &content, &author_avatar, &author_name, ctx.channel_id()).await?;
         return Ok(())
     };
 
@@ -54,8 +51,8 @@ pub async fn screenshot_this(ctx: Context<'_>, ooc: Option<String>) -> CommandRe
 
     let ooc_channel = GuildData::verify_data(guild_id).await?
         .into_result()?
-        .channel_config
-        .ooc_channel_id;
+        .channels
+        .ooc;
 
     if ooc_channel.is_none() {
         poise::say_reply(ctx, "No se ha establecido un canal OOC").await?;
@@ -65,9 +62,26 @@ pub async fn screenshot_this(ctx: Context<'_>, ooc: Option<String>) -> CommandRe
     let ooc_channel = ooc_channel.into_result()?;
     let channel_id = ooc_channel.parse::<ChannelId>()?;
 
-    handle_content(ctx, content.as_str(), quoted_content, &author_avatar, &author_name, channel_id).await?;
+    handle_content(ctx, &content, &content, &author_avatar, &author_name, channel_id).await?;
 
     Ok(())
+}
+
+async fn generate_author_avatar(ctx: Context<'_>, author_id: &UserId) -> UnwrapResult<String> {
+    let guild_id = ctx.guild_id().into_result()?; // SAFETY: Si el mensaje no es de un servidor, no se ejecutará el comando
+    let member = guild_id.member(&ctx.http(), author_id).await?;
+    let author_avatar = member.face(); // el método face devuelve el avatar si existe, de lo contrario, el avatar predeterminado
+
+    Ok(author_avatar)
+}
+
+async fn generate_author_name(ctx: Context<'_>, author_id: &UserId) -> UnwrapResult<String> {
+    let guild_id = ctx.guild_id().into_result()?; // SAFETY: Si el mensaje no es de un servidor, no se ejecutará el comando
+    let member = guild_id.member(&ctx.http(), author_id).await?;
+    let author_name = member.distinct(); // el método distinct devuelve el apodo si existe, de lo contrario, el nombre de usuario
+    let author_name = format!("- {author_name}");
+
+    Ok(author_name)
 }
 
 /// # Genera y envía la imagen generada al canal
@@ -88,8 +102,8 @@ async fn send_image(
     let message = channel_id.send_files(&ctx.http(), vec![attachment], CreateMessage::default()).await?;
     let ooc_channel_id = GuildData::verify_data(guild_id).await?
         .into_result()?
-        .channel_config
-        .ooc_channel_id
+        .channels
+        .ooc
         .into_result()?
         .parse::<ChannelId>()?;
 
@@ -113,7 +127,7 @@ async fn send_image(
 async fn handle_content(
     ctx: Context<'_>,
     content: &str,
-    quoted_content: String,
+    quoted_content: &str,
     author_avatar: &str,
     author_name: &str,
     channel_id: ChannelId
@@ -122,7 +136,7 @@ async fn handle_content(
     let quoted_content = if content.contains("<@") {
         generate_mention(ctx, content, quoted_content).await?
     } else {
-        quoted_content
+        quoted_content.to_string()
     };
 
     let quoted_content = &*remove_discord_emojis(&quoted_content)?;
@@ -172,7 +186,7 @@ fn remove_discord_emojis(content: &str) -> UnwrapResult<String> {
 /// ya que las menciones de usuario no son interpretadas como @usuario sino como
 /// `<@user_id>`
 ///
-async fn generate_mention(ctx: Context<'_>, content: &str, quoted_content: String) -> UnwrapResult<String> {
+async fn generate_mention(ctx: Context<'_>, content: &str, quoted_content: &str) -> UnwrapResult<String> {
     let user_id = content.split("<@")
         .collect::<Vec<&str>>()[1]
         .split('>')

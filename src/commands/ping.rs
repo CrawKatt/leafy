@@ -7,7 +7,10 @@ use crate::utils::{CommandResult, Context};
     slash_command,
     category = "Info",
     guild_only,
-    ephemeral
+    ephemeral,
+    description_localized("es-ES", "Muestra la latencia del bot"),
+    description_localized("en-US", "Shows the bot's latency"),
+    description_localized("ja", "ボットの遅延を表示します")
 )]
 pub async fn ping(ctx: Context<'_>) -> CommandResult {
     let before = Instant::now();
