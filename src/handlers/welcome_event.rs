@@ -6,10 +6,11 @@ use image::DynamicImage;
 use poise::serenity_prelude as serenity;
 use plantita_welcomes::create_welcome::combine_images;
 use serenity::all::{ChannelId, CreateAttachment, User};
+use crate::location;
 
 use crate::utils::CommandResult;
 use crate::utils::config::GuildData;
-use crate::utils::debug::{IntoUnwrapResult, UnwrapErrors};
+use crate::utils::debug::{IntoUnwrapResult, UnwrapErrors, UnwrapLog};
 
 pub async fn welcome_handler(
     ctx: &serenity::Context,
@@ -18,14 +19,14 @@ pub async fn welcome_handler(
     let guild_id = new_member.guild_id;
     let user = &new_member.user;
     let channel_id = GuildData::verify_data(guild_id).await?
-        .into_result()?
+        .unwrap_log(location!())?
         .channels
         .welcome
         .into_result()?
         .parse::<ChannelId>()?;
 
     let welcome_message = GuildData::verify_data(guild_id).await?
-        .into_result()?
+        .unwrap_log(location!())?
         .messages
         .welcome
         .into_result()?;
