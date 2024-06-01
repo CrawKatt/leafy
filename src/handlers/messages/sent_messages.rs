@@ -35,11 +35,11 @@ pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> 
     let admin_role_id = GuildData::verify_data(guild_id).await?
         .unwrap_log(location!())?
         .admins
-        .role_id;
+        .role;
     
     let time = GuildData::verify_data(guild_id).await?
         .into_result()?
-        .time_out_config
+        .time_out
         .time
         .into_result()?
         .parse::<i64>()?;
@@ -99,22 +99,20 @@ async fn handle_user_id(
     
     let forbidden_user_id = GuildData::verify_data(guild_id).await?
         .into_result()?
-        .forbidden_config
-        .user_id
+        .forbidden
+        .user
         .unwrap_log(location!())?
         .parse::<UserId>()?;
 
     if new_message.mentions_user_id(forbidden_user_id) {
         handle_forbidden_user(ctx, new_message, guild_id, data, forbidden_user_id).await?;
-        DB.query("DEFINE INDEX message_id ON TABLE messages COLUMNS message_id UNIQUE").await?;
-        let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
         return Ok(())
     }
 
     let forbidden_role_id = GuildData::verify_data(guild_id).await?
         .into_result()?
-        .forbidden_config
-        .role_id
+        .forbidden
+        .role
         .into_result()?
         .parse::<RoleId>()?;
     
