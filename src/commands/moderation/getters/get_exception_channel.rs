@@ -12,7 +12,7 @@ use crate::utils::debug::IntoUnwrapResult;
     guild_only,
     ephemeral
 )]
-pub async fn get_log_channel(
+pub async fn get_exception_channel(
     ctx: Context<'_>,
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
@@ -26,16 +26,16 @@ pub async fn get_log_channel(
         .take(0)?;
 
     let Some(database_info) = database_info else {
-        ctx.say("No hay un canal de logs establecido").await?;
+        ctx.say("No hay un canal de excepciones establecido").await?;
         return Ok(())
     };
 
-    let log_channel_id = database_info
+    let exception_channel = database_info
         .channels
-        .logs
-        .ok_or("No se encontró un canal de logs o no ha sido establecido")?;
-    
-    ctx.say(format!("Log channel is <#{log_channel_id}>")).await?;
+        .exceptions
+        .ok_or("No se encontró un canal de excepciones o no ha sido establecido")?;
+
+    ctx.say(format!("Exceptions channel is <#{exception_channel}>")).await?;
 
     Ok(())
 }

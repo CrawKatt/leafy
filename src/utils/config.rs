@@ -12,14 +12,11 @@ use crate::utils::debug::UnwrapResult;
 /// - Simplifica la creación de métodos para seguir el patrón de diseño Builder
 macro_rules! obj {
     ($name:ident, $($field:ident: $type:ty),*) => {
-        #[allow(clippy::module_name_repetitions)]
-        #[allow(clippy::struct_field_names)]
         #[derive(Serialize, Deserialize, Debug, Clone, Default)]
         pub struct $name {
             $(pub $field: Option<$type>,)*
         }
 
-        #[allow(clippy::missing_const_for_fn)]
         impl $name {
             $(
                 pub fn $field(mut self, $field: impl Into<$type>) -> Self {
@@ -46,15 +43,12 @@ macro_rules! obj {
 
 macro_rules! build_obj {
     ($name:ident, $($field:ident: $type:ty),*) => {
-        #[allow(clippy::module_name_repetitions)]
-        #[allow(clippy::struct_field_names)]
         #[derive(Serialize, Deserialize, Debug, Clone, Default)]
         pub struct $name {
             $(pub $field: $type,)*
             pub guild_id: Option<String>,
         }
 
-        #[allow(clippy::missing_const_for_fn)]
         impl $name {
             $(
                 pub fn $field(mut self, $field: $type) -> Self {
@@ -70,7 +64,6 @@ macro_rules! build_obj {
             
             pub async fn save_to_db(&self) -> SurrealResult<()> {
                 DB.use_ns("discord-namespace").use_db("discord").await?;
-                DB.query("DEFINE INDEX guild_id ON TABLE guild_config COLUMNS guild_id UNIQUE").await?;
                 let _created: Vec<Self> = DB
                     .create("guild_config")
                     .content(self)
@@ -94,15 +87,15 @@ macro_rules! build_obj {
     };
 }
 
-obj!(Admin, role_id: String, role_2_id: String);
-obj!(Forbidden, user_id: String, role_id: String);
+obj!(Admin, role: String, role_2: String);
+obj!(Forbidden, user: String, role: String);
 obj!(TimeOut, time: String);
-obj!(Channels, welcome_channel_id: String, ooc_channel_id: String, log_channel_id: String);
+obj!(Channels, welcome: String, ooc: String, logs: String, exceptions: String);
 obj!(Messages, welcome: String, time_out: String, warn: String);
 build_obj!(GuildData,
     admins: Admin,
-    forbidden_config: Forbidden,
-    time_out_config: TimeOut,
-    channel_config: Channels,
-    messages_config: Messages
+    forbidden: Forbidden,
+    time_out: TimeOut,
+    channels: Channels,
+    messages: Messages
 );

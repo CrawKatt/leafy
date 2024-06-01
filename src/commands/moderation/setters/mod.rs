@@ -9,3 +9,4 @@ pub mod set_forbidden_exception;
 pub mod set_welcome_channel;
 pub mod set_welcome_message;
 pub mod set_ooc_channel;
+pub mod set_exception_channel;

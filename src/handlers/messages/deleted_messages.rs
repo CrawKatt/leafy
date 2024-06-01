@@ -30,8 +30,8 @@ pub async fn delete_message_handler(ctx: &serenity::Context, channel_id: &Channe
     let result_database = database_message.guild_id.unwrap_log(location!())?;
     let log_channel = GuildData::verify_data(result_database).await?
         .into_result()?
-        .channel_config
-        .log_channel_id
+        .channels
+        .logs
         .into_result()?
         .parse::<ChannelId>()?;
     
@@ -57,8 +57,8 @@ async fn handle_audio(ctx: &serenity::Context, deleted_message_id: &MessageId, d
     let result_database = database_message.guild_id.into_result()?;
     let log_channel = GuildData::verify_data(result_database).await?
         .into_result()?
-        .channel_config
-        .log_channel_id
+        .channels
+        .logs
         .into_result()?
         .parse::<ChannelId>()?;
     

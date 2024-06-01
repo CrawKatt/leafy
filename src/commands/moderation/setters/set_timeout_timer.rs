@@ -31,7 +31,7 @@ pub async fn set_timeout_timer(
     if existing_data.is_none() {
         let data = GuildData::default()
             .guild_id(guild_id)
-            .time_out_config(TimeOut::default()
+            .time_out(TimeOut::default()
                 .time(time_in_seconds));
 
         data.save_to_db().await?;
@@ -43,11 +43,11 @@ pub async fn set_timeout_timer(
     let data = TimeOut::default()
         .time(time_in_seconds);
 
-    data.update_field_in_db("time_out_config.time", time_in_seconds, &guild_id.to_string()).await?;
+    data.update_field_in_db("time_out.time", time_in_seconds, &guild_id.to_string()).await?;
     
     let time_out_timer = &*GuildData::verify_data(guild_id).await?
         .into_result()?
-        .time_out_config
+        .time_out
         .time
         .into_result()?;
 

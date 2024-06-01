@@ -218,8 +218,8 @@ async fn create_embed(
 
     let log_channel = GuildData::verify_data(guild_id).await?
         .into_result()?
-        .channel_config
-        .log_channel_id
+        .channels
+        .logs
         .into_result()?
         .parse::<ChannelId>()?;
 

@@ -1,3 +1,4 @@
+use serenity::all::UserId;
 use crate::DB;
 use crate::utils::config::GuildData;
 use crate::utils::{CommandResult, Context};
@@ -30,10 +31,10 @@ pub async fn get_forbidden_user(
     };
     
     let forbidden_user_id = forbidden_user_id
-        .forbidden_config
-        .user_id
+        .forbidden
+        .user
         .ok_or("No se ha establecido un usuario prohíbido de mencionar")?
-        .parse::<u64>()?;
+        .parse::<UserId>()?;
     
     let forbidden_user = ctx
         .cache()

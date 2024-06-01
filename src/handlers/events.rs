@@ -7,17 +7,18 @@ use crate::handlers::messages::deleted_messages::delete_message_handler;
 use crate::handlers::messages::edited_messages::edited_message_handler;
 use crate::handlers::misc::reaction_add::vote_react;
 use crate::handlers::messages::sent_messages::message_handler;
+use crate::handlers::presence_handler::handler;
 use crate::handlers::welcome_event::welcome_handler;
 
 /// # Esta función maneja los eventos de Discord
 ///
 /// ## Eventos manejados:
-/// - Ready: Imprime el nombre del Bot al iniciar sesión
-/// - Message: Maneja los mensajes enviados en un servidor
-/// - MessageDelete: Maneja los mensajes eliminados en un servidor
-/// - MessageUpdate: Maneja los mensajes editados en un servidor
-/// - GuildMemberAddition: Maneja la llegada de un nuevo miembro a un servidor
-/// - ReactionAdd: Maneja las reacciones a los mensajes
+/// - `Ready`: Imprime el nombre del Bot al iniciar sesión
+/// - `Message`: Maneja los mensajes enviados en un servidor
+/// - `MessageDelete`: Maneja los mensajes eliminados en un servidor
+/// - `MessageUpdate`: Maneja los mensajes editados en un servidor
+/// - `GuildMemberAddition`: Maneja la llegada de un nuevo miembro a un servidor
+/// - `ReactionAdd`: Maneja las reacciones a los mensajes
 pub async fn event_handler(
     ctx: &serenity::Context,
     event: &serenity::FullEvent,
@@ -32,7 +33,8 @@ pub async fn event_handler(
         serenity::FullEvent::MessageUpdate { event, .. } => edited_message_handler(ctx, event).await?,
         serenity::FullEvent::GuildMemberAddition { new_member} => welcome_handler(ctx, new_member).await?,
         serenity::FullEvent::ReactionAdd { add_reaction } => vote_react(ctx, add_reaction).await?,
-        serenity::FullEvent::PresenceUpdate { .. } | serenity::FullEvent::TypingStart { .. } => (),
+        serenity::FullEvent::TypingStart { event, .. } => handler(event).await?,
+        serenity::FullEvent::PresenceUpdate { .. } => (),
 
         /*
         serenity::FullEvent::PresenceUpdate { .. } => {
@@ -48,7 +50,7 @@ pub async fn event_handler(
 
         _ => {
             #[cfg(debug_assertions)] // Macro para imprimir solo en modo Debug
-            println!("Unhandled event: {:?}", event.snake_case_name())
+            println!("Unhandled event: {:?}", event.snake_case_name());
         }
     }
 

@@ -27,8 +27,8 @@ pub async fn set_forbidden_user(
     if existing_data.is_none() {
         let data = GuildData::default()
             .guild_id(guild_id)
-            .forbidden_config(Forbidden::default()
-                .user_id(user_id)
+            .forbidden(Forbidden::default()
+                .user(user_id)
             );
 
         data.save_to_db().await?;
@@ -36,8 +36,8 @@ pub async fn set_forbidden_user(
         return Ok(())
     }
 
-    let data = Forbidden::default().user_id(&user_id);
-    data.update_field_in_db("forbidden_config.user_id", &user_id, &guild_id.to_string()).await?;
+    let data = Forbidden::default().user(&user_id);
+    data.update_field_in_db("forbidden.user", &user_id, &guild_id.to_string()).await?;
     ctx.say(format!("Se ha prohibido mencionar a: **{}**", forbidden_user.name)).await?;
 
     Ok(())

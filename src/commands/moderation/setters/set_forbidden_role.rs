@@ -26,20 +26,20 @@ pub async fn set_forbidden_role(
     if existing_data.is_none() {
         let data = GuildData::default()
             .guild_id(guild_id)
-            .forbidden_config(Forbidden::default()
-                .role_id(role_id)
+            .forbidden(Forbidden::default()
+                .role(role_id)
             );
         data.save_to_db().await?;
         ctx.say(format!("Set forbidden role to: **{}**", forbidden_role.name)).await?;
 
         return Ok(())
     };
-    let data = Forbidden::default().role_id(&role_id);
+    let data = Forbidden::default().role(&role_id);
     
     // NOTA: Se debe utilizar el nombre del objeto junto con el campo a actualizar
     // Ejemplo: `forbidden.role_id`
     // Actualizar usando `role_id` creará un nuevo campo en la base de datos fuera del objeto
-    data.update_field_in_db("forbidden_config.role_id", &role_id, &guild_id.to_string()).await?;
+    data.update_field_in_db("forbidden.role", &role_id, &guild_id.to_string()).await?;
     ctx.say(format!("Set forbidden role to: **{}**", forbidden_role.name)).await?;
 
     Ok(())
