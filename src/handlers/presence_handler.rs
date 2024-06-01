@@ -5,10 +5,11 @@ use tokio::time::{Duration, sleep};
 use serenity::all::{ChannelId, GuildId, TypingStartEvent, UserId};
 use tokio::sync::Mutex;
 use crate::commands::moderation::setters::set_forbidden_exception::ForbiddenException;
+use crate::location;
 
 use crate::utils::CommandResult;
 use crate::utils::config::GuildData;
-use crate::utils::debug::IntoUnwrapResult;
+use crate::utils::debug::{IntoUnwrapResult, UnwrapLog};
 
 type TimerMap<T> = LazyLock<Arc<Mutex<HashMap<T, tokio::task::JoinHandle<()>>>>>;
 
@@ -30,17 +31,17 @@ pub async fn handler(event: &TypingStartEvent) -> CommandResult {
 
     // todo: mejorar la forma de obtener el forbidden_user_id, solo puede haber un usuario al cual aplicar excepciones.
     let forbidden_user_id = GuildData::verify_data(guild_id).await?
-        .into_result()?
+        .unwrap_log(location!())?
         .forbidden
         .user
-        .into_result()?
+        .unwrap_log(location!())?
         .parse::<UserId>()?;
 
     let exception_channel_id = GuildData::verify_data(guild_id).await?
-        .into_result()?
+        .unwrap_log(location!())?
         .channels
         .exceptions
-        .into_result()?
+        .unwrap_log(location!())?
         .parse::<ChannelId>()?;
 
     if user_id == forbidden_user_id && channel_id == exception_channel_id {
