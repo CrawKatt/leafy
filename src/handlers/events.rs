@@ -3,10 +3,10 @@ use crate::DB;
 use crate::utils::CommandResult;
 pub use crate::utils::Data;
 pub use crate::utils::Error;
-use crate::handlers::messages::deleted_messages::delete_message_handler;
-use crate::handlers::messages::edited_messages::edited_message_handler;
+use crate::handlers::messages::deleted::delete_message_handler;
+use crate::handlers::messages::edited::edited_message_handler;
 use crate::handlers::misc::reaction_add::vote_react;
-use crate::handlers::messages::sent_messages::message_handler;
+use crate::handlers::messages::sent::message_handler;
 use crate::handlers::presence_handler::handler;
 use crate::handlers::welcome_event::welcome_handler;
 
