@@ -5,6 +5,7 @@ use std::time::Duration;
 use tokio::time::Instant;
 use chrono::Local;
 use poise::serenity_prelude as serenity;
+use songbird::SerenityInit;
 use surrealdb::opt::auth::Root;
 use surrealdb::engine::remote::ws::{Client as SurrealClient, Ws};
 use tokio::time::sleep_until;
@@ -13,7 +14,6 @@ pub static DB: LazyLock<Surreal<SurrealClient>> = LazyLock::new(Surreal::init);
 
 mod commands;
 mod utils;
-mod test;
 mod handlers;
 
 use utils::Data;
@@ -37,6 +37,9 @@ async fn main() -> UnwrapResult<()> {
         username: "root",
         password: &database_password,
     }).await.expect("Could not sign in");
+    
+    // Crear la Base de Datos si no existe
+    create_database().await?;
 
     // Borrar mensajes de la Base de Datos cada 24 horas
     clean_database_loop();
@@ -75,6 +78,7 @@ async fn main() -> UnwrapResult<()> {
 
     let mut client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
+        .register_songbird()
         .await?;
 
     client.start().await?;
@@ -114,4 +118,22 @@ fn clean_database_loop() {
             sleep_until(Instant::now() + Duration::from_secs(60 * 60 * 24)).await;
         }
     });
+}
+
+/// # Crear la tabla de la Base de Datos si no existe
+/// - La tabla de configuración de los servidores es `SCHEMAFULL`
+/// - Los campos son flexibles y se pueden añadir o eliminar
+/// - Se crea un índice único para el campo `guild_id` dado que el `guild_id` debe ser único para cada servidor
+async fn create_database() -> UnwrapResult<()> {
+    DB.use_ns("discord-namespace").use_db("discord").await?;
+    DB.query("DEFINE TABLE guild_config SCHEMAFULL PERMISSIONS FOR select, create, update, delete WHERE true;").await?;
+    DB.query("DEFINE FIELD guild_id ON guild_config TYPE string;").await?;
+    DB.query("DEFINE FIELD admins ON guild_config FLEXIBLE TYPE option<object>;").await?;
+    DB.query("DEFINE FIELD channels ON guild_config FLEXIBLE TYPE option<object>;").await?;
+    DB.query("DEFINE FIELD forbidden ON guild_config FLEXIBLE TYPE option<object>;").await?;
+    DB.query("DEFINE FIELD messages ON guild_config FLEXIBLE TYPE option<object>;").await?;
+    DB.query("DEFINE FIELD time_out ON guild_config FLEXIBLE TYPE option<object>;").await?;
+    DB.query("DEFINE INDEX guild_id ON TABLE guild_config COLUMNS guild_id UNIQUE;").await?;
+
+    Ok(())
 }
