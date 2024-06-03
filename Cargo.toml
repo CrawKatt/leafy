@@ -1,15 +1,18 @@
 [package]
 name = "plantita_ayudante"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+# Necesario para que songbird pueda reproducir archivos de audio
+symphonia = { version = "0.5.4", features = ["aac", "mp3", "isomp4", "alac"] }
 poise = { git = "https://github.com/serenity-rs/poise.git", branch = "current" }
 tokio = "1.28.1"
 serenity = "0.12.0"
-songbird = "0.4.1"
+songbird = { version = "0.4.1", features = ["builtin-queue"] }
+rusty_ytdl = "0.7.2"
 serde = "1.0.164"
 reqwest = "0.11.22"
 env_logger = "0.10.0"

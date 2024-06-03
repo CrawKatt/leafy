@@ -1,14 +1,26 @@
 #![feature(lazy_cell)]
+
 use std::sync::{Arc, LazyLock};
-use surrealdb::Surreal;
 use std::time::Duration;
-use tokio::time::Instant;
+
 use chrono::Local;
 use poise::serenity_prelude as serenity;
+use serenity::prelude::TypeMapKey;
 use songbird::SerenityInit;
-use surrealdb::opt::auth::Root;
 use surrealdb::engine::remote::ws::{Client as SurrealClient, Ws};
+use surrealdb::opt::auth::Root;
+use surrealdb::Surreal;
+use tokio::time::Instant;
 use tokio::time::sleep_until;
+use reqwest::Client as HttpClient;
+
+use handlers::error::err_handler;
+use handlers::events::event_handler;
+use handlers::misc::link_spam_handler::message_tracker_cleaner;
+use utils::Data;
+use utils::debug::UnwrapResult;
+use utils::load_commands;
+use utils::MessageData;
 
 pub static DB: LazyLock<Surreal<SurrealClient>> = LazyLock::new(Surreal::init);
 
@@ -16,13 +28,12 @@ mod commands;
 mod utils;
 mod handlers;
 
-use utils::Data;
-use utils::MessageData;
-use utils::load_commands;
-use utils::debug::UnwrapResult;
-use handlers::error::err_handler;
-use handlers::events::event_handler;
-use handlers::misc::link_spam_handler::message_tracker_cleaner;
+#[derive(Debug)]
+struct HttpKey;
+
+impl TypeMapKey for HttpKey {
+    type Value = HttpClient;
+}
 
 #[tokio::main]
 async fn main() -> UnwrapResult<()> {
@@ -79,6 +90,7 @@ async fn main() -> UnwrapResult<()> {
     let mut client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
         .register_songbird()
+        .type_map_insert::<HttpKey>(HttpClient::new())
         .await?;
 
     client.start().await?;
