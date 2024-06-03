@@ -9,7 +9,7 @@ pub mod leave;
 pub mod play;
 pub mod pause;
 pub mod resume;
-pub mod queue;
+//pub mod queue;
 pub mod skip;
 pub mod stop;
 
