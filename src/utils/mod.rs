@@ -3,6 +3,13 @@ use serde::{Deserialize, Serialize};
 use serenity::all::{ChannelId, GuildId, MessageId, UserId};
 use surrealdb::Result as SurrealResult;
 
+use crate::commands::audio::join::join;
+use crate::commands::audio::leave::leave;
+use crate::commands::audio::pause::pause;
+use crate::commands::audio::play::play;
+use crate::commands::audio::resume::resume;
+use crate::commands::audio::skip::skip;
+use crate::commands::audio::stop::stop;
 use crate::commands::fun::generate_furry::furry;
 use crate::commands::fun::generate_pride::pride;
 use crate::commands::fun::screenshot_this::screenshot_this;
@@ -15,7 +22,6 @@ use crate::commands::moderation::getters::get_log_channel::get_log_channel;
 use crate::commands::moderation::getters::get_ooc_channel::get_ooc_channel;
 use crate::commands::moderation::getters::get_timeout_timer::get_timeout_timer;
 use crate::commands::moderation::getters::get_welcome_channel::get_welcome_channel;
-use crate::commands::ping::ping;
 use crate::commands::moderation::setters::set_admins::set_admins;
 use crate::commands::moderation::setters::set_exception_channel::set_exception_channel;
 use crate::commands::moderation::setters::set_forbidden_exception::set_forbidden_exception;
@@ -28,6 +34,7 @@ use crate::commands::moderation::setters::set_timeout_timer::set_timeout_timer;
 use crate::commands::moderation::setters::set_warn_message::set_warn_message;
 use crate::commands::moderation::setters::set_welcome_channel::set_welcome_channel;
 use crate::commands::moderation::setters::set_welcome_message::set_welcome_message;
+use crate::commands::ping::ping;
 use crate::DB;
 
 pub mod autocomplete;
@@ -36,6 +43,7 @@ pub mod debug;
 pub mod embeds;
 
 pub struct Data;
+
 pub type CommandResult = Result<(), Error>;
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
@@ -185,5 +193,12 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         screenshot_this(),
         pride(),
         furry(),
+        join(),
+        leave(),
+        play(),
+        skip(),
+        resume(),
+        pause(),
+        stop(),
     ]
 }

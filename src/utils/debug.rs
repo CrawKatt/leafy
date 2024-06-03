@@ -33,6 +33,9 @@ pub enum UnwrapErrors {
 
     #[error(transparent)]
     Regex(#[from] regex::Error),
+    
+    #[error(transparent)]
+    VideoError(#[from] rusty_ytdl::VideoError),
 }
 
 pub trait IntoUnwrapResult<T> {
