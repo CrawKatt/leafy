@@ -9,7 +9,6 @@ use crate::utils::debug::{IntoUnwrapResult, UnwrapLog};
     slash_command,
     category = "Audio",
     guild_only,
-    track_edits
 )]
 pub async fn join(ctx: Context<'_>) -> CommandResult {
     let messages = ctx.channel_id().messages(&ctx.http(), GetMessages::default()).await?;
