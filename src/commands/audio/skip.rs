@@ -5,8 +5,8 @@ use crate::utils::debug::UnwrapLog;
 #[poise::command(
     prefix_command,
     slash_command,
+    guild_only,
     category = "Audio",
-    aliases("s"),
 )]
 pub async fn skip(ctx: Context<'_>) -> CommandResult {
     let songbird = songbird::get(ctx.serenity_context())

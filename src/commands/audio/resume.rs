@@ -4,8 +4,8 @@ use crate::utils::debug::IntoUnwrapResult;
 #[poise::command(
     prefix_command,
     slash_command,
+    guild_only,
     category = "Audio",
-    aliases("p"),
 )]
 pub async fn resume(ctx: Context<'_>) -> CommandResult {
     let guild_id = ctx.guild_id().into_result()?;
