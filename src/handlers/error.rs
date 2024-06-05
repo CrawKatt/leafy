@@ -4,18 +4,11 @@ use crate::utils::Error;
 pub async fn err_handler(error: poise::FrameworkError<'_, Data, Error>) {
     match error {
         poise::FrameworkError::Setup { error, .. } => {
-            eprintln!("Error al iniciar el Bot: {error:?}");
-            panic!()
+            println!("Error al iniciar el Bot: {error:?}");
+            panic!("Error al iniciar el Bot:")
         },
-
-        poise::FrameworkError::Command { error, ctx, ..} => {
-            eprintln!("Error en comando `{}` : {:?}", ctx.command().name, error);
-        },
-
-        poise::FrameworkError::EventHandler { error, event, .. } => {
-            crate::log_handle!("Error en el evento: {:?} Causa del error: {:?}", event.snake_case_name(), error);
-        },
-
+        poise::FrameworkError::Command { error, ctx, ..} => eprintln!("Error en comando `{}` : {:?}", ctx.command().name, error),
+        poise::FrameworkError::EventHandler { error, event, .. } => crate::log_handle!("Error en el evento: {:?} Causa del error: {error:?}", event.snake_case_name()),
         error => {
             if let Err(e) = poise::builtins::on_error(error).await {
                 eprintln!("Error al manejar el error: {e}");

@@ -7,6 +7,7 @@ use crate::commands::audio::join::join;
 use crate::commands::audio::leave::leave;
 use crate::commands::audio::pause::pause;
 use crate::commands::audio::play::play;
+use crate::commands::audio::queue::queue;
 use crate::commands::audio::resume::resume;
 use crate::commands::audio::skip::skip;
 use crate::commands::audio::stop::stop;
@@ -200,5 +201,6 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         resume(),
         pause(),
         stop(),
+        queue(),
     ]
 }
