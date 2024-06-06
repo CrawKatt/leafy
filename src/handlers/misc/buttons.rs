@@ -1,6 +1,6 @@
 use poise::serenity_prelude as serenity;
 use songbird::error::TrackResult;
-use serenity::all::{ComponentInteraction, Context, CreateActionRow, CreateButton, CreateInteractionResponse, CreateInteractionResponseMessage};
+use serenity::all::{ComponentInteraction, Context, CreateActionRow, CreateButton, CreateInteractionResponse, CreateInteractionResponseMessage, GuildId};
 use crate::location;
 use crate::utils::CommandResult;
 use crate::utils::debug::UnwrapLog;
@@ -35,7 +35,13 @@ pub async fn update_button(ctx: &Context, mc: &ComponentInteraction) -> CommandR
     Ok(())
 }
 
-pub async fn handle_action<F>(ctx: &Context, guild_id: serenity::GuildId, mc: &ComponentInteraction, message: &str, action: F) -> CommandResult
+pub async fn handle_action<F>(
+    ctx: &Context,
+    guild_id: GuildId,
+    mc: &ComponentInteraction,
+    message: &str,
+    action: F
+) -> CommandResult
     where
         F: FnOnce(&mut songbird::tracks::TrackQueue) -> TrackResult<()> + Send,
 {
@@ -66,7 +72,13 @@ pub async fn handle_action<F>(ctx: &Context, guild_id: serenity::GuildId, mc: &C
     Ok(())
 }
 
-pub async fn handle_and_update<F>(ctx: &Context, guild_id: serenity::GuildId, mc: &ComponentInteraction, message: &str, action: F) -> CommandResult
+pub async fn handle_and_update<F>(
+    ctx: &Context,
+    guild_id: GuildId,
+    mc: &ComponentInteraction,
+    message: &str,
+    action: F
+) -> CommandResult
     where
         F: FnOnce(&mut songbird::tracks::TrackQueue) -> TrackResult<()> + Send,
 {
