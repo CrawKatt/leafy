@@ -1,28 +1,24 @@
 use poise::serenity_prelude as serenity;
 use songbird::error::TrackResult;
+use plantita_macros::FromStr;
 use serenity::all::{ComponentInteraction, Context, CreateActionRow, CreateButton, CreateInteractionResponse, CreateInteractionResponseMessage, GuildId};
+
 use crate::location;
 use crate::utils::CommandResult;
 use crate::utils::debug::UnwrapLog;
 
+#[derive(PartialEq, Eq, FromStr)]
 pub enum ButtonAction {
+    #[str("skip")]
     Skip,
+    #[str("stop")]
     Stop,
+    #[str("pause")]
     Pause,
+    #[str("resume")]
     Resume,
+    #[str("unknown")]
     Unknown,
-}
-
-impl From<&str> for ButtonAction {
-    fn from(item: &str) -> Self {
-        match item {
-            "skip" => Self::Skip,
-            "stop" => Self::Stop,
-            "pause" => Self::Pause,
-            "resume" => Self::Resume,
-            _ => Self::Unknown,
-        }
-    }
 }
 
 pub async fn update_button(ctx: &Context, mc: &ComponentInteraction) -> CommandResult {
@@ -54,6 +50,21 @@ pub async fn handle_action<F>(
 
         return Ok(());
     };
+
+    let custom_id = ButtonAction::from(mc.data.custom_id.as_str());
+    let queue = call.lock().await.queue().current_queue();
+    if (custom_id == ButtonAction::Skip && queue.is_empty()) || (custom_id == ButtonAction::Stop && queue.len() <= 1) {
+        let error_message = match custom_id {
+            ButtonAction::Skip => "No hay canciones en la cola",
+            ButtonAction::Stop => "No hay más canciones en la cola",
+            _ => "Error desconocido",
+        };
+
+        let response = CreateInteractionResponseMessage::new().content(error_message);
+        mc.create_response(&ctx, CreateInteractionResponse::Message(response)).await?;
+
+        return Ok(());
+    }
 
     let caller = call.lock().await;
     let mut queue = caller.queue().clone();
