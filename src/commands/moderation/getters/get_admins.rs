@@ -3,6 +3,7 @@ use serenity::all::RoleId;
 use crate::DB;
 use crate::utils::config::GuildData;
 use crate::utils::{CommandResult, Context};
+use crate::utils::debug::IntoUnwrapResult;
 
 #[poise::command(
     prefix_command,
@@ -41,27 +42,27 @@ pub async fn get_admins(
 
     if let Some(role_id) = role_id_1 {
         let role_id = role_id.parse::<RoleId>()?;
-        let role_name = &*ctx
-            .cache()
-            .role(guild_id, role_id)
-            .ok_or("No se han establecido roles de moderador")?
-            .name;
+        
+        let guild = ctx.cache().guild(guild_id).into_result()?;
+        let role = guild.roles.get(&role_id).into_result()?;
+        let role_name = &*role.name;
         
         role_names.push_str(role_name);
+        drop(guild);
     }
 
     if let Some(role_id) = role_id_2 {
         let role_id = role_id.parse::<RoleId>()?;
-        let role_name = &*ctx
-            .cache()
-            .role(guild_id, role_id)
-            .ok_or("No se han establecido roles de moderador")?
-            .name;
+        
+        let guild = ctx.cache().guild(guild_id).into_result()?;
+        let role = guild.roles.get(&role_id).into_result()?;
+        let role_name = &*role.name;
         
         if !role_names.is_empty() {
             role_names.push_str(", ");
         }
         role_names.push_str(role_name);
+        drop(guild);
     }
 
     if role_names.is_empty() {

@@ -36,9 +36,11 @@ pub async fn get_forbidden_role(
         .ok_or("No se ha establecido un rol prohíbido de mencionar")?
         .parse::<RoleId>()?;
     
-    let forbidden_role = ctx.cache().role(guild_id, forbidden_role_id).ok_or("Role not found")?.name.clone();
+    let guild = ctx.cache().guild(guild_id).ok_or("Guild not found")?.clone();
+    let forbidden_role = guild.roles.get(&forbidden_role_id).ok_or("Role not found")?;
+    let forbidden_role_name = &*forbidden_role.name;
 
-    ctx.say(format!("Forbidden role is **{forbidden_role}**")).await?;
+    ctx.say(format!("Forbidden role is **{forbidden_role_name}**")).await?;
 
     Ok(())
 }

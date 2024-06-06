@@ -1,15 +1,14 @@
-use rusty_ytdl::search::{SearchResult, YouTube};
 use serenity::all::Guild;
 use crate::location;
 use crate::utils::{CommandResult, Context};
-use crate::utils::debug::{IntoUnwrapResult, UnwrapLog, UnwrapResult};
+use crate::utils::debug::{IntoUnwrapResult, UnwrapLog};
 
 pub mod join;
 pub mod leave;
 pub mod play;
 pub mod pause;
 pub mod resume;
-//pub mod queue;
+pub mod queue;
 pub mod skip;
 pub mod stop;
 
@@ -30,20 +29,4 @@ pub async fn try_join(ctx: Context<'_>, guild: Guild) -> CommandResult {
     }
 
     Ok(())
-}
-
-pub async fn try_get_song(ctx: Context<'_>, do_search: bool, query: String) -> UnwrapResult<String> {
-    let result = if do_search {
-        let youtube = YouTube::new()?;
-        let res = youtube.search(query, None).await?.first().into_result()?.clone();
-        let SearchResult::Video(res) = res else {
-            ctx.say("No se ha encontrado nada").await?;
-            return Ok(String::new())
-        };
-        res.url
-    } else {
-        query
-    };
-
-    Ok(result)
 }
