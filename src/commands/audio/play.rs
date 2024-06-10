@@ -4,11 +4,14 @@ use crate::{HttpKey, location};
 use crate::commands::audio::queue::AuxMetadataKey;
 use crate::utils::{CommandResult, Context};
 use crate::utils::debug::{IntoUnwrapResult, UnwrapLog};
+use crate::handlers::error::err_handler;
 
 #[poise::command(
     prefix_command,
     slash_command,
     guild_only,
+    on_error = "err_handler",
+    user_cooldown = 10,
     category = "Audio",
     aliases("p"),
 )]
@@ -46,11 +49,14 @@ pub async fn play(ctx: Context<'_>, query: String) -> CommandResult {
 
     let message = ctx.say("Buscando...").await?;
     
+    // Necesario para bypassear el baneo de YouTube a Bots
+    // (No utilizar cookies de cuentas de Google personales)
+    let cookies = format!("--cookies ~/cookies.txt {query}");
     let mut handler = handler_lock.lock().await;
     let source = if do_search {
-        YoutubeDl::new_search(http_client, query.clone())
+        YoutubeDl::new_search(http_client, cookies)
     } else {
-        YoutubeDl::new(http_client, query.clone())
+        YoutubeDl::new(http_client, cookies)
     };
     
     let mut src: songbird::input::Input = source.into();
