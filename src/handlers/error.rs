@@ -1,14 +1,25 @@
+use poise::FrameworkError;
+
 use crate::utils::Data;
 use crate::utils::Error;
 
-pub async fn err_handler(error: poise::FrameworkError<'_, Data, Error>) {
+pub async fn err_handler(error: FrameworkError<'_, Data, Error>) {
     match error {
-        poise::FrameworkError::Setup { error, .. } => {
+        FrameworkError::Setup { error, .. } => {
             println!("Error al iniciar el Bot: {error:?}");
             panic!("Error al iniciar el Bot:")
         },
-        poise::FrameworkError::Command { error, ctx, ..} => eprintln!("Error en comando `{}` : {:?}", ctx.command().name, error),
-        poise::FrameworkError::EventHandler { error, event, .. } => crate::log_handle!("Error en el evento: {:?} Causa del error: {error:?}", event.snake_case_name()),
+        FrameworkError::MissingUserPermissions { ctx, missing_permissions, .. } => {
+            let _ = ctx.say(format!("¡No tienes los permisos necesarios para usar este comando! \nPermisos necesarios: **{}**", missing_permissions.unwrap_or_default())).await;
+        }
+        FrameworkError::ArgumentParse { error, ctx, .. } => {
+            let _ = ctx.say(format!("Error al parsear los argumentos: {error:?}")).await;
+        }
+        FrameworkError::CooldownHit { ctx, remaining_cooldown, .. } => {
+            let _ = ctx.say(format!("¡Espera {} segundos antes de usar este comando de nuevo!", remaining_cooldown.as_secs())).await;
+        }
+        FrameworkError::Command { error, ctx, ..} => eprintln!("Error en comando `{}` : {:?}", ctx.command().name, error),
+        FrameworkError::EventHandler { error, event, .. } => crate::log_handle!("Error en el evento: {:?} Causa del error: {error:?}", event.snake_case_name()),
         error => {
             if let Err(e) = poise::builtins::on_error(error).await {
                 eprintln!("Error al manejar el error: {e}");
