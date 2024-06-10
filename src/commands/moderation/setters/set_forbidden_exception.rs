@@ -92,6 +92,7 @@ impl ForbiddenException {
     prefix_command,
     slash_command,
     guild_only,
+    category = "Moderator",
     ephemeral
 )]
 pub async fn set_forbidden_exception(
