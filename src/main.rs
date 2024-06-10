@@ -70,7 +70,7 @@ async fn main() -> UnwrapResult<()> {
                 ..Default::default()
             },
             on_error: |error| Box::pin(err_handler(error)),
-            event_handler: |ctx, event, _framework, _data| Box::pin(event_handler(ctx, event)),
+            event_handler: |ctx, event, framework, _data| Box::pin(event_handler(ctx, event, framework)),
             allowed_mentions: Some(serenity::CreateAllowedMentions::default()
                 .all_users(true)
                 .replied_user(true)),

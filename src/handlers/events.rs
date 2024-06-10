@@ -1,4 +1,4 @@
-use poise::serenity_prelude as serenity;
+use poise::{FrameworkContext, serenity_prelude as serenity};
 use serenity::FullEvent;
 
 use crate::DB;
@@ -8,7 +8,7 @@ use crate::handlers::messages::edited::edited_message_handler;
 use crate::handlers::messages::sent::message_handler;
 use crate::handlers::misc::reaction_add::vote_react;
 use crate::handlers::welcome_event::welcome_handler;
-use crate::utils::CommandResult;
+use crate::utils::{CommandResult, Data, Error};
 
 /// # Esta función maneja los eventos de Discord
 ///
@@ -19,8 +19,9 @@ use crate::utils::CommandResult;
 /// - `MessageUpdate`: Maneja los mensajes editados en un servidor
 /// - `GuildMemberAddition`: Maneja la llegada de un nuevo miembro a un servidor
 /// - `ReactionAdd`: Maneja las reacciones a los mensajes
-pub async fn event_handler(ctx: &serenity::Context, event: &FullEvent) -> CommandResult {
+pub async fn event_handler(ctx: &serenity::Context, event: &FullEvent, framework: FrameworkContext<'_, Data, Error>) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
+    let commands = &framework.options.commands;
     match event {
         FullEvent::Ready { data_about_bot } => println!("Logged in as {}", data_about_bot.user.name),
         FullEvent::Message { new_message } => message_handler(ctx, new_message).await?,
@@ -30,7 +31,7 @@ pub async fn event_handler(ctx: &serenity::Context, event: &FullEvent) -> Comman
         FullEvent::ReactionAdd { add_reaction } => vote_react(ctx, add_reaction).await?,
         FullEvent::TypingStart { event, .. } => presence_handler::handler(event).await?,
         FullEvent::PresenceUpdate { .. } => (),
-        FullEvent::InteractionCreate { interaction, .. } => interactions::handler(ctx, interaction).await?,
+        FullEvent::InteractionCreate { interaction, .. } => interactions::handler(ctx, interaction, commands).await?,
 
         /*
         serenity::FullEvent::PresenceUpdate { .. } => {

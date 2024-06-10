@@ -17,12 +17,28 @@ pub enum ButtonAction {
     Pause,
     #[str("resume")]
     Resume,
+    #[str("help_menu")]
+    HelpMenu,
     #[str("unknown")]
     Unknown,
 }
 
-pub async fn update_button(ctx: &Context, mc: &ComponentInteraction) -> CommandResult {
-    let buttons = generate_row();
+#[derive(PartialEq, Eq, FromStr)]
+pub enum MenuOption {
+    #[str("Moderator")]
+    Mod,
+    #[str("Fun")]
+    Fun,
+    #[str("Info")]
+    Info,
+    #[str("Audio")]
+    Audio,
+    #[str("unknown")]
+    Unknown,
+}
+
+pub async fn update_button(ctx: &Context, mc: &ComponentInteraction, is_paused: bool) -> CommandResult {
+    let buttons = generate_row(is_paused);
     let components = vec![buttons];
 
     let response = CreateInteractionResponseMessage::new().components(components);
@@ -88,22 +104,19 @@ pub async fn handle_and_update<F>(
     guild_id: GuildId,
     mc: &ComponentInteraction,
     message: &str,
-    action: F
+    action: F,
+    is_paused: bool
 ) -> CommandResult
     where
         F: FnOnce(&mut songbird::tracks::TrackQueue) -> TrackResult<()> + Send,
 {
     handle_action(ctx, guild_id, mc, message, action).await?;
-    update_button(ctx, mc).await?;
+    update_button(ctx, mc, is_paused).await?;
 
     Ok(())
 }
 
-pub fn generate_row() -> CreateActionRow {
-    let pause = CreateButton::new("pause")
-        .label("Pausar")
-        .emoji('⏸');
-
+pub fn generate_row(is_paused: bool) -> CreateActionRow {
     let skip = CreateButton::new("skip")
         .label("Saltar")
         .emoji('⏭');
@@ -112,5 +125,15 @@ pub fn generate_row() -> CreateActionRow {
         .label("Detener")
         .emoji('⏹');
 
-    CreateActionRow::Buttons(vec![stop, pause, skip])
+    let play_pause = if is_paused {
+        CreateButton::new("resume")
+            .label("Reanudar")
+            .emoji('▶')
+    } else {
+        CreateButton::new("pause")
+            .label("Pausar")
+            .emoji('⏸')
+    };
+
+    CreateActionRow::Buttons(vec![stop, play_pause, skip])
 }

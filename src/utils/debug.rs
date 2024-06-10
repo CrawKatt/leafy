@@ -33,6 +33,9 @@ pub enum UnwrapErrors {
 
     #[error(transparent)]
     Regex(#[from] regex::Error),
+    
+    #[error(transparent)]
+    StringError(#[from] std::fmt::Error),
 }
 
 pub trait IntoUnwrapResult<T> {
