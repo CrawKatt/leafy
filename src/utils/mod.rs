@@ -14,6 +14,7 @@ use crate::commands::audio::stop::stop;
 use crate::commands::fun::generate_furry::furry;
 use crate::commands::fun::generate_pride::pride;
 use crate::commands::fun::screenshot_this::screenshot_this;
+use crate::commands::help::help;
 use crate::commands::moderation::getters::get_admins::get_admins;
 use crate::commands::moderation::getters::get_exception_channel::get_exception_channel;
 use crate::commands::moderation::getters::get_forbidden_exception::get_forbidden_exception;
@@ -202,5 +203,6 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         pause(),
         stop(),
         queue(),
+        help(),
     ]
 }

@@ -2,6 +2,7 @@ use poise::CreateReply;
 use serenity::all::CreateEmbed;
 use serenity::prelude::TypeMapKey;
 use songbird::input::AuxMetadata;
+use songbird::tracks::PlayMode;
 
 use crate::handlers::misc::buttons::generate_row;
 use crate::utils::{CommandResult, Context};
@@ -53,7 +54,9 @@ pub async fn queue(ctx: Context<'_>) -> CommandResult {
         }
     }
     
-    let buttons = generate_row();
+    let playing_status = queue.current().into_result()?.get_info().await?.playing;
+    let is_paused = matches!(playing_status, PlayMode::Pause);
+    let buttons = generate_row(is_paused);
     let components = vec![buttons];
     
     let embed = CreateEmbed::default()

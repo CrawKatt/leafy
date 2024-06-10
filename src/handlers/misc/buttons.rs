@@ -1,32 +1,44 @@
 use poise::serenity_prelude as serenity;
 use songbird::error::TrackResult;
-use serenity::all::{ComponentInteraction, Context, CreateActionRow, CreateButton, CreateInteractionResponse, CreateInteractionResponseMessage};
+use plantita_macros::FromStr;
+use serenity::all::{ComponentInteraction, Context, CreateActionRow, CreateButton, CreateInteractionResponse, CreateInteractionResponseMessage, GuildId};
+
 use crate::location;
 use crate::utils::CommandResult;
 use crate::utils::debug::UnwrapLog;
 
+#[derive(PartialEq, Eq, FromStr)]
 pub enum ButtonAction {
+    #[str("skip")]
     Skip,
+    #[str("stop")]
     Stop,
+    #[str("pause")]
     Pause,
+    #[str("resume")]
     Resume,
+    #[str("help_menu")]
+    HelpMenu,
+    #[str("unknown")]
     Unknown,
 }
 
-impl From<&str> for ButtonAction {
-    fn from(item: &str) -> Self {
-        match item {
-            "skip" => Self::Skip,
-            "stop" => Self::Stop,
-            "pause" => Self::Pause,
-            "resume" => Self::Resume,
-            _ => Self::Unknown,
-        }
-    }
+#[derive(PartialEq, Eq, FromStr)]
+pub enum MenuOption {
+    #[str("Moderator")]
+    Mod,
+    #[str("Fun")]
+    Fun,
+    #[str("Info")]
+    Info,
+    #[str("Audio")]
+    Audio,
+    #[str("unknown")]
+    Unknown,
 }
 
-pub async fn update_button(ctx: &Context, mc: &ComponentInteraction) -> CommandResult {
-    let buttons = generate_row();
+pub async fn update_button(ctx: &Context, mc: &ComponentInteraction, is_paused: bool) -> CommandResult {
+    let buttons = generate_row(is_paused);
     let components = vec![buttons];
 
     let response = CreateInteractionResponseMessage::new().components(components);
@@ -35,7 +47,13 @@ pub async fn update_button(ctx: &Context, mc: &ComponentInteraction) -> CommandR
     Ok(())
 }
 
-pub async fn handle_action<F>(ctx: &Context, guild_id: serenity::GuildId, mc: &ComponentInteraction, message: &str, action: F) -> CommandResult
+pub async fn handle_action<F>(
+    ctx: &Context,
+    guild_id: GuildId,
+    mc: &ComponentInteraction,
+    message: &str,
+    action: F
+) -> CommandResult
     where
         F: FnOnce(&mut songbird::tracks::TrackQueue) -> TrackResult<()> + Send,
 {
@@ -48,6 +66,21 @@ pub async fn handle_action<F>(ctx: &Context, guild_id: serenity::GuildId, mc: &C
 
         return Ok(());
     };
+
+    let custom_id = ButtonAction::from(mc.data.custom_id.as_str());
+    let queue = call.lock().await.queue().current_queue();
+    if (custom_id == ButtonAction::Skip && queue.is_empty()) || (custom_id == ButtonAction::Stop && queue.len() <= 1) {
+        let error_message = match custom_id {
+            ButtonAction::Skip => "No hay canciones en la cola",
+            ButtonAction::Stop => "No hay más canciones en la cola",
+            _ => "Error desconocido",
+        };
+
+        let response = CreateInteractionResponseMessage::new().content(error_message);
+        mc.create_response(&ctx, CreateInteractionResponse::Message(response)).await?;
+
+        return Ok(());
+    }
 
     let caller = call.lock().await;
     let mut queue = caller.queue().clone();
@@ -66,21 +99,24 @@ pub async fn handle_action<F>(ctx: &Context, guild_id: serenity::GuildId, mc: &C
     Ok(())
 }
 
-pub async fn handle_and_update<F>(ctx: &Context, guild_id: serenity::GuildId, mc: &ComponentInteraction, message: &str, action: F) -> CommandResult
+pub async fn handle_and_update<F>(
+    ctx: &Context,
+    guild_id: GuildId,
+    mc: &ComponentInteraction,
+    message: &str,
+    action: F,
+    is_paused: bool
+) -> CommandResult
     where
         F: FnOnce(&mut songbird::tracks::TrackQueue) -> TrackResult<()> + Send,
 {
     handle_action(ctx, guild_id, mc, message, action).await?;
-    update_button(ctx, mc).await?;
+    update_button(ctx, mc, is_paused).await?;
 
     Ok(())
 }
 
-pub fn generate_row() -> CreateActionRow {
-    let pause = CreateButton::new("pause")
-        .label("Pausar")
-        .emoji('⏸');
-
+pub fn generate_row(is_paused: bool) -> CreateActionRow {
     let skip = CreateButton::new("skip")
         .label("Saltar")
         .emoji('⏭');
@@ -89,5 +125,15 @@ pub fn generate_row() -> CreateActionRow {
         .label("Detener")
         .emoji('⏹');
 
-    CreateActionRow::Buttons(vec![stop, pause, skip])
+    let play_pause = if is_paused {
+        CreateButton::new("resume")
+            .label("Reanudar")
+            .emoji('▶')
+    } else {
+        CreateButton::new("pause")
+            .label("Pausar")
+            .emoji('⏸')
+    };
+
+    CreateActionRow::Buttons(vec![stop, play_pause, skip])
 }

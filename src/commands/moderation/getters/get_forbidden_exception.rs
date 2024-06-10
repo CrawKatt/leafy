@@ -9,6 +9,7 @@ use crate::{DB, location};
     prefix_command,
     slash_command,
     guild_only,
+    category = "Moderator",
     ephemeral
 )]
 pub async fn get_forbidden_exception(

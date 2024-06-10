@@ -1,6 +1,6 @@
 [package]
 name = "plantita_ayudante"
-version = "0.1.8"
+version = "0.1.9"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -24,3 +24,4 @@ image = "0.24.7"
 regex = "1.10.2"
 plantita_welcomes = { git = "https://github.com/CrawKatt/plantita_welcomes.git", features = ["create_phrases", "create_welcome"] }
 plantita_audio = { git = "https://github.com/CrawKatt/plantita_audio.git" }
+plantita_macros = { git = "https://github.com/CrawKatt/plantita_macros.git" }
