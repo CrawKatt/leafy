@@ -183,8 +183,8 @@ fn remove_discord_emojis(content: &str) -> UnwrapResult<String> {
 /// # Genera una mención a un usuario en el mensaje referenciado
 ///
 /// - Esto es necesario para evitar sobrepasar el límite de caracteres en la imagen
-/// ya que las menciones de usuario no son interpretadas como @usuario sino como
-/// `<@user_id>`
+///     ya que las menciones de usuario no son interpretadas como @usuario sino como
+///     `<@user_id>`
 ///
 async fn generate_mention(ctx: Context<'_>, content: &str, quoted_content: &str) -> UnwrapResult<String> {
     let user_id = content.split("<@")
