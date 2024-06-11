@@ -53,17 +53,17 @@ pub fn get_command_categories(commands: &Vec<Command<Data, Error>>) -> UnwrapRes
     for command in commands {
         let new = &String::new();
         let category = command.category.as_ref().unwrap_or(new);
-        let command_name = format!("`${}` {}", command.name, command.description.as_ref().unwrap_or(new));
+        let command_name = format!("${}", command.name);
         categories.entry(category.to_string()).or_default().push(command_name);
     }
 
     let mut description = String::new();
     for (category, command_names) in &categories {
-        writeln!(description, "**{category}:**")?;
+        writeln!(description, "**{}:**\n```", category)?;
         for command_name in command_names {
             writeln!(description, "{command_name}")?;
         }
-        writeln!(description)?;
+        writeln!(description, "```")?;
     }
 
     Ok(description)
