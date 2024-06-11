@@ -5,6 +5,7 @@ use crate::utils::debug::IntoUnwrapResult;
     prefix_command,
     slash_command,
     guild_only,
+    user_cooldown = 10,
     category = "Audio",
 )]
 pub async fn stop(ctx: Context<'_>) -> CommandResult {
