@@ -63,7 +63,7 @@ async fn main() -> UnwrapResult<()> {
         .options(poise::FrameworkOptions {
             commands: load_commands(),
             prefix_options: poise::PrefixFrameworkOptions {
-                prefix: Some("$".into()),
+                prefix: Some("leafy".to_lowercase()),
                 edit_tracker: Some(Arc::from(poise::EditTracker::for_timespan(Duration::from_secs(3600)))),
                 ..Default::default()
             },
