@@ -1,13 +1,10 @@
 use poise::{FrameworkContext, serenity_prelude as serenity};
 use serenity::FullEvent;
 
-use crate::DB;
-use crate::handlers::{interactions, presence_handler};
-use crate::handlers::messages::deleted::delete_message_handler;
-use crate::handlers::messages::edited::edited_message_handler;
-use crate::handlers::messages::sent::message_handler;
+use crate::{DB, debug};
+use crate::handlers::{interactions, presence_handler, welcome_event};
+use crate::handlers::messages::{deleted, edited, sent};
 use crate::handlers::misc::reaction_add::vote_react;
-use crate::handlers::welcome_event::welcome_handler;
 use crate::utils::{CommandResult, Data, Error};
 
 /// # Esta función maneja los eventos de Discord
@@ -24,13 +21,12 @@ pub async fn event_handler(ctx: &serenity::Context, event: &FullEvent, framework
     let commands = &framework.options.commands;
     match event {
         FullEvent::Ready { data_about_bot } => println!("Logged in as {}", data_about_bot.user.name),
-        FullEvent::Message { new_message } => message_handler(ctx, new_message).await?,
-        FullEvent::MessageDelete { channel_id, deleted_message_id, .. } => delete_message_handler(ctx, channel_id, deleted_message_id).await?,
-        FullEvent::MessageUpdate { event, .. } => edited_message_handler(ctx, event).await?,
-        FullEvent::GuildMemberAddition { new_member} => welcome_handler(ctx, new_member).await?,
+        FullEvent::Message { new_message } => sent::handler(ctx, new_message).await?,
+        FullEvent::MessageDelete { channel_id, deleted_message_id, .. } => deleted::handler(ctx, channel_id, deleted_message_id).await?,
+        FullEvent::MessageUpdate { event, .. } => edited::handler(ctx, event).await?,
+        FullEvent::GuildMemberAddition { new_member} => welcome_event::handler(ctx, new_member).await?,
         FullEvent::ReactionAdd { add_reaction } => vote_react(ctx, add_reaction).await?,
         FullEvent::TypingStart { event, .. } => presence_handler::handler(event).await?,
-        FullEvent::PresenceUpdate { .. } => (),
         FullEvent::InteractionCreate { interaction, .. } => interactions::handler(ctx, interaction, commands).await?,
 
         /*
@@ -45,10 +41,7 @@ pub async fn event_handler(ctx: &serenity::Context, event: &FullEvent, framework
         }
         */
 
-        _ => {
-            #[cfg(debug_assertions)] // Macro para imprimir solo en modo Debug
-            println!("Unhandled event: {:?}", event.snake_case_name());
-        }
+        _ => { debug!("Unhandled event: {:?}", event.snake_case_name()) }
     }
 
     Ok(())

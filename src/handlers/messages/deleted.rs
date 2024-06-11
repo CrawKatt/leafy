@@ -11,7 +11,7 @@ use crate::utils::config::GuildData;
 use crate::utils::debug::{IntoUnwrapResult, UnwrapLog};
 use crate::utils::embeds::{send_embed, send_embed_with_attachment};
 
-pub async fn delete_message_handler(ctx: &serenity::Context, channel_id: &ChannelId, deleted_message_id: &MessageId) -> CommandResult {
+pub async fn handler(ctx: &serenity::Context, channel_id: &ChannelId, deleted_message_id: &MessageId) -> CommandResult {
     let database_info = MessageData::get_message_data(deleted_message_id).await?;
     let Some(database_message) = database_info else { return Ok(()) };
     let message_content = database_message.message_content.clone();
