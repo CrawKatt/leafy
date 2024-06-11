@@ -6,6 +6,7 @@ use crate::utils::debug::{IntoUnwrapResult, UnwrapLog};
     prefix_command,
     slash_command,
     guild_only,
+    user_cooldown = 10,
     category = "Audio",
 )]
 pub async fn pause(ctx: Context<'_>) -> CommandResult {
