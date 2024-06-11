@@ -22,7 +22,7 @@ use crate::utils::debug::{IntoUnwrapResult, UnwrapLog};
 /// - manejo de menciones a @everyone y @here
 /// - manejo de spam de links
 /// - guardar el mensaje en la base de datos
-pub async fn message_handler(ctx: &serenity::Context, new_message: &Message) -> CommandResult {
+pub async fn handler(ctx: &serenity::Context, new_message: &Message) -> CommandResult {
 
     // Crear un objeto Arc<String> con el contenido del mensaje para utilizar cheap cloning (clonación barata)
     // La clonación barata consiste en utilizar Arc<T> o Rc<T> para clonar un objeto sin copiar su contenido

@@ -12,7 +12,7 @@ use crate::utils::CommandResult;
 use crate::utils::config::GuildData;
 use crate::utils::debug::{IntoUnwrapResult, UnwrapErrors, UnwrapLog};
 
-pub async fn welcome_handler(
+pub async fn handler(
     ctx: &serenity::Context,
     new_member: &serenity::Member,
 ) -> CommandResult {
