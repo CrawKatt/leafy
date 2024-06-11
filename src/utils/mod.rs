@@ -14,7 +14,7 @@ use crate::commands::audio::stop::stop;
 use crate::commands::fun::generate_furry::furry;
 use crate::commands::fun::generate_pride::pride;
 use crate::commands::fun::screenshot_this::screenshot_this;
-use crate::commands::help::help;
+use crate::commands::info::help::help;
 use crate::commands::moderation::getters::get_admins::get_admins;
 use crate::commands::moderation::getters::get_exception_channel::get_exception_channel;
 use crate::commands::moderation::getters::get_forbidden_exception::get_forbidden_exception;
@@ -36,7 +36,7 @@ use crate::commands::moderation::setters::set_timeout_timer::set_timeout_timer;
 use crate::commands::moderation::setters::set_warn_message::set_warn_message;
 use crate::commands::moderation::setters::set_welcome_channel::set_welcome_channel;
 use crate::commands::moderation::setters::set_welcome_message::set_welcome_message;
-use crate::commands::ping::ping;
+use crate::commands::info::ping::ping;
 use crate::DB;
 
 pub mod autocomplete;
