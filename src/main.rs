@@ -1,5 +1,3 @@
-#![feature(lazy_cell)]
-
 use std::sync::{Arc, LazyLock};
 use std::time::Duration;
 
