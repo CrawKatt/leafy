@@ -14,6 +14,7 @@ use crate::utils::debug::UnwrapResult;
     prefix_command,
     category = "Fun",
     guild_only,
+    user_cooldown = 10,
     track_edits
 )]
 pub async fn furry(ctx: Context<'_>, target: Option<Member>) -> CommandResult {

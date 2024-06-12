@@ -9,8 +9,7 @@ use crate::utils::config::GuildData;
 use crate::utils::debug::{IntoUnwrapResult, UnwrapLog};
 use crate::utils::embeds::edit_message_embed;
 
-pub async fn edited_message_handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> CommandResult {
-
+pub async fn handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> CommandResult {
     if event.author.as_ref().map_or(false, |author| author.bot) { return Ok(()) }
     let message_id = event.id;
     let guild_id = event.guild_id.unwrap_log(location!())?; // SAFETY: El GuildId siempre está disponible

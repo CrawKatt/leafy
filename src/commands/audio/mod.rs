@@ -1,7 +1,7 @@
-use serenity::all::Guild;
+use serenity::all::{ChannelId, GetMessages, Guild, GuildId};
 use crate::location;
 use crate::utils::{CommandResult, Context};
-use crate::utils::debug::{IntoUnwrapResult, UnwrapLog};
+use crate::utils::debug::{IntoUnwrapResult, UnwrapLog, UnwrapResult};
 
 pub mod join;
 pub mod leave;
@@ -29,4 +29,17 @@ pub async fn try_join(ctx: Context<'_>, guild: Guild) -> CommandResult {
     }
 
     Ok(())
+}
+
+pub async fn get_guild_id_and_channel_id(ctx: Context<'_>) -> UnwrapResult<(GuildId, Option<ChannelId>)> {
+    let messages = ctx.channel_id().messages(&ctx.http(), GetMessages::default()).await?;
+    let msg = messages.first().unwrap_log(location!())?;
+
+    let guild = ctx.guild().unwrap();
+    let channel_id = guild
+        .voice_states
+        .get(&msg.author.id)
+        .and_then(|voice_state| voice_state.channel_id);
+
+    Ok((guild.id, channel_id))
 }

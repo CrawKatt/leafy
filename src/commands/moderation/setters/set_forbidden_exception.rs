@@ -51,7 +51,7 @@ impl ForbiddenException {
         };
 
         let sql_query = "UPDATE forbidden_exception SET is_active = $is_active WHERE guild_id = $guild_id AND user_id = $user_id";
-        DB.query(sql_query).bind(&self).await?;
+        DB.query(sql_query).bind(&*self).await?;
         self.is_active = Some(!is_active);
 
         Ok(())
@@ -100,7 +100,7 @@ pub async fn set_forbidden_exception(
     #[description = "The user id to set as a forbidden exception"] user: Option<UserId>,
     #[description = "The state to set for the forbidden exception"] state: bool
 ) -> CommandResult {
-    let guild_id = ctx.guild_id().unwrap();
+    let guild_id = ctx.guild_id().unwrap(); // SAFETY: Al estar el parámetro guild_only, la función solo se ejecutará en un servidor
     let user_id = user.unwrap_or(ctx.author().id);
 
     if user_id != ctx.author().id {

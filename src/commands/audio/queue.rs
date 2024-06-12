@@ -23,6 +23,7 @@ pub fn format_metadata(AuxMetadata { title, .. }: &AuxMetadata) -> String {
     slash_command,
     guild_only,
     category = "Audio",
+    user_cooldown = 10,
     aliases("q"),
 )]
 pub async fn queue(ctx: Context<'_>) -> CommandResult {
