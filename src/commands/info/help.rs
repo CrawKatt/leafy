@@ -33,8 +33,11 @@ pub async fn help(ctx: Context<'_>) -> CommandResult {
         ],
     }).placeholder("Selecciona una categoría de comandos");
     let action_row = CreateActionRow::SelectMenu(select_menu);
-    let commands = get_command_categories(&ctx.framework().options.commands);
-    let description = format!("Prefix del Bot: `leafy`\n\n{commands}");
+    let description = format!(
+        "Prefix del bot: `{}`\n\n{}",
+        ctx.framework().options.prefix_options.prefix.as_ref().unwrap(), // SAFETY: El prefix siempre está definido
+        ctx.framework().user_data.command_descriptions.values().map(String::as_str).collect::<String>()
+    );
 
     let reply = CreateReply::default()
         .ephemeral(true)
@@ -51,34 +54,56 @@ pub async fn help(ctx: Context<'_>) -> CommandResult {
     Ok(())
 }
 
-pub fn get_command_categories(commands: &[Command<Data, Error>]) -> String {
-    let categories: HashMap<String, Vec<String>> = commands.iter()
-        .map(|command| (command.category.clone().unwrap_or_default(), command.name.to_string()))
-        .fold(HashMap::new(), |mut acc, (category, command_name)| {
-            acc.entry(category).or_default().push(command_name);
-            acc
-        });
+pub fn get_command_categories(commands: &[Command<Data, Error>]) -> HashMap<&'static str, String> {
+    let mut map = HashMap::new();
 
-    create_description(&categories)
+    map.insert("Moderator", filter_categories(&mut commands.iter(),"Moderator"));
+    map.insert("Fun", filter_categories(&mut commands.iter(), "Fun"));
+    map.insert("Info", filter_categories(&mut commands.iter(), "Info"));
+    map.insert("Audio", filter_categories(&mut commands.iter(), "Audio"));
+
+    map
 }
 
-pub fn filter_categories(commands: &[Command<Data, Error>], selected_category: &str) -> String {
-    let categories: HashMap<String, Vec<String>> = commands.iter()
-        .filter(|command| command.category.as_ref().map(|c| c.to_lowercase()) == Some(selected_category.to_lowercase()))
-        .map(|command| (command.category.clone().unwrap_or_default(), command.name.to_string()))
-        .fold(HashMap::new(), |mut acc, (category, command_name)| {
-            acc.entry(category).or_default().push(command_name);
-            acc
-        });
-
-    create_description(&categories)
+pub fn filter_categories(
+    commands_iter: &mut dyn Iterator<Item = &Command<Data, Error>>,
+    selected_category: &str
+) -> String {
+    let selected_category_lower = selected_category.to_lowercase();
+    let categories = commands_iter
+        .filter(|cmd| {
+            cmd.category
+                .as_ref()
+                .is_some_and(|name| name.to_lowercase() == selected_category_lower)
+        })
+        .fold(
+            HashMap::new(),
+            |mut map: HashMap<Option<&str>, Vec<&str>>, cmd| {
+                map.entry(cmd.category.as_deref())
+                    .or_default()
+                    .push(cmd.name.as_ref());
+                map
+            },
+        );
+    
+    if categories.is_empty() {
+        String::new()
+    } else {
+        create_description(&categories)
+    }
 }
 
-fn create_description(categories: &HashMap<String, Vec<String>>) -> String {
-    categories.iter()
-        .fold(String::new(), |mut description, (category, command_names)| {
-            let commands = command_names.join("\n");
-            write!(description, "**{category}:**\n```\n{commands}\n```\n").unwrap(); // SAFETY: la macro `write!` nunca falla
+fn create_description(categories: &HashMap<Option<&str>, Vec<&str>>) -> String {
+    categories
+        .iter()
+        .fold(String::new(), |mut description, (cat, cmds)| {
+            writeln!(
+                description,
+                "**{}:**\n```\n{}\n```",
+                cat.unwrap_or("None"),
+                cmds.join("\n")
+            )
+            .unwrap();
             description
         })
 }

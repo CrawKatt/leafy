@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use poise::Command;
 use serde::{Deserialize, Serialize};
 use serenity::all::{ChannelId, GuildId, MessageId, UserId};
@@ -44,7 +45,10 @@ pub mod config;
 pub mod debug;
 pub mod embeds;
 
-pub struct Data;
+#[allow(dead_code)]
+pub struct Data {
+    pub command_descriptions: HashMap<&'static str, String>
+}
 
 pub type CommandResult = Result<(), Error>;
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
