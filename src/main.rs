@@ -64,6 +64,7 @@ async fn main() -> UnwrapResult<()> {
             commands: load_commands(),
             prefix_options: poise::PrefixFrameworkOptions {
                 prefix: Some("leafy".to_lowercase()),
+                additional_prefixes: vec![poise::Prefix::Literal("Leafy"), poise::Prefix::Literal(">>")],
                 edit_tracker: Some(Arc::from(poise::EditTracker::for_timespan(Duration::from_secs(3600)))),
                 ..Default::default()
             },
