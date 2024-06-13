@@ -5,7 +5,6 @@ use crate::utils::{CommandResult, Context};
     slash_command,
     category = "Fun",
     guild_only,
-    ephemeral,
     description_localized("es-ES", "Repite el mensaje que se le pases como argumento"),
     description_localized("en-US", "Repeats the message you pass as an argument"),
     description_localized("ja", "引数として渡されたメッセージを繰り返します")
