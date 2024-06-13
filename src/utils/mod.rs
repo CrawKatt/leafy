@@ -14,6 +14,7 @@ use crate::commands::audio::skip::skip;
 use crate::commands::audio::stop::stop;
 use crate::commands::fun::generate_furry::furry;
 use crate::commands::fun::generate_pride::pride;
+use crate::commands::fun::say::say;
 use crate::commands::fun::screenshot_this::screenshot_this;
 use crate::commands::info::help::help;
 use crate::commands::moderation::getters::get_admins::get_admins;
@@ -208,5 +209,6 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         stop(),
         queue(),
         help(),
+        say(),
     ]
 }
