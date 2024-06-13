@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use poise::Command;
 use serde::{Deserialize, Serialize};
 use serenity::all::{ChannelId, GuildId, MessageId, UserId};
@@ -13,6 +14,7 @@ use crate::commands::audio::skip::skip;
 use crate::commands::audio::stop::stop;
 use crate::commands::fun::generate_furry::furry;
 use crate::commands::fun::generate_pride::pride;
+use crate::commands::fun::say::say;
 use crate::commands::fun::screenshot_this::screenshot_this;
 use crate::commands::info::help::help;
 use crate::commands::moderation::getters::get_admins::get_admins;
@@ -44,7 +46,10 @@ pub mod config;
 pub mod debug;
 pub mod embeds;
 
-pub struct Data;
+#[allow(dead_code)]
+pub struct Data {
+    pub command_descriptions: HashMap<&'static str, String>
+}
 
 pub type CommandResult = Result<(), Error>;
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -204,5 +209,6 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         stop(),
         queue(),
         help(),
+        say(),
     ]
 }

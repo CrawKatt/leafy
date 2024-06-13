@@ -77,8 +77,16 @@ async fn main() -> UnwrapResult<()> {
         })
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
-                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(Data)
+                poise::builtins::register_globally(
+                    ctx,
+                    &framework.options().commands
+                ).await?;
+                
+                let command_descriptions = commands::info::help::get_command_categories(&framework.options().commands);
+                
+                Ok(Data {
+                    command_descriptions
+                })
             })
         })
         .build();

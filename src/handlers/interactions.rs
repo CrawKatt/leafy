@@ -1,7 +1,7 @@
-use poise::{Command, serenity_prelude as serenity};
+use poise::{FrameworkContext, serenity_prelude as serenity};
 use serenity::all::{ComponentInteraction, ComponentInteractionDataKind, Context, CreateEmbed, CreateEmbedFooter, CreateInteractionResponse, CreateInteractionResponseMessage, Interaction};
 
-use crate::commands::info::help::{filter_categories, FOOTER_URL};
+use crate::commands::info::help::FOOTER_URL;
 use crate::debug;
 use crate::handlers::misc::buttons::{ButtonAction, handle_action, handle_and_update};
 use crate::utils::{CommandResult, Data, Error};
@@ -14,7 +14,7 @@ use crate::utils::debug::IntoUnwrapResult;
 pub async fn handler(
     ctx: &Context,
     interaction: &Interaction,
-    commands: &[Command<Data, Error>]
+    framework: &FrameworkContext<'_, Data, Error>
 ) -> CommandResult {
     let Some(mc) = interaction.as_message_component() else { return Ok(()) };
     let guild_id = mc.guild_id.into_result()?;
@@ -22,7 +22,7 @@ pub async fn handler(
     debug!("Button pressed: {custom_id}");
 
     match ButtonAction::from(custom_id) {
-        ButtonAction::HelpMenu => help_action(ctx, mc, commands).await?,
+        ButtonAction::HelpMenu => help_action(ctx, mc, framework).await?,
         ButtonAction::Skip => handle_action(ctx, guild_id, mc, "Se ha saltado la canción", |queue| queue.skip()).await?,
         ButtonAction::Pause => handle_and_update(ctx, guild_id, mc, "Se ha pausado la canción", |queue| queue.pause(),true).await?,
         ButtonAction::Resume => handle_and_update(ctx, guild_id, mc, "Se ha reanudado la canción", |queue| queue.resume(), false).await?,
@@ -40,16 +40,16 @@ pub async fn handler(
 pub async fn help_action(
     ctx: &Context,
     mc: &ComponentInteraction,
-    commands: &[Command<Data, Error>]
+    framework: &FrameworkContext<'_, Data, Error>
 ) -> CommandResult {
-    let kind = match &mc.data.kind {
-        ComponentInteractionDataKind::StringSelect {
-            values,
-        } => &values[0],
-        _ => return Ok(()),
+
+    let ComponentInteractionDataKind::StringSelect { values } = &mc.data.kind else {
+        return Ok(())
     };
+
+    let value = &*values[0];
+    let description = &framework.user_data.command_descriptions[value];
     
-    let description = filter_categories(commands, kind);
     let embed = CreateEmbed::default()
         .title("Comandos de Plantita Ayudante")
         .color(0x0000_ff00)

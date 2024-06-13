@@ -5,6 +5,7 @@ use crate::utils::debug::{IntoUnwrapResult, UnwrapResult};
 pub mod generate_furry;
 pub mod screenshot_this;
 pub mod generate_pride;
+pub mod say;
 
 pub async fn get_target_info(ctx: &Context<'_>, target: Option<Member>) -> UnwrapResult<(UserId, String)> {
     let guild_id = ctx.guild_id().into_result()?; // SAFETY: Si el mensaje no es de un servidor, no se ejecutará el comando
