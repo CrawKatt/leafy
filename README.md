@@ -7,7 +7,7 @@
 ---
 
 - [ ] Refactorizar el código para que sea más legible
-- [ ] Normalizar la Base de Datos para que sea más eficiente y evitar la repetición de datos
+- [x] Normalizar la Base de Datos para que sea más eficiente y evitar la repetición de datos
   - [x] Crear una sola tabla de configuración
   - [x] Si no hay una tabla de configuración al establecer un valor,
   crearla con el valor establecido y el resto de los valores por defecto
