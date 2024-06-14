@@ -2,7 +2,6 @@ use serenity::all::Channel;
 
 use crate::DB;
 use crate::utils::{CommandResult, Context};
-use crate::utils::autocomplete::args_log_command;
 use crate::utils::config::{Channels, GuildData};
 
 #[poise::command(
@@ -16,7 +15,7 @@ use crate::utils::config::{Channels, GuildData};
 pub async fn set_exception_channel(
     ctx: Context<'_>,
     #[description = "The channel to set as the exception channel"]
-    #[autocomplete = "args_log_command"]
+    #[channel_types("Text")]
     exception_channel: Channel,
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;

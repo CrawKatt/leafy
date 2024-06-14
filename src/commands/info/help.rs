@@ -2,11 +2,12 @@ use std::collections::HashMap;
 use std::fmt::Write;
 
 use poise::{Command, CreateReply};
-use serenity::all::{CreateActionRow, CreateEmbed, CreateEmbedFooter, CreateSelectMenu, CreateSelectMenuKind, CreateSelectMenuOption};
+use serenity::all::{ButtonStyle, CreateActionRow, CreateButton, CreateEmbed, CreateEmbedFooter, CreateSelectMenu, CreateSelectMenuKind, CreateSelectMenuOption};
 
 use crate::utils::{CommandResult, Context, Data, Error};
 
 pub const FOOTER_URL: &str = "https://cdn.discordapp.com/guilds/983473640387518504/users/395631548629516298/avatars/456f92e6e01310c808551557833f13ad.png?size=2048";
+const GITHUB: &str = "https://github.com/CrawKatt/plantita_ayudante";
 
 // Se debe manejar la interacción con el SelectMenu desde el handler de interacciones
 // en `events.rs` utilizando el `custom_id` para identificar el `SelectMenu`.
@@ -32,10 +33,26 @@ pub async fn help(ctx: Context<'_>) -> CommandResult {
             CreateSelectMenuOption::new("Audio", "Audio").emoji('🎵'),
         ],
     }).placeholder("Selecciona una categoría de comandos");
-    let action_row = CreateActionRow::SelectMenu(select_menu);
+    
+    let buttons = vec![
+        CreateButton::new("close")
+            .style(ButtonStyle::Danger)
+            .label("Cerrar"),
+        
+        CreateButton::new_link(GITHUB)
+            .label("Código Fuente")
+            .emoji('📄')
+            .custom_id("github"),
+    ];
+    
+    let action_menu = CreateActionRow::SelectMenu(select_menu);
+    let action_button = CreateActionRow::Buttons(buttons);
+
     let description = format!(
-        "Prefix del bot: `{}`\n\n{}",
+        "Prefix del bot: `{}`\nTenemos {} categorías y {} comandos para explorar.\n\n{}Puedes ver mi código fuente pulsando el botón de abajo.",
         ctx.framework().options.prefix_options.prefix.as_ref().unwrap(), // SAFETY: El prefix siempre está definido
+        ctx.framework().user_data.command_descriptions.len(),
+        ctx.framework().options.commands.len(),
         ctx.framework().user_data.command_descriptions.values().map(String::as_str).collect::<String>()
     );
 
@@ -47,7 +64,7 @@ pub async fn help(ctx: Context<'_>) -> CommandResult {
             .footer(CreateEmbedFooter::new("© CrawKatt").icon_url(FOOTER_URL))
             .description(description)
         )
-        .components(vec![action_row.clone()]);
+        .components(vec![action_menu, action_button]);
 
     ctx.send(reply).await?;
 

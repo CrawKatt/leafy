@@ -19,6 +19,8 @@ pub enum ButtonAction {
     Resume,
     #[str("help_menu")]
     HelpMenu,
+    #[str("close")]
+    Close,
     #[str("unknown")]
     Unknown,
 }

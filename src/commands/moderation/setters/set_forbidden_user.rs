@@ -2,8 +2,7 @@ use serenity::all::User;
 
 use crate::DB;
 use crate::utils::{CommandResult, Context};
-use crate::utils::autocomplete::args_set_forbidden_user;
-use crate::utils::config::{GuildData, Forbidden};
+use crate::utils::config::{Forbidden, GuildData};
 
 #[poise::command(
     prefix_command,
@@ -16,7 +15,6 @@ use crate::utils::config::{GuildData, Forbidden};
 pub async fn set_forbidden_user(
     ctx: Context<'_>,
     #[description = "The user to set as the forbidden user"]
-    #[autocomplete = "args_set_forbidden_user"]
     forbidden_user: User,
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;

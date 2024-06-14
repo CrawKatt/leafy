@@ -1,5 +1,5 @@
 use poise::{FrameworkContext, serenity_prelude as serenity};
-use serenity::all::{ComponentInteraction, ComponentInteractionDataKind, Context, CreateEmbed, CreateEmbedFooter, CreateInteractionResponse, CreateInteractionResponseMessage, Interaction};
+use serenity::all::{CacheHttp, ComponentInteraction, ComponentInteractionDataKind, Context, CreateEmbed, CreateEmbedFooter, CreateInteractionResponse, CreateInteractionResponseMessage, Interaction};
 
 use crate::commands::info::help::FOOTER_URL;
 use crate::debug;
@@ -23,6 +23,7 @@ pub async fn handler(
 
     match ButtonAction::from(custom_id) {
         ButtonAction::HelpMenu => help_action(ctx, mc, framework).await?,
+        ButtonAction::Close => ctx.http().delete_message(mc.channel_id, mc.message.id, None).await?,
         ButtonAction::Skip => handle_action(ctx, guild_id, mc, "Se ha saltado la canción", |queue| queue.skip()).await?,
         ButtonAction::Pause => handle_and_update(ctx, guild_id, mc, "Se ha pausado la canción", |queue| queue.pause(),true).await?,
         ButtonAction::Resume => handle_and_update(ctx, guild_id, mc, "Se ha reanudado la canción", |queue| queue.resume(), false).await?,
