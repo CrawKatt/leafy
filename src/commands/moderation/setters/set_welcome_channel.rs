@@ -15,6 +15,7 @@ use crate::utils::config::{Channels, GuildData};
 pub async fn set_welcome_channel(
     ctx: Context<'_>,
     #[description = "The channel to set as the Welcome channel"]
+    #[channel_types("Text")]
     welcome_channel: Channel,
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;

@@ -1,7 +1,7 @@
 use serenity::all::Role;
+
 use crate::DB;
 use crate::utils::{CommandResult, Context};
-use crate::utils::autocomplete::args_set_admins;
 use crate::utils::config::{Admin, GuildData};
 use crate::utils::debug::IntoUnwrapResult;
 
@@ -16,7 +16,6 @@ use crate::utils::debug::IntoUnwrapResult;
 pub async fn set_admins(
     ctx: Context<'_>,
     #[description = "El rol para establecer como administrador"]
-    #[autocomplete = "args_set_admins"]
     role: Role,
     #[description = "El rol para establecer un administrador secundario (opcional)"]
     role_2: Option<Role>,
@@ -57,7 +56,7 @@ pub async fn set_admins(
     data.update_field_in_db("admins.role_id", &role_id, &guild_id.to_string()).await?;
     data.update_field_in_db("admins.role_2_id", &role_2_id, &guild_id.to_string()).await?;
 
-    ctx.say(format!("Admin roles set to: **{role_id}** and **{role_2_id}**")).await?;
+    ctx.say(format!("Admin roles set to: **{}** and **{}**", role.name, role_2.into_result()?.name)).await?;
 
     Ok(())
 }

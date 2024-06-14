@@ -2,8 +2,7 @@ use serenity::all::Role;
 
 use crate::DB;
 use crate::utils::{CommandResult, Context};
-use crate::utils::autocomplete::args_set_forbidden_role;
-use crate::utils::config::{GuildData, Forbidden};
+use crate::utils::config::{Forbidden, GuildData};
 
 #[poise::command(
     prefix_command,
@@ -16,7 +15,6 @@ use crate::utils::config::{GuildData, Forbidden};
 pub async fn set_forbidden_role(
     ctx: Context<'_>,
     #[description = "The role to set as the forbidden role"]
-    #[autocomplete = "args_set_forbidden_role"]
     forbidden_role: Role,
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;

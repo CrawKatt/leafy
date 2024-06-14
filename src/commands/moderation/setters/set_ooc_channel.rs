@@ -15,6 +15,7 @@ use crate::utils::config::{Channels, GuildData};
 pub async fn set_ooc_channel(
     ctx: Context<'_>,
     #[description = "The channel to set as the log channel"]
+    #[channel_types("Text")]
     ooc_channel: Channel,
 ) -> CommandResult {
     DB.use_ns("discord-namespace").use_db("discord").await?;
