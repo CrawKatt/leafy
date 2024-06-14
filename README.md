@@ -1,10 +1,9 @@
-<h1 align="center" id="title">Plantita Ayudante</h1>
-
 <p align="center"><img src="https://cdn.discordapp.com/avatars/1207370166028083230/ea0ac311211f2e958535d0ed4a04935b.png?size=256" alt="project-image"></p>
 
-<p id="description">
-    Plantita Ayudante es un Bot de Discord que posee funciones de moderación, comandos de música, sistema anti tag (@), comandos de entretenimiento y más.
-</p>
+<h1 align="center" id="title">Plantita Ayudante</h1>
+
+---
+Plantita Ayudante es un Bot de Discord que posee funciones de moderación, comandos de música, sistema anti tag (@), comandos de entretenimiento y más.
 
 ## Comandos disponibles:
 | Comando                 | Categoría       | Tipo                 | Descripción                                                                                                                                                                                      |
@@ -38,6 +37,8 @@
 
 ## 🛠️ Guía de Instalación:
 
+---
+
 <p>
     1. Instalar Rust
 </p>
@@ -58,11 +59,15 @@ curl -sSf https://install.surrealdb.com | sh
     🍰 Contribution Guidelines:
 </h2>
 
+---
+
 Puedes contribuir al desarrollo de Plantita Ayudante siguiendo nuestro `todo.md` o abriendo un issue con alguna sugerencia para mejorar.
 
 <h2>
     🛡️ Licencia:
 </h2>
+
+---
 
 Este proyecto tiene licencia Apache 2.0.
 
