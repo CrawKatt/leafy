@@ -1,3 +1,7 @@
+<p style= "text-align: center;">
+  <img src="https://cdn.discordapp.com/avatars/1207370166028083230/ea0ac311211f2e958535d0ed4a04935b.png?size=256" alt="plantita-logo">
+</p>
+
 # Tareas Pendientes
 
 ---
