@@ -1,7 +1,7 @@
 use poise::serenity_prelude as serenity;
 use serenity::all::{ChannelId, MessageUpdateEvent, RoleId, UserId};
 
-use crate::{location, match_handle};
+use crate::{debug, location, match_handle};
 use crate::utils::CommandResult;
 use crate::handlers::misc::forbidden_mentions::{handle_forbidden_role, handle_forbidden_user};
 use crate::utils::MessageData;
@@ -17,7 +17,12 @@ pub async fn handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> Com
     let Some(database_message) = old_message else { return Ok(()) };
 
     let old_content = &database_message.message_content;
-    let new_content = event.content.as_deref().unwrap_log(location!())?;
+    let new_content = event.content.as_deref();
+    let Some(new_content) = new_content else {
+        debug!("No new content {new_content:?}");
+        return Ok(());
+    };
+    
     if old_content == new_content { return Ok(()) }
     let log_channel = GuildData::verify_data(guild_id).await?
         .unwrap_log(location!())?
