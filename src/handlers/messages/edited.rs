@@ -33,7 +33,7 @@ pub async fn handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> Com
     
     let message_content = format!("\n**Antes:** \n> {old_content}\n**Después:** \n> {new_content}");
 
-    let mention = event.mentions.clone().into_result()?;
+    let mention = event.mentions.as_ref().into_result()?;
     let first = mention.first();
 
     let Some(user) = first else {
