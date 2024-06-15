@@ -15,7 +15,11 @@ use crate::handlers::error::handler;
     category = "Audio",
     aliases("p"),
 )]
-pub async fn play(ctx: Context<'_>, query: String) -> CommandResult {
+pub async fn play(
+    ctx: Context<'_>,
+    #[rest]
+    query: String
+) -> CommandResult {
     let do_search = !query.starts_with("http");
     let guild = ctx.guild().into_result()?.clone();
     let guild_id = guild.id;

@@ -49,6 +49,10 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
     2. SurrealDB
 </p>
 
+```
+curl -sSf https://install.surrealdb.com | sh
+```
+
 <p>
     3. Opus - Códec de audio que utiliza Discord. audiopus utilizará los binarios libopus instalados si están 
     disponibles a través de pkgconf en Linux/MacOS, de lo contrario tendrá que instalar cmake para construir opus 
@@ -72,10 +76,6 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
     <code>pip install youtube_dl</code>. Alternativamente, puedes instalarlo con el gestor de paquetes de tu sistema, 
     <code>apt install youtube-dl</code> en Ubuntu o <code>pacman -S youtube-dl</code> en Arch Linux.
 </p>
-
-```
-curl -sSf https://install.surrealdb.com | sh
-```
 
 ## 🍰 Contribuciones:
 

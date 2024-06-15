@@ -1,6 +1,9 @@
+use poise::CreateReply;
+use serenity::all::{ButtonStyle, CreateActionRow, CreateButton};
+
+use crate::handlers::error::handler;
 use crate::utils::{CommandResult, Context};
 use crate::utils::autocomplete::lessons;
-use crate::handlers::error::handler;
 
 #[poise::command(
     prefix_command,
@@ -16,7 +19,18 @@ pub async fn rust(
 ) -> CommandResult {
     let path = format!("./assets/rust-examples/docs/{concept}.md");
     let example = std::fs::read_to_string(path)?;
-    ctx.say(example).await?;
+    let button = CreateActionRow::Buttons(vec![
+        CreateButton::new("close")
+            .label("Cerrar")
+            .style(ButtonStyle::Danger)
+        ]
+    );
+    
+    let builder = CreateReply::default()
+        .content(example)
+        .components(vec![button]);
+    
+    ctx.send(builder).await?;
     
     Ok(())
 }
