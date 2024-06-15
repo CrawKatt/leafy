@@ -31,6 +31,7 @@ pub async fn help(ctx: Context<'_>) -> CommandResult {
             CreateSelectMenuOption::new("Fun", "Fun").emoji('🎉'),
             CreateSelectMenuOption::new("Información", "Info").emoji('ℹ'),
             CreateSelectMenuOption::new("Audio", "Audio").emoji('🎵'),
+            CreateSelectMenuOption::new("Lecciones de Programación", "Lessons").emoji('📚'),
         ],
     }).placeholder("Selecciona una categoría de comandos");
     
@@ -78,6 +79,7 @@ pub fn get_command_categories(commands: &[Command<Data, Error>]) -> HashMap<&'st
     map.insert("Fun", filter_categories(&mut commands.iter(), "Fun"));
     map.insert("Info", filter_categories(&mut commands.iter(), "Info"));
     map.insert("Audio", filter_categories(&mut commands.iter(), "Audio"));
+    map.insert("Lessons", filter_categories(&mut commands.iter(), "Lessons"));
 
     map
 }
