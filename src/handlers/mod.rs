@@ -1,7 +1,7 @@
 pub mod error;
 pub mod misc;
-pub mod welcome_event;
+pub mod welcome;
 pub mod messages;
 pub mod events;
-pub mod presence_handler;
+pub mod typing_start;
 pub mod interactions;

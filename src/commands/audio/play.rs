@@ -4,13 +4,13 @@ use crate::{HttpKey, location};
 use crate::commands::audio::queue::AuxMetadataKey;
 use crate::utils::{CommandResult, Context};
 use crate::utils::debug::{IntoUnwrapResult, UnwrapLog};
-use crate::handlers::error::err_handler;
+use crate::handlers::error::handler;
 
 #[poise::command(
     prefix_command,
     slash_command,
     guild_only,
-    on_error = "err_handler",
+    on_error = "handler",
     user_cooldown = 10,
     category = "Audio",
     aliases("p"),
