@@ -1,0 +1,6 @@
+[submodule "rust-examples"]
+	path = rust-examples
+	url = https://github.com/CrawKatt/rust-examples.git
+[submodule "assets/rust-examples"]
+	path = assets/rust-examples
+	url = https://github.com/CrawKatt/rust-examples.git
