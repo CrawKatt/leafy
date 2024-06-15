@@ -33,6 +33,7 @@ Plantita Ayudante es un Bot de Discord que posee funciones de moderación, coman
 | get_welcome_channel     | Moderación      | Prefix/Slash Command | Obtiene el canal de bienvenidas establecido                                                                                                                                                      |
 | get_exception_channel   | Moderación      | Prefix/Slash Command | Obtiene el canal de excepciones dinámicas establecido                                                                                                                                            |
 | get_forbidden_exception | Moderación      | Prefix/Slash Command | Obtiene el usuario que ha solicitado una excepción                                                                                                                                               |
+| rust                    | Aprendizaje     | Prefix/Slash Command | Enseña ejemplos de código en Rust para aprender a programar                                                                                                                                      |
 
 ## 🛠️ Dependencias:
 
