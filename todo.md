@@ -12,7 +12,7 @@
   - [x] Si no hay una tabla de configuración al establecer un valor,
   crearla con el valor establecido y el resto de los valores por defecto
 - [ ] Enviar un sticker de "que dijiste @muteado"
-- [ ] Crear un sistema de reacciones para borrar un ooc si se reacciona con un emoji 10 veces
+- [x] Crear un sistema de reacciones para borrar un ooc si se reacciona con un emoji 10 veces
 
 ---
 
