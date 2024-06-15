@@ -51,24 +51,60 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
     2. SurrealDB
 </p>
 
+<p>
+    3. Opus - Códec de audio que utiliza Discord. audiopus utilizará los binarios libopus instalados si están 
+    disponibles a través de pkgconf en Linux/MacOS, de lo contrario tendrá que instalar cmake para construir opus 
+    desde el código fuente. Este es siempre el caso en Windows. Para sistemas Unix, puede instalar la biblioteca con
+    <code>apt install libopus-dev</code> en Ubuntu o <code>pacman -S opus</code> en Arch Linux. Si no la tienes 
+    instalada, se creará para ti. Sin embargo, necesitarás un compilador de C y las autotools de GNU instaladas.
+    De nuevo, estos pueden ser instalados con <code>apt install build-essential autoconf automake libtool m4</code>
+    en Ubuntu o <code>pacman -S base-devel</code> en Arch Linux.
+</p>
+
+<p>
+    4. ffmpeg - ffmpeg es una colección de software libre que maneja audio, video y otros archivos multimedia y 
+    bibliotecas de software. Puedes instalarlo con <code>apt install ffmpeg</code> en Ubuntu o <code>pacman -S ffmpeg</code>
+    en Arch Linux.
+</p>
+
+<p>
+    5. yt-dlp / youtube-dl / (forks similares) - Herramienta de descarga de audio/vídeo. yt-dlp puede instalarse
+    siguiendo las instrucciones de instalación del repositorio principal. Puedes instalar youtube-dl con el
+    gestor de paquetes de Python, pip, que recomendamos para youtube-dl. Puedes hacerlo con el comando <code>pip install
+    youtube_dl</code>. Alternativamente, puedes instalarlo con el gestor de paquetes de tu sistema, 
+    <code>apt install youtube-dl</code> en Ubuntu o <code>pacman -S youtube-dl</code> en Arch Linux.
+</p>
+
 ```
 curl -sSf https://install.surrealdb.com | sh
 ```
 
-<h2>
-    🍰 Contribuciones:
-</h2>
+## 🍰 Contribuciones:
 
 ---
 
 Puedes contribuir al desarrollo de Plantita Ayudante siguiendo nuestro `todo.md` o abriendo un `issue` con alguna sugerencia para mejorar.
 
-<h2>
-    🛡️ Licencia:
-</h2>
+## 🛡️ Licencia:
 
 ---
 
 Este proyecto tiene licencia Apache 2.0.
+
+## Donaciones
+Si has encontrado útil este proyecto y deseas apoyar su desarrollo continuo, considera hacer una donación. Tu contribución nos ayudará a:
+
+- Mantener el proyecto actualizado con las últimas características y mejoras.
+- Pagar por servicios y herramientas necesarias para el desarrollo y pruebas.
+- Dedicar más tiempo y recursos a la documentación y soporte comunitario.
+
+## ¿Cómo donar?
+Puedes hacer una donación a través de cualquiera de las siguientes plataformas:
+- [GitHub Sponsors](https://github.com/sponsors/CrawKatt)
+- [Patreon](https://www.patreon.com/crawkatt)
+
+Cualquier cantidad, grande o pequeña, es muy apreciada. ¡Gracias por tu apoyo!
+
+¡Gracias por tu generosidad!
 
 <p align="center"><img src="https://socialify.git.ci/crawkatt/plantita_ayudante/image?description=1&amp;descriptionEditable=Bot%20de%20Discord%20del%20fan%20server%20de%20Meica&amp;font=Source%20Code%20Pro&amp;forks=1&amp;issues=1&amp;language=1&amp;logo=https%3A%2F%2Fi.ibb.co%2FPZTwNYH%2F108593932-modified.png&amp;name=1&amp;owner=1&amp;pattern=Floating%20Cogs&amp;pulls=1&amp;stargazers=1&amp;theme=Dark" alt="project-image"></p>
