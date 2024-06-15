@@ -12,7 +12,7 @@ use tokio::time::Instant;
 use tokio::time::sleep_until;
 use reqwest::Client as HttpClient;
 
-use handlers::error::err_handler;
+use handlers::error::handler;
 use handlers::events::event_handler;
 use handlers::misc::link_spam_handler::message_tracker_cleaner;
 use utils::Data;
@@ -68,7 +68,7 @@ async fn main() -> UnwrapResult<()> {
                 edit_tracker: Some(Arc::from(poise::EditTracker::for_timespan(Duration::from_secs(3600)))),
                 ..Default::default()
             },
-            on_error: |error| Box::pin(err_handler(error)),
+            on_error: |error| Box::pin(handler(error)),
             event_handler: |ctx, event, framework, _data| Box::pin(event_handler(ctx, event, framework)),
             allowed_mentions: Some(serenity::CreateAllowedMentions::default()
                 .all_users(true)

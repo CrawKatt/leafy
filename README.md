@@ -33,6 +33,7 @@ Plantita Ayudante es un Bot de Discord que posee funciones de moderación, coman
 | get_welcome_channel     | Moderación      | Prefix/Slash Command | Obtiene el canal de bienvenidas establecido                                                                                                                                                      |
 | get_exception_channel   | Moderación      | Prefix/Slash Command | Obtiene el canal de excepciones dinámicas establecido                                                                                                                                            |
 | get_forbidden_exception | Moderación      | Prefix/Slash Command | Obtiene el usuario que ha solicitado una excepción                                                                                                                                               |
+| rust                    | Aprendizaje     | Prefix/Slash Command | Enseña ejemplos de código en Rust para aprender a programar                                                                                                                                      |
 
 ## 🛠️ Dependencias:
 
@@ -67,8 +68,8 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 <p>
     5. yt-dlp / youtube-dl / (forks similares) - Herramienta de descarga de audio/vídeo. yt-dlp puede instalarse
     siguiendo las instrucciones de instalación del repositorio principal. Puedes instalar youtube-dl con el
-    gestor de paquetes de Python, pip, que recomendamos para youtube-dl. Puedes hacerlo con el comando <code>pip install
-    youtube_dl</code>. Alternativamente, puedes instalarlo con el gestor de paquetes de tu sistema, 
+    gestor de paquetes de Python, pip, que recomendamos para youtube-dl. Puedes hacerlo con el comando 
+    <code>pip install youtube_dl</code>. Alternativamente, puedes instalarlo con el gestor de paquetes de tu sistema, 
     <code>apt install youtube-dl</code> en Ubuntu o <code>pacman -S youtube-dl</code> en Arch Linux.
 </p>
 

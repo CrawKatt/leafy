@@ -2,7 +2,7 @@ use poise::{FrameworkContext, serenity_prelude as serenity};
 use serenity::FullEvent;
 
 use crate::{DB, debug};
-use crate::handlers::{interactions, presence_handler, welcome_event};
+use crate::handlers::{interactions, typing_start, welcome};
 use crate::handlers::messages::{deleted, edited, sent};
 use crate::handlers::misc::reaction_add::vote_react;
 use crate::utils::{CommandResult, Data, Error};
@@ -27,10 +27,10 @@ pub async fn event_handler(
         FullEvent::Message { new_message } => sent::handler(ctx, new_message).await?,
         FullEvent::MessageDelete { channel_id, deleted_message_id, .. } => deleted::handler(ctx, channel_id, deleted_message_id).await?,
         FullEvent::MessageUpdate { event, .. } => edited::handler(ctx, event).await?,
-        FullEvent::GuildMemberAddition { new_member} => welcome_event::handler(ctx, new_member).await?,
+        FullEvent::GuildMemberAddition { new_member} => welcome::handler(ctx, new_member).await?,
         FullEvent::ReactionAdd { add_reaction } => vote_react(ctx, add_reaction).await?,
-        FullEvent::TypingStart { event, .. } => presence_handler::handler(event).await?,
-        FullEvent::InteractionCreate { interaction, .. } => interactions::handler(ctx, interaction, &framework).await?,
+        FullEvent::TypingStart { event } => typing_start::handler(event).await?,
+        FullEvent::InteractionCreate { interaction } => interactions::handler(ctx, interaction, &framework).await?,
 
         /*
         serenity::FullEvent::PresenceUpdate { .. } => {

@@ -3,7 +3,7 @@ use poise::FrameworkError;
 use crate::utils::Data;
 use crate::utils::Error;
 
-pub async fn err_handler(error: FrameworkError<'_, Data, Error>) {
+pub async fn handler(error: FrameworkError<'_, Data, Error>) {
     match error {
         FrameworkError::Setup { error, .. } => {
             println!("Error al iniciar el Bot: {error:?}");
