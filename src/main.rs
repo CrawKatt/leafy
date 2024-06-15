@@ -142,7 +142,6 @@ fn clean_database_loop() {
 /// - Los campos son flexibles y se pueden añadir o eliminar
 /// - Se crea un índice único para el campo `guild_id` dado que el `guild_id` debe ser único para cada servidor
 async fn create_database() -> UnwrapResult<()> {
-    DB.use_ns("discord-namespace").use_db("discord").await?;
     DB.query("DEFINE TABLE guild_config SCHEMAFULL PERMISSIONS FOR select, create, update, delete WHERE true;").await?;
     DB.query("DEFINE FIELD guild_id ON guild_config TYPE string;").await?;
     DB.query("DEFINE FIELD admins ON guild_config FLEXIBLE TYPE option<object>;").await?;
