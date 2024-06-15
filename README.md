@@ -35,12 +35,12 @@ Plantita Ayudante es un Bot de Discord que posee funciones de moderación, coman
 | get_exception_channel   | Moderación      | Prefix/Slash Command | Obtiene el canal de excepciones dinámicas establecido                                                                                                                                            |
 | get_forbidden_exception | Moderación      | Prefix/Slash Command | Obtiene el usuario que ha solicitado una excepción                                                                                                                                               |
 
-## 🛠️ Guía de Instalación:
+## 🛠️ Dependencias:
 
 ---
 
 <p>
-    1. Instalar Rust
+    1. Rust
 </p>
 
 ```
@@ -48,7 +48,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
 <p>
-    2. Instalar SurrealDB
+    2. SurrealDB
 </p>
 
 ```
@@ -56,12 +56,12 @@ curl -sSf https://install.surrealdb.com | sh
 ```
 
 <h2>
-    🍰 Contribution Guidelines:
+    🍰 Contribuciones:
 </h2>
 
 ---
 
-Puedes contribuir al desarrollo de Plantita Ayudante siguiendo nuestro `todo.md` o abriendo un issue con alguna sugerencia para mejorar.
+Puedes contribuir al desarrollo de Plantita Ayudante siguiendo nuestro `todo.md` o abriendo un `issue` con alguna sugerencia para mejorar.
 
 <h2>
     🛡️ Licencia:
