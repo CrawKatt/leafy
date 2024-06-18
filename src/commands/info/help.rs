@@ -55,6 +55,11 @@ pub async fn help(
             .label("Código Fuente")
             .emoji('📄')
             .custom_id("github"),
+        
+        CreateButton::new_link("https://github.com/sponsors/CrawKatt")
+            .label("Apoyar")
+            .emoji('💸')
+            .custom_id("donate"),
     ];
     
     let action_menu = CreateActionRow::SelectMenu(select_menu);
