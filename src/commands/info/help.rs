@@ -13,6 +13,7 @@ const GITHUB: &str = "https://github.com/CrawKatt/plantita_ayudante";
 // en `events.rs` utilizando el `custom_id` para identificar el `SelectMenu`.
 // Se recomienda ver como ejemplo, el manejo de botones en `handlers/misc/buttons.rs`
 // y el manejo de interacciones en `handlers/interactions.rs`.
+/// Muestra un menú de ayuda con los comandos del Bot
 #[poise::command(
     prefix_command,
     slash_command,
@@ -24,7 +25,17 @@ const GITHUB: &str = "https://github.com/CrawKatt/plantita_ayudante";
     description_localized("en-US", "Shows a help menu with the Bot's commands"),
     description_localized("ja", "ボットのコマンドを表示するヘルプメニュー")
 )]
-pub async fn help(ctx: Context<'_>) -> CommandResult {
+pub async fn help(
+    ctx: Context<'_>,
+    command: Option<String>
+) -> CommandResult {
+    
+    // Obtener el comando seleccionado
+    if let Some(command) = command {
+        send_description(ctx, command).await?;
+        return Ok(())
+    }
+    
     let select_menu = CreateSelectMenu::new("help_menu", CreateSelectMenuKind::String {
         options: vec![
             CreateSelectMenuOption::new("Moderación", "Moderator").emoji('🛠'),
@@ -125,4 +136,42 @@ fn create_description(categories: &HashMap<Option<&str>, Vec<&str>>) -> String {
             .unwrap();
             description
         })
+}
+
+async fn send_description(ctx: Context<'_>, command: String) -> CommandResult {
+    let command = command.to_lowercase();
+    let command = command.trim();
+    
+    let command = ctx.framework()
+        .options
+        .commands
+        .iter()
+        .find(|cmd| cmd.name.to_lowercase() == command);
+    
+    let Some(command) = command else {
+        let reply = CreateReply::default()
+            .ephemeral(true)
+            .content("No se encontró el comando seleccionado");
+
+        ctx.send(reply).await?;
+        
+        return Ok(())
+    };
+
+    let default = "No hay descripción".to_string();
+    let description = &**command.description.as_ref().unwrap_or(&default);
+
+    let reply = CreateReply::default()
+        .ephemeral(true)
+        .embed(CreateEmbed::default()
+            .title(&command.name)
+            .color(0x0000_ff00)
+            .footer(CreateEmbedFooter::new("© CrawKatt")
+                .icon_url(FOOTER_URL))
+            .description(description)
+        );
+
+    ctx.send(reply).await?;
+
+    Ok(())
 }

@@ -3,6 +3,7 @@ use poise::Command;
 use serde::{Deserialize, Serialize};
 use serenity::all::{ChannelId, GuildId, MessageId, UserId};
 use surrealdb::Result as SurrealResult;
+use crate::commands::ai::ask;
 
 use crate::commands::audio::join::join;
 use crate::commands::audio::leave::leave;
@@ -210,5 +211,6 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         queue(),
         help(),
         rust(),
+        ask(),
     ]
 }
