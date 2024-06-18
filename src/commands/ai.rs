@@ -3,6 +3,8 @@ use openai_api_rs::v1::api::Client;
 use openai_api_rs::v1::chat_completion;
 use openai_api_rs::v1::chat_completion::ChatCompletionRequest;
 use poise::CreateReply;
+use serenity::all::{ButtonStyle, CreateButton};
+use serenity::builder::CreateActionRow;
 use crate::utils::debug::IntoUnwrapResult;
 
 #[poise::command(
@@ -10,7 +12,7 @@ use crate::utils::debug::IntoUnwrapResult;
     slash_command,
     guild_only,
     category = "Info",
-    user_cooldown = 10,
+    guild_cooldown = 15,
 )]
 pub async fn ask(
     ctx: Context<'_>,
@@ -41,7 +43,18 @@ pub async fn ask(
 
     let result = client.chat_completion(req)?;
     let message = result.choices[0].message.content.as_ref().into_result()?;
-    let reply = CreateReply::default().content(message);
+    
+    let action_row = vec![CreateActionRow::Buttons(vec![
+        CreateButton::new("close")
+            .style(ButtonStyle::Danger)
+            .label("Cerrar")
+        ])
+    ];
+    
+    let reply = CreateReply::default()
+        .content(message)
+        .components(action_row);
+    
     loading.edit(ctx, reply).await?;
 
     Ok(())
