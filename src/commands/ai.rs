@@ -14,7 +14,9 @@ use crate::utils::debug::IntoUnwrapResult;
 )]
 pub async fn ask(
     ctx: Context<'_>,
-    #[description = "Texto a enviar al modelo de IA"] prompt: String
+    #[description = "Texto a enviar al modelo de IA"]
+    #[rest]
+    prompt: String
 ) -> CommandResult {
     let loading = ctx.say("Cargando...").await?;
     let url = dotenvy::var("OPENAI_API_BASE")?;
