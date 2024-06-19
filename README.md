@@ -1,14 +1,15 @@
-<p align="center"><img src="https://cdn.discordapp.com/avatars/1207370166028083230/ea0ac311211f2e958535d0ed4a04935b.png?size=256" alt="project-image"></p>
+<p align="center"><img src="https://media.discordapp.net/attachments/1072713959733469306/1252777858355564574/Ilustracion7.png?ex=66741c8c&is=6672cb0c&hm=ab6527d70138d35872c5e6d4bc6210c54a3cf368d139b7575f5fc4eda507ee5d&=&format=webp&quality=lossless&width=256&height=256" alt="project-image"></p>
 
-<h1 align="center" id="title">Plantita Ayudante</h1>
+<h1 align="center" id="title">Leafy</h1>
 
-Plantita Ayudante es un Bot de Discord que posee funciones de moderación, comandos de música, sistema anti tag (@), comandos de entretenimiento y más.
+Leafy es un Bot de Discord que posee funciones de moderación, comandos de música, sistema anti tag (@), comandos de entretenimiento y más.
 
 ## Comandos disponibles:
 | Comando                 | Categoría       | Tipo                 | Descripción                                                                                                                                                                                      |
 |-------------------------|-----------------|----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | ping                    | Info            | Prefix/Slash Command | Muestra la latencia del Bot                                                                                                                                                                      |
 | help                    | Info            | Prefix/Slash command | Muestra un menú de ayuda con los comandos del Bot                                                                                                                                                |
+| ask                     | Info            | Prefix/Slash Command | Habla con la IA del Bot                                                                                                                                                                          |
 | sst                     | Entretenimiento | Prefix Command       | Crea una pseudocaptura de pantalla de un mensaje al que respondas                                                                                                                                |
 | pride                   | Entretenimiento | Prefix Command       | Aplica un Overlay Arcoíris a la foto de perfil del usuario                                                                                                                                       |
 | furry                   | Entretenimiento | Prefix Command       | Envía una imágen de broma Furry con la foto de perfil del usuario                                                                                                                                |
@@ -110,4 +111,4 @@ Muchas gracias a todos los que han contribuido a este proyecto. Son geniales.
 
 Made with [contrib.rocks](https://contrib.rocks).
 
-<p align="center"><img src="https://socialify.git.ci/crawkatt/plantita_ayudante/image?description=1&amp;descriptionEditable=Bot%20de%20Discord%20del%20fan%20server%20de%20Meica&amp;font=Source%20Code%20Pro&amp;forks=1&amp;issues=1&amp;language=1&amp;logo=https%3A%2F%2Fi.ibb.co%2FPZTwNYH%2F108593932-modified.png&amp;name=1&amp;owner=1&amp;pattern=Floating%20Cogs&amp;pulls=1&amp;stargazers=1&amp;theme=Dark" alt="project-image"></p>
+<p align="center"><img src="https://socialify.git.ci/crawkatt/plantita_ayudante/image?description=1&descriptionEditable=Bot%20de%20Discord%20del%20fan%20server%20de%20Meica&font=Source%20Code%20Pro&forks=1&issues=1&language=1&logo=https%3A%2F%2Fi.ibb.co%2FPZTwNYH%2F108593932-modified.png&name=1&owner=1&pattern=Floating%20Cogs&pulls=1&stargazers=1&theme=Dark" alt="project-image"></p>
