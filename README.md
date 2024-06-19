@@ -111,4 +111,4 @@ Muchas gracias a todos los que han contribuido a este proyecto. Son geniales.
 
 Made with [contrib.rocks](https://contrib.rocks).
 
-<p align="center"><img src="https://socialify.git.ci/crawkatt/plantita_ayudante/image?description=1&amp;descriptionEditable=Bot%20de%20Discord%20del%20fan%20server%20de%20Meica&amp;font=Source%20Code%20Pro&amp;forks=1&amp;issues=1&amp;language=1&amp;logo=https%3A%2F%2Fi.ibb.co%2FPZTwNYH%2F108593932-modified.png&amp;name=1&amp;owner=1&amp;pattern=Floating%20Cogs&amp;pulls=1&amp;stargazers=1&amp;theme=Dark" alt="project-image"></p>
+<p align="center"><img src="https://socialify.git.ci/crawkatt/plantita_ayudante/image?description=1&descriptionEditable=Bot%20de%20Discord%20del%20fan%20server%20de%20Meica&font=Source%20Code%20Pro&forks=1&issues=1&language=1&logo=https%3A%2F%2Fi.ibb.co%2FPZTwNYH%2F108593932-modified.png&name=1&owner=1&pattern=Floating%20Cogs&pulls=1&stargazers=1&theme=Dark" alt="project-image"></p>
