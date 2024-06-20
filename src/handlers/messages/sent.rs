@@ -23,7 +23,6 @@ use crate::utils::debug::{IntoUnwrapResult, UnwrapLog};
 /// - manejo de spam de links
 /// - guardar el mensaje en la base de datos
 pub async fn handler(ctx: &serenity::Context, new_message: &Message) -> CommandResult {
-
     // Crear un objeto Arc<String> con el contenido del mensaje para utilizar cheap cloning (clonación barata)
     // La clonación barata consiste en utilizar Arc<T> o Rc<T> para clonar un objeto sin copiar su contenido
     // Rc<T> es para usar en hilos de ejecución y Arc<T> es para usar en hilos de ejecución concurrentes (async)
@@ -47,6 +46,12 @@ pub async fn handler(ctx: &serenity::Context, new_message: &Message) -> CommandR
     // Si hay un error al manejar un archivo adjunto, imprimir el error pero no terminar la función
     if let Err(why) = attachment_handler(new_message).await {
         println!("Error handling attachment: {why:?} {}", Location::caller());
+    }
+    
+    // Si el mensaje no tiene contenido, es probable que sea un sticker o una imágen
+    // En este caso, es mejor salir de la función en lugar de guardar en los logs
+    if message_content.is_empty() {
+        return Ok(())
     }
 
     let data = MessageData::new(
