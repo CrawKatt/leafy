@@ -2,7 +2,7 @@ use std::panic::Location;
 use std::sync::Arc;
 
 use poise::serenity_prelude as serenity;
-use serenity::all::{GuildId, Message, RoleId, UserId};
+use serenity::all::{EmojiId, GuildId, Message, ReactionType, RoleId, UserId};
 
 use crate::{DB, location};
 use crate::utils::CommandResult;
@@ -28,6 +28,12 @@ pub async fn handler(ctx: &serenity::Context, new_message: &Message) -> CommandR
     // Rc<T> es para usar en hilos de ejecución y Arc<T> es para usar en hilos de ejecución concurrentes (async)
     let message_content = Arc::new(String::from(&new_message.content));
     if new_message.author.bot { return Ok(()) }
+
+    if *message_content == "<:HojaYo:1082385549450563584>" {
+        let emoji = ReactionType::from(EmojiId::new(1_082_385_549_450_563_584));
+        new_message.react(&ctx.http, emoji).await?;
+    }
+
     let guild_id = new_message.guild_id.into_result()?;
     let mut member = guild_id.member(&ctx.http, new_message.author.id).await?;
     let user_id = new_message.mentions.first().map(|user| user.id);
