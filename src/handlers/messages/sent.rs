@@ -30,8 +30,9 @@ pub async fn handler(ctx: &serenity::Context, new_message: &Message) -> CommandR
     if new_message.author.bot { return Ok(()) }
 
     if *message_content == "<:HojaYo:1082385549450563584>" {
-        let emoji = ReactionType::from(EmojiId::new(1_082_385_549_450_563_584));
-        new_message.react(&ctx.http, emoji).await?;
+        let emoji = EmojiId::new(1_082_385_549_450_563_584);
+        let react = ReactionType::from(emoji);
+        new_message.react(&ctx.http, react).await?;
     }
 
     let guild_id = new_message.guild_id.into_result()?;
