@@ -31,7 +31,7 @@ pub async fn handler(ctx: &serenity::Context, new_message: &Message) -> CommandR
 
     if *message_content == "<:HojaYo:1082385549450563584>" {
         let emoji = EmojiId::new(1_082_385_549_450_563_584);
-        let react = ReactionType::from(emoji);
+        let react = ReactionType::Custom { id: emoji, animated: false, name: Some("HojaYo".to_string()) };
         new_message.react(&ctx.http, react).await?;
     }
 
