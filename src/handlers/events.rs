@@ -4,7 +4,7 @@ use serenity::FullEvent;
 use crate::{DB, debug};
 use crate::handlers::{interactions, typing_start, welcome};
 use crate::handlers::messages::{deleted, edited, sent};
-use crate::handlers::misc::reaction_add::vote_react;
+use crate::handlers::misc::reaction_add;
 use crate::utils::{CommandResult, Data, Error};
 
 /// # Esta función maneja los eventos de Discord
@@ -28,7 +28,7 @@ pub async fn event_handler(
         FullEvent::MessageDelete { channel_id, deleted_message_id, .. } => deleted::handler(ctx, channel_id, deleted_message_id).await?,
         FullEvent::MessageUpdate { event, .. } => edited::handler(ctx, event).await?,
         FullEvent::GuildMemberAddition { new_member} => welcome::handler(ctx, new_member).await?,
-        FullEvent::ReactionAdd { add_reaction } => vote_react(ctx, add_reaction).await?,
+        FullEvent::ReactionAdd { add_reaction } => reaction_add::handler(ctx, add_reaction).await?,
         FullEvent::TypingStart { event } => typing_start::handler(event).await?,
         FullEvent::InteractionCreate { interaction } => interactions::handler(ctx, interaction, &framework).await?,
 

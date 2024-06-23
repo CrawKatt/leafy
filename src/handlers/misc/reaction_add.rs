@@ -5,6 +5,11 @@ use crate::utils::CommandResult;
 use crate::utils::config::GuildData;
 use crate::utils::debug::{IntoUnwrapResult, UnwrapResult};
 
+pub async fn handler(ctx: &serenity::Context, add_reaction: &Reaction) -> CommandResult {
+    vote_react(ctx, add_reaction).await?;
+    Ok(())
+}
+
 /// # Esta función maneja las reacciones con un sistema de votación
 ///
 /// - Si la reacción es igual a ❌ y tiene 5 o más reacciones, se elimina el mensaje
