@@ -13,6 +13,7 @@ use crate::commands::audio::queue::queue;
 use crate::commands::audio::resume::resume;
 use crate::commands::audio::skip::skip;
 use crate::commands::audio::stop::stop;
+use crate::commands::fun::generate_dumb::dumb;
 use crate::commands::fun::generate_furry::furry;
 use crate::commands::fun::generate_pride::pride;
 use crate::commands::fun::screenshot_this::screenshot_this;
@@ -212,5 +213,6 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         help(),
         rust(),
         ask(),
+        dumb(),
     ]
 }
