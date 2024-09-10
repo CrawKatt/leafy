@@ -1,4 +1,4 @@
-<p align="center"><img src="https://media.discordapp.net/attachments/1072713959733469306/1252777858355564574/Ilustracion7.png?ex=66741c8c&is=6672cb0c&hm=ab6527d70138d35872c5e6d4bc6210c54a3cf368d139b7575f5fc4eda507ee5d&=&format=webp&quality=lossless&width=256&height=256" alt="project-image"></p>
+<p align="center"><img src="https://cdn.discordapp.com/avatars/1207370166028083230/73e2a023b6797922d02e3b6f6bcb7109.png?size=256" alt="project-image"></p>
 
 <h1 align="center" id="title">Leafy</h1>
 
