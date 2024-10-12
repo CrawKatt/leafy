@@ -23,7 +23,7 @@ pub async fn build_embed(ctx: &Context<'_>, json_path: &str, author_name: &str, 
     
     let title = metadata.title;
     let description = format!("**Solicitado por:** {author_name}");
-    let thumbnail = metadata.thumbnail.unwrap_or("".to_string());
+    let thumbnail = metadata.thumbnail.unwrap_or(String::new());
     
     let embed = CreateEmbed::new()
         .title(title)
