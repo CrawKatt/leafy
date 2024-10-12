@@ -62,13 +62,16 @@ pub async fn play(
     let cookies_path = "~/cookies.txt";
     let output_path = format!("/tmp/{}.mp3", uuid::Uuid::new_v4());
     let json_path = format!("{output_path}.info.json");
-    
+    let limit_rate = "500K";
+
     let status = Command::new("yt-dlp")
         .arg("-x")
         .arg("--audio-format")
         .arg("mp3")
         .arg("--add-metadata")
         .arg("--write-info-json")
+        .arg("--limit-rate")
+        .arg(limit_rate)
         .arg("-o")
         .arg(&output_path)
         .arg("--cookies")
