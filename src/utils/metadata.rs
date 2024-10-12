@@ -18,7 +18,12 @@ pub fn read_metadata<P: AsRef<Path>>(path: P) -> UnwrapResult<VideoMetadata> {
     Ok(metadata)
 }
 
-pub async fn build_embed(ctx: &Context<'_>, json_path: &str, author_name: &str, author_face: &str) -> CommandResult {
+pub async fn build_embed(
+    ctx: &Context<'_>,
+    json_path: &str,
+    author_name: &str,
+    author_face: &str
+) -> CommandResult {
     let metadata = read_metadata(json_path)?;
     
     let title = metadata.title;
