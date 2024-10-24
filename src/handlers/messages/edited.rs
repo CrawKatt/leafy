@@ -2,10 +2,10 @@ use poise::serenity_prelude as serenity;
 use serenity::all::{ChannelId, MessageUpdateEvent, RoleId, UserId};
 
 use crate::{debug, location, match_handle};
-use crate::utils::CommandResult;
 use crate::handlers::misc::forbidden_mentions::{handle_forbidden_role, handle_forbidden_user};
+use crate::utils::CommandResult;
+use crate::utils::config::load_data;
 use crate::utils::MessageData;
-use crate::utils::config::GuildData;
 use crate::utils::debug::{IntoUnwrapResult, UnwrapLog};
 use crate::utils::embeds::edit_message_embed;
 
@@ -13,7 +13,7 @@ pub async fn handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> Com
     if event.author.as_ref().map_or(false, |author| author.bot) { return Ok(()) }
     let message_id = event.id;
     let guild_id = event.guild_id.unwrap_log(location!())?; // SAFETY: El GuildId siempre está disponible
-    let old_message = MessageData::get_message_data(&message_id).await?;
+    let old_message = MessageData::get_message_data(message_id).await?;
     let Some(database_message) = old_message else { return Ok(()) };
 
     let old_content = &database_message.message_content;
@@ -24,15 +24,8 @@ pub async fn handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> Com
     };
     
     if old_content == new_content { return Ok(()) }
-    let log_channel = GuildData::verify_data(guild_id).await?
-        .unwrap_log(location!())?
-        .channels
-        .logs
-        .into_result()?
-        .parse::<ChannelId>()?;
-    
+    let log_channel = load_data().channels.logs.parse::<ChannelId>()?;
     let message_content = format!("\n**Antes:** \n> {old_content}\n**Después:** \n> {new_content}");
-
     let mention = event.mentions.as_ref().into_result()?;
     let first = mention.first();
 
@@ -42,19 +35,8 @@ pub async fn handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> Com
     };
     
     let user_id = user.id;
-    let forbidden_user_id = GuildData::verify_data(guild_id).await?
-        .unwrap_log(location!())?
-        .forbidden
-        .user
-        .into_result()?
-        .parse::<UserId>()?;
-
-    let forbidden_role_id = GuildData::verify_data(guild_id).await?
-        .unwrap_log(location!())?
-        .forbidden
-        .role
-        .into_result()?
-        .parse::<RoleId>()?;
+    let forbidden_user_id = load_data().forbidden.user.parse::<UserId>()?;
+    let forbidden_role_id = load_data().forbidden.role.parse::<RoleId>()?;
 
     let mentioned_user = guild_id.member(&ctx.http, user_id).await?; // SAFETY: El GuildId siempre está disponible
     let mentioned_user_roles = mentioned_user.roles(&ctx.cache).unwrap_log(location!())?;
@@ -65,7 +47,7 @@ pub async fn handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> Com
     match_handle!(
         contains_forbidden_user, {
             let message = ctx.http.get_message(database_message.channel_id, database_message.message_id).await?;
-            handle_forbidden_user(ctx, &message, guild_id, &database_message, forbidden_user_id).await?;
+            handle_forbidden_user(ctx, &message, guild_id, database_message.clone(), forbidden_user_id).await?;
         },
         contains_forbidden_role, {
             let message = ctx.http.get_message(database_message.channel_id, database_message.message_id).await?;

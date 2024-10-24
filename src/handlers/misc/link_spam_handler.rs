@@ -10,11 +10,12 @@ use tokio::time::{Duration, sleep};
 
 use crate::utils::CommandResult;
 use crate::handlers::misc::everyone_case::handle_everyone;
-use crate::utils::config::GuildData;
+use crate::utils::config::load_data;
+//use crate::utils::config::GuildData;
 use crate::utils::debug::IntoUnwrapResult;
 
 /// # Estructura de rastreador de mensajes
-/// 
+///
 /// - Almacena el ID del autor del mensaje
 /// - Almacena el contenido del mensaje
 /// - Almacena los IDs de los canales
@@ -28,7 +29,7 @@ struct MessageTracker {
 }
 
 /// Implementación de la estructura de rastreador de mensajes
-/// 
+///
 /// - Implementa un método para crear un rastreador de mensajes por defecto
 /// - Implementa un método para modificar el ID del autor del mensaje
 /// - Implementa un método para modificar el contenido del mensaje
@@ -36,7 +37,7 @@ struct MessageTracker {
 /// - Se sigue el patrón de diseño Builder
 impl MessageTracker {
     /// # Default implementado manualmente
-    /// 
+    ///
     /// - Es necesario implementar `Default` manualmente
     ///     ya que no puede establecer un valor por defecto para `Instant::now()`
     pub fn default() -> Self {
@@ -49,10 +50,10 @@ impl MessageTracker {
     }
 
     /// # Modifica el ID del autor del mensaje
-    /// 
+    ///
     /// - Modifica el ID del autor del mensaje
     ///     El patrón de diseño Builder consiste en mutar `self` y devolver `Self`
-    ///     con el campo modificado por el valor proporcionado como argumento 
+    ///     con el campo modificado por el valor proporcionado como argumento
     /// - Devuelve la estructura de rastreador de mensajes
     const fn author_id(mut self, author_id: UserId) -> Self {
         self.author_id = author_id;
@@ -62,7 +63,7 @@ impl MessageTracker {
     /// # Modifica el contenido del mensaje
     ///
     /// El patrón de diseño Builder consiste en mutar `self` y devolver `Self`
-    ///     con el campo modificado por el valor proporcionado como argumento 
+    ///     con el campo modificado por el valor proporcionado como argumento
     /// - Devuelve la estructura de rastreador de mensajes
     fn message_content(mut self, message_content: Arc<String>) -> Self {
         self.message_content = message_content;
@@ -81,12 +82,12 @@ impl MessageTracker {
 }
 
 /// # Rastreador de mensajes
-/// 
+///
 /// - Almacena un vector de rastreadores de mensajes
 /// - Se utiliza un `LazyLock` para evitar problemas de concurrencia
 /// - Se utiliza un Mutex para evitar problemas de concurrencia
 /// - Se utiliza un vector para almacenar los rastreadores de mensajes
-/// - Se utiliza static para almacenar el rastreador de 
+/// - Se utiliza static para almacenar el rastreador de
 ///     mensajes de forma global y evitar la pérdida de datos
 static MESSAGE_TRACKER: LazyLock<Mutex<Vec<MessageTracker>>> = LazyLock::new(|| {
     Mutex::new(Vec::new())
@@ -108,7 +109,7 @@ pub fn extract_link(text: &str) -> Option<String> {
 pub async fn spam_checker(
     message_content: &Arc<String>,
     channel_id: ChannelId,
-    admin_role_id: &Option<String>,
+    admin_role_id: &String,
     ctx: &serenity::Context,
     time: i64,
     new_message: &Message,
@@ -171,8 +172,8 @@ pub async fn spam_checker(
 }
 
 /// # Esta función borra los mensajes de spam
-/// 
-/// - Borra cada mensaje individualmente en donde 
+///
+/// - Borra cada mensaje individualmente en donde
 ///     el autor del mensaje y el contenido del mensaje coinciden
 async fn delete_spam_messages(
     message: &MessageTracker,
@@ -202,7 +203,7 @@ async fn delete_spam_messages(
 }
 
 /// # Esta función crea un `Embed` para enviar un mensaje al canal de Logs
-/// 
+///
 /// El Log contiene
 /// - El nombre del autor del mensaje
 /// - La URL de la imagen del autor del mensaje
@@ -216,13 +217,7 @@ async fn create_embed(
     message_content: &str,
 ) -> CommandResult {
 
-    let log_channel = GuildData::verify_data(guild_id).await?
-        .into_result()?
-        .channels
-        .logs
-        .into_result()?
-        .parse::<ChannelId>()?;
-
+    let log_channel = load_data().channels.logs.parse::<ChannelId>()?;
     let author_user = author_id.to_user(&ctx.http).await?;
     let author_member = guild_id.member(&ctx.http, author_id).await?;
     let username = author_member.distinct();

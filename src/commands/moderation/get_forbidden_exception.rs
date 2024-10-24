@@ -1,5 +1,5 @@
 use serenity::all::UserId;
-use crate::commands::moderation::setters::set_forbidden_exception::ForbiddenException;
+use crate::commands::moderation::set_forbidden_exception::ForbiddenException;
 use crate::utils::{CommandResult, Context};
 use crate::utils::debug::UnwrapLog;
 use crate::{DB, location};

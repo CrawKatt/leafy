@@ -12,10 +12,9 @@ services:
     command:
       - start
       - --log=trace
-      - --auth
       - --user=root
-      - --pass=file:///run/secrets/DATABASE_PASSWORD
-      - file:///data
+      - --pass=061020
+      - rocksdb:///data
     restart: always
     secrets:
       - DATABASE_PASSWORD

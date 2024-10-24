@@ -6,12 +6,12 @@ use tokio::io::AsyncWriteExt;
 use crate::location;
 
 use crate::utils::CommandResult;
+use crate::utils::config::load_data;
 use crate::utils::MessageData;
-use crate::utils::config::GuildData;
 use crate::utils::debug::{IntoUnwrapResult, UnwrapLog};
 use crate::utils::embeds::{send_embed, send_embed_with_attachment};
 
-pub async fn handler(ctx: &serenity::Context, channel_id: &ChannelId, deleted_message_id: &MessageId) -> CommandResult {
+pub async fn handler(ctx: &serenity::Context, channel_id: &ChannelId, deleted_message_id: MessageId) -> CommandResult {
     let database_info = MessageData::get_message_data(deleted_message_id).await?;
     let Some(database_message) = database_info else { return Ok(()) };
     let message_content = database_message.message_content.clone();
@@ -28,12 +28,7 @@ pub async fn handler(ctx: &serenity::Context, channel_id: &ChannelId, deleted_me
 
     // Obtener el canal de logs de la base de datos
     let result_database = database_message.guild_id.unwrap_log(location!())?;
-    let log_channel = GuildData::verify_data(result_database).await?
-        .into_result()?
-        .channels
-        .logs
-        .into_result()?
-        .parse::<ChannelId>()?;
+    let log_channel = load_data().channels.logs.parse::<ChannelId>()?;
     
     if channel_id == &log_channel { return Ok(()) }
     send_embed(ctx, result_database, log_channel, &message_channel_id, author_id, &message_content).await?;
@@ -41,7 +36,7 @@ pub async fn handler(ctx: &serenity::Context, channel_id: &ChannelId, deleted_me
     Ok(())
 }
 
-async fn handle_audio(ctx: &serenity::Context, deleted_message_id: &MessageId, database_message: &MessageData, channel_id: &ChannelId) -> CommandResult {
+async fn handle_audio(ctx: &serenity::Context, deleted_message_id: MessageId, database_message: &MessageData, channel_id: &ChannelId) -> CommandResult {
     let audio_info = MessageData::get_audio_data(deleted_message_id).await?;
     let Some(audio_info) = audio_info else { return Ok(()) };
 
@@ -55,12 +50,7 @@ async fn handle_audio(ctx: &serenity::Context, deleted_message_id: &MessageId, d
     out.write_all(&bytes).await?;
 
     let result_database = database_message.guild_id.into_result()?;
-    let log_channel = GuildData::verify_data(result_database).await?
-        .into_result()?
-        .channels
-        .logs
-        .into_result()?
-        .parse::<ChannelId>()?;
+    let log_channel = load_data().channels.logs.parse::<ChannelId>()?;
     
     if channel_id == &log_channel { return Ok(()) }
     send_embed_with_attachment(ctx, result_database, log_channel, &database_message.channel_id, database_message.author_id, &filename).await?;

@@ -1,16 +1,15 @@
-use std::fs::remove_file;
 use std::collections::HashMap;
+use std::fs::remove_file;
 
-use reqwest::get;
 use image::DynamicImage;
-use poise::serenity_prelude as serenity;
 use plantita_welcomes::create_welcome::combine_images;
+use poise::serenity_prelude as serenity;
+use reqwest::get;
 use serenity::all::{ChannelId, CreateAttachment, User};
-use crate::location;
 
+use crate::utils::config::load_data;
+use crate::utils::debug::UnwrapErrors;
 use crate::utils::CommandResult;
-use crate::utils::config::GuildData;
-use crate::utils::debug::{IntoUnwrapResult, UnwrapErrors, UnwrapLog};
 
 pub async fn handler(
     ctx: &serenity::Context,
@@ -18,18 +17,8 @@ pub async fn handler(
 ) -> CommandResult {
     let guild_id = new_member.guild_id;
     let user = &new_member.user;
-    let channel_id = GuildData::verify_data(guild_id).await?
-        .unwrap_log(location!())?
-        .channels
-        .welcome
-        .into_result()?
-        .parse::<ChannelId>()?;
-
-    let welcome_message = GuildData::verify_data(guild_id).await?
-        .unwrap_log(location!())?
-        .messages
-        .welcome
-        .into_result()?;
+    let channel_id = load_data().channels.welcome.parse::<ChannelId>()?;
+    let welcome_message = load_data().messages.welcome;
 
     let mut background = image::open("assets/background.png")?;
     let file = get_welcome_attachment(&mut background, user, 74, 74, 372).await?;

@@ -24,8 +24,8 @@ pub async fn event_handler(
     DB.use_ns("discord-namespace").use_db("discord").await?;
     match event {
         FullEvent::Ready { data_about_bot } => println!("Logged in as {}", data_about_bot.user.name),
-        FullEvent::Message { new_message } => sent::handler(ctx, new_message).await?,
-        FullEvent::MessageDelete { channel_id, deleted_message_id, .. } => deleted::handler(ctx, channel_id, deleted_message_id).await?,
+        FullEvent::Message { new_message } => sent::handler(ctx, new_message.clone()).await?,
+        FullEvent::MessageDelete { channel_id, deleted_message_id, .. } => deleted::handler(ctx, channel_id, *deleted_message_id).await?,
         FullEvent::MessageUpdate { event, .. } => edited::handler(ctx, event).await?,
         FullEvent::GuildMemberAddition { new_member} => welcome::handler(ctx, new_member).await?,
         FullEvent::ReactionAdd { add_reaction } => reaction_add::handler(ctx, add_reaction).await?,

@@ -4,20 +4,19 @@ use std::panic::Location;
 use poise::serenity_prelude as serenity;
 use serenity::all::{GuildId, Message, UserId};
 
-use crate::{DB, log_handle};
-use crate::commands::moderation::setters::set_forbidden_exception::ForbiddenException;
-use crate::utils::{CommandResult, MessageData, Warns};
+use crate::commands::moderation::set_forbidden_exception::ForbiddenException;
 use crate::handlers::misc::exceptions::check_admin_exception;
 use crate::handlers::misc::warns::handle_warn_system;
-use crate::utils::config::GuildData;
-use crate::utils::debug::IntoUnwrapResult;
+use crate::utils::config::load_data;
 use crate::utils::embeds::send_warn_embed;
+use crate::utils::{CommandResult, MessageData, Warns};
+use crate::DB;
 
 pub async fn handle_forbidden_user(
     ctx: &serenity::Context,
     new_message: &Message,
     guild_id: GuildId,
-    data: &MessageData,
+    data: MessageData,
     forbidden_user_id: UserId
 ) -> CommandResult {
     let author_user_id = new_message.author.id;
@@ -39,50 +38,19 @@ pub async fn handle_forbidden_user(
     }
 
     let mut member = guild_id.member(&ctx.http, author_user_id).await?;
-    let time_out_timer = GuildData::verify_data(guild_id).await?
-        .into_result()?
+    let time_out_timer = load_data()
         .time_out
         .time
-        .into_result()?
         .parse::<i64>()?;
     
-    let warn_message = GuildData::verify_data(guild_id).await?
-        .into_result()?
-        .messages
-        .warn
-        .unwrap_or_else(|| {
-            log_handle!("No se ha establecido un mensaje de advertencia: `sent_message.rs` {}", Location::caller());
-            "Por favor no hagas @ a este usuario. Si estás respondiendo un mensaje, considera responder al mensaje sin usar @".to_string()
-        });
-    
+    let warn_message = load_data().messages.warn;
     let warn_message = format!("{} {warn_message}", member.distinct());
-    let time_out_message = GuildData::verify_data(guild_id).await?
-        .into_result()?
-        .messages
-        .time_out
-        .unwrap_or_else(|| {
-            log_handle!("No se ha establecido un mensaje de silencio: {}", Location::caller());
-            "Has sido silenciado por mencionar a un usuario cuyo rol está prohibido de mencionar".to_string()
-        });
-    
-    let admin_role_id = GuildData::verify_data(guild_id).await?
-        .into_result()?
-        .admins
-        .role;
-    
-    let admin_role_id_2 = GuildData::verify_data(guild_id).await?
-        .into_result()?
-        .admins
-        .role_2;
+    let time_out_message = load_data().messages.time_out;
+    let admin_role_id = load_data().admins.role;
+    let admin_role_id_2 = load_data().admins.role_2;
 
-    // Salir de la función si no hay un admin establecido
-    if admin_role_id.is_none() {
-        log_handle!("No hay un admin establecido: {}", Location::caller());
-        return Ok(())
-    }
-
-    let admin_exception = check_admin_exception(admin_role_id, &member, ctx);
-    let admin_exception_2 = check_admin_exception(admin_role_id_2, &member, ctx);
+    let admin_exception = check_admin_exception(&admin_role_id, &member, ctx);
+    let admin_exception_2 = check_admin_exception(&admin_role_id_2, &member, ctx);
 
     if admin_exception || admin_exception_2 {
         println!("Admin exception : {}", Location::caller());
@@ -102,7 +70,7 @@ pub async fn handle_forbidden_user(
     }
     
     DB.query("DEFINE INDEX message_id ON TABLE messages COLUMNS message_id UNIQUE").await?;
-    let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
+    let _created: Option<MessageData> = DB.create("messages").content(data).await?;
     http.delete_message(new_message.channel_id, new_message.id, None).await?;
 
     Ok(())
@@ -115,38 +83,16 @@ pub async fn handle_forbidden_role(
 ) -> CommandResult {
     let author_user_id = new_message.author.id;
     let member = guild_id.member(&ctx.http, author_user_id).await?;
-    let admin_role_id = GuildData::verify_data(guild_id).await?
-        .into_result()?
-        .admins
-        .role;
-    
-    let time_out_timer = GuildData::verify_data(guild_id).await?
-        .into_result()?
+    let admin_role_id = load_data().admins.role;
+    let warn_message = load_data().messages.warn;
+    let time_out_message = load_data().messages.time_out;
+    let time_out_timer = load_data()
         .time_out
         .time
-        .into_result()?
         .parse::<i64>()?;
 
-    let warn_message = GuildData::verify_data(guild_id).await?
-        .into_result()?
-        .messages
-        .warn
-        .unwrap_or_else(|| {
-            log_handle!("No se ha establecido un mensaje de advertencia: `sent_message.rs` {}", Location::caller());
-            format!("{} Por favor no hagas @ a este usuario. Si estás respondiendo un mensaje, considera responder al mensaje sin usar @", member.distinct())
-        });
-
     let warn_message = format!("{} {warn_message}", member.distinct());
-    let time_out_message = GuildData::verify_data(guild_id).await?
-        .into_result()?
-        .messages
-        .time_out
-        .unwrap_or_else(|| {
-            log_handle!("No se ha establecido un mensaje de silencio: {}", Location::caller());
-            format!("{} Has sido silenciado por mencionar a un usuario cuyo rol está prohibido de mencionar", member.distinct())
-        });
-
-    let admin_exception = check_admin_exception(admin_role_id, &member, ctx);
+    let admin_exception = check_admin_exception(&admin_role_id, &member, ctx);
     if admin_exception {
         println!("Admin exception : {}", Location::caller());
         return Ok(())

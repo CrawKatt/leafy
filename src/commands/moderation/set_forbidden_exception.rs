@@ -21,9 +21,9 @@ impl ForbiddenException {
         }
     }
 
-    pub async fn save_to_db(&self) -> SurrealResult<()> {
+    pub async fn save_to_db(self) -> SurrealResult<()> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
-        let _created: Vec<Self> = DB
+        let _created: Option<Self> = DB
             .create("forbidden_exception")
             .content(self)
             .await?;
@@ -31,7 +31,7 @@ impl ForbiddenException {
         Ok(())
     }
 
-    pub async fn verify_data(&self) -> SurrealResult<Option<Self>> {
+    pub async fn verify_data(self) -> SurrealResult<Option<Self>> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
         let sql_query = "SELECT * FROM forbidden_exception WHERE guild_id = $guild_id AND user_id = $user_id";
         let existing_data: Option<Self> = DB
@@ -43,7 +43,7 @@ impl ForbiddenException {
         Ok(existing_data)
     }
 
-    pub async fn switch(&mut self) -> SurrealResult<()> {
+    pub async fn switch(mut self) -> SurrealResult<()> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
         let Some(is_active) = self.is_active else {
             println!("No is_active value found {}", Location::caller());
@@ -51,7 +51,7 @@ impl ForbiddenException {
         };
 
         let sql_query = "UPDATE forbidden_exception SET is_active = $is_active WHERE guild_id = $guild_id AND user_id = $user_id";
-        DB.query(sql_query).bind(&*self).await?;
+        DB.query(sql_query).bind(self.clone()).await?;
         self.is_active = Some(!is_active);
 
         Ok(())
@@ -101,7 +101,7 @@ pub async fn set_forbidden_exception(
     #[description = "The state to set for the forbidden exception"] state: bool
 ) -> CommandResult {
     let guild_id = ctx.guild_id().unwrap(); // SAFETY: Al estar el parámetro guild_only, la función solo se ejecutará en un servidor
-    let user_id = user.unwrap_or(ctx.author().id);
+    let user_id = user.unwrap_or_else(|| ctx.author().id);
 
     if user_id != ctx.author().id {
         let member = guild_id.member(ctx.serenity_context(), ctx.author().id).await?;
@@ -112,8 +112,8 @@ pub async fn set_forbidden_exception(
         }
     }
 
-    let mut data = ForbiddenException::new(user_id, guild_id, state);
-    let existing_data = data.verify_data().await?;
+    let data = ForbiddenException::new(user_id, guild_id, state);
+    let existing_data = data.clone().verify_data().await?;
     let user = user_id.to_user(ctx.http()).await?;
     let username = user.name;
 

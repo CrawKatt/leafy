@@ -2,7 +2,7 @@ use serenity::all::Message;
 use crate::DB;
 use crate::utils::{CommandResult, MessageData};
 
-pub async fn attachment_handler(new_message: &Message) -> CommandResult {
+pub async fn attachment_handler(new_message: Message) -> CommandResult {
     if !new_message.attachments.is_empty() {
         for attachment in new_message.attachments.clone() {
             if attachment.content_type.unwrap_or_default().starts_with("audio") {
@@ -16,7 +16,7 @@ pub async fn attachment_handler(new_message: &Message) -> CommandResult {
                 );
 
                 // Guardar el enlace del archivo de audio en la base de datos
-                let _created: Vec<MessageData> = DB.create("audio").content(data).await?;
+                let _created: Option<MessageData> = DB.create("audio").content(data).await?;
                 println!("Audio file saved to database");
             }
         }

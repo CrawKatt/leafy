@@ -6,7 +6,7 @@ use serenity::all::{ChannelId, CreateMessage, GetMessages, UserId};
 use serenity::builder::CreateAttachment;
 
 use crate::utils::{CommandResult, Context};
-use crate::utils::config::GuildData;
+use crate::utils::config::load_data;
 use crate::utils::debug::{IntoUnwrapResult, UnwrapResult};
 
 #[poise::command(
@@ -34,7 +34,6 @@ pub async fn screenshot_this(ctx: Context<'_>, ooc: Option<String>) -> CommandRe
 
     let content = format!("\"{}\"", &message_some.content);
     let author_id = &message.referenced_message.as_ref().unwrap().author.id; // SAFETY: El `author_id` siempre está disponible en un mensaje referenciado
-    let guild_id = ctx.guild_id().unwrap(); // SAFETY: Si el mensaje no es de un servidor, no se ejecutará el comando
     let author_avatar = generate_author_avatar(ctx, author_id).await?;
     let author_name = generate_author_name(ctx, author_id).await?;
 
@@ -49,20 +48,9 @@ pub async fn screenshot_this(ctx: Context<'_>, ooc: Option<String>) -> CommandRe
         return Ok(());
     }
 
-    let ooc_channel = GuildData::verify_data(guild_id).await?
-        .into_result()?
-        .channels
-        .ooc;
+    let ooc_channel = load_data().channels.ooc.parse::<ChannelId>()?;
 
-    if ooc_channel.is_none() {
-        poise::say_reply(ctx, "No se ha establecido un canal OOC").await?;
-        return Ok(());
-    }
-
-    let ooc_channel = ooc_channel.into_result()?;
-    let channel_id = ooc_channel.parse::<ChannelId>()?;
-
-    handle_content(ctx, &content, &content, &author_avatar, &author_name, channel_id).await?;
+    handle_content(ctx, &content, &content, &author_avatar, &author_name, ooc_channel).await?;
 
     Ok(())
 }
@@ -96,16 +84,10 @@ async fn send_image(
     quoted_content: &str,
     author_name: &str
 ) -> CommandResult {
-    let guild_id = ctx.guild_id().unwrap();
     let create_image = create_image(author_avatar, quoted_content, author_name, "assets/PTSerif-Regular.ttf", "assets/PTSerif-Italic.ttf").await?;
     let attachment = CreateAttachment::path(&create_image).await?;
     let message = channel_id.send_files(&ctx.http(), vec![attachment], CreateMessage::default()).await?;
-    let ooc_channel_id = GuildData::verify_data(guild_id).await?
-        .into_result()?
-        .channels
-        .ooc
-        .into_result()?
-        .parse::<ChannelId>()?;
+    let ooc_channel_id = load_data().channels.ooc.parse::<ChannelId>()?;
 
     if channel_id == ooc_channel_id {
         message.react(&ctx.http(), '🔺').await?;
@@ -165,7 +147,7 @@ async fn extract_username(ctx: Context<'_>, user_id: &UserId) -> UnwrapResult<St
 }
 
 /// # Extrae y remueve los emojis de Discord en el mensaje
-/// 
+///
 /// - Esto es necesario para evitar sobrepasar el límite de caracteres en la imagen
 /// - Si el mensaje contiene emojis de Discord, se eliminarán del mensaje y se devolverá el mensaje sin emojis
 fn remove_discord_emojis(content: &str) -> UnwrapResult<String> {
