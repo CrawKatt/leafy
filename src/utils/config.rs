@@ -28,10 +28,10 @@ macro_rules! obj {
             pub async fn update_field_in_db(&self, field_name: &str, new_value: &str, guild_id: &str) -> UnwrapResult<()> {
                 DB.use_ns("discord-namespace").use_db("discord").await?;
                 let sql_query = &*format!("UPDATE guild_config SET {field_name} = $value WHERE guild_id = $guild_id");
-                let _updated: Vec<Self> = DB
+                let _updated: Option<Self> = DB
                     .query(sql_query)
-                    .bind(("value", new_value))
-                    .bind(("guild_id", guild_id))
+                    .bind(("value", new_value.to_string()))
+                    .bind(("guild_id", guild_id.to_string()))
                     .await?
                     .take(0)?;
 
@@ -62,9 +62,9 @@ macro_rules! build_obj {
                 self
             }
             
-            pub async fn save_to_db(&self) -> SurrealResult<()> {
+            pub async fn save_to_db(self) -> SurrealResult<()> {
                 DB.use_ns("discord-namespace").use_db("discord").await?;
-                let _created: Vec<Self> = DB
+                let _created: Option<Self> = DB
                     .create("guild_config")
                     .content(self)
                     .await?;

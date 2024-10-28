@@ -17,6 +17,7 @@ pub async fn set_forbidden_user(
     #[description = "The user to set as the forbidden user"]
     forbidden_user: User,
 ) -> CommandResult {
+    ctx.defer().await?;
     DB.use_ns("discord-namespace").use_db("discord").await?;
     let guild_id = ctx.guild_id().unwrap();
     let user_id = forbidden_user.id.to_string();

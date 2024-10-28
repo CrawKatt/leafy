@@ -18,6 +18,7 @@ pub async fn set_ooc_channel(
     #[channel_types("Text")]
     ooc_channel: Channel,
 ) -> CommandResult {
+    ctx.defer().await?;
     DB.use_ns("discord-namespace").use_db("discord").await?;
     let guild_id = ctx.guild_id().unwrap();
     let channel_id = ooc_channel.id().to_string();
@@ -30,7 +31,7 @@ pub async fn set_ooc_channel(
                 .ooc(&channel_id)
             );
         data.save_to_db().await?;
-        ctx.say(format!("OOC channel set to: <#{channel_id}>")).await?;
+        ctx.say(format!("OOC channel set to: <#{channel_id}>")).await?; // Bug: Resolver
 
         return Ok(())
     }
@@ -39,7 +40,7 @@ pub async fn set_ooc_channel(
         .logs(&channel_id);
 
     data.update_field_in_db("channels.ooc", &channel_id, &guild_id.to_string()).await?;
-    ctx.say(format!("Canal de Fuera de Contexto establecido en: <#{channel_id}>")).await?;
+    ctx.say(format!("Canal de Fuera de Contexto establecido en: <#{channel_id}>")).await.unwrap();
 
     Ok(())
 }

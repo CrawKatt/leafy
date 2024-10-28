@@ -11,6 +11,7 @@ use crate::utils::{CommandResult, Context};
     ephemeral
 )]
 pub async fn get_ooc_channel(ctx: Context<'_>) -> CommandResult {
+    ctx.defer().await?;
     let guild_id = ctx.guild_id().unwrap();
     let sql_query = "SELECT * FROM guild_config WHERE guild_id = $guild_id";
     let existing_data: Option<GuildData> = DB

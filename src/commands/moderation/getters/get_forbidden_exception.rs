@@ -16,6 +16,7 @@ pub async fn get_forbidden_exception(
     ctx: Context<'_>,
     #[description = "The user id to get the forbidden exception"] user: Option<UserId>,
 ) -> CommandResult {
+    ctx.defer().await?; // Necesario para que el Bot no devuelva un error de interacción si tarda mucho en responder
     let guild_id = ctx.guild_id().unwrap();
 
     let author = guild_id.member(&ctx.serenity_context().http, ctx.author().id).await?;

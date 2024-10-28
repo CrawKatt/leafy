@@ -18,6 +18,7 @@ pub async fn set_exception_channel(
     #[channel_types("Text")]
     exception_channel: Channel,
 ) -> CommandResult {
+    ctx.defer().await?;
     DB.use_ns("discord-namespace").use_db("discord").await?;
     let guild_id = ctx.guild_id().unwrap();
     let channel_id = exception_channel.id().to_string();

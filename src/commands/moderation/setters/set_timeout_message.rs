@@ -13,6 +13,7 @@ pub async fn set_time_out_message(
     ctx: Context<'_>,
     #[description = "The message to set as the time out message"] time_out_message: String,
 ) -> CommandResult {
+    ctx.defer().await?;
     let guild_id = ctx.guild_id().unwrap();
     
     let existing_data = GuildData::verify_data(guild_id).await?;

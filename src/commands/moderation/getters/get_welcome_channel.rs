@@ -15,6 +15,7 @@ use crate::utils::{CommandResult, Context};
 pub async fn get_welcome_channel(
     ctx: Context<'_>,
 ) -> CommandResult {
+    ctx.defer().await?;
     DB.use_ns("discord-namespace").use_db("discord").await?;
 
     let guild_id = ctx.guild_id().into_result()?;
