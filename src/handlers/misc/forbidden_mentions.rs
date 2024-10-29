@@ -102,7 +102,7 @@ pub async fn handle_forbidden_user(
     }
     
     DB.query("DEFINE INDEX message_id ON TABLE messages COLUMNS message_id UNIQUE").await?;
-    let _created: Vec<MessageData> = DB.create("messages").content(data).await?;
+    let _created: Option<MessageData> = DB.create("messages").content(data.clone()).await?;
     http.delete_message(new_message.channel_id, new_message.id, None).await?;
 
     Ok(())

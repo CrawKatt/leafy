@@ -13,6 +13,7 @@ use crate::commands::audio::queue::queue;
 use crate::commands::audio::resume::resume;
 use crate::commands::audio::skip::skip;
 use crate::commands::audio::stop::stop;
+use crate::commands::fun::cat::cat_shh;
 use crate::commands::fun::generate_dumb::dumb;
 use crate::commands::fun::generate_furry::furry;
 use crate::commands::fun::generate_pride::pride;
@@ -89,7 +90,7 @@ impl MessageData {
         let sql_query = "SELECT * FROM messages WHERE message_id = $message_id";
         let existing_data: Option<Self> = DB
             .query(sql_query)
-            .bind(("message_id", message_id))
+            .bind(("message_id", *message_id))
             .await?
             .take(0)?;
 
@@ -101,7 +102,7 @@ impl MessageData {
         let sql_query = "SELECT * FROM audio WHERE message_id = $message_id";
         let existing_data: Option<Self> = DB
             .query(sql_query)
-            .bind(("message_id", message_id))
+            .bind(("message_id", *message_id))
             .await?
             .take(0)?;
 
@@ -109,7 +110,7 @@ impl MessageData {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Copy, Clone)]
 pub struct Warns {
     pub user_id: UserId,
     pub warns: u8,
@@ -123,9 +124,11 @@ impl Warns {
     pub async fn get_warns(&self) -> SurrealResult<Option<Self>> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
         let sql_query = "SELECT * FROM warns WHERE user_id = $user_id";
+        let user_id = self.user_id;
+        
         let existing_data: Option<Self> = DB
             .query(sql_query)
-            .bind(("user_id", &self.user_id))
+            .bind(("user_id", user_id))
             .await?
             .take(0)?;
 
@@ -134,9 +137,9 @@ impl Warns {
 
     pub async fn save_to_db(&self) -> SurrealResult<()> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
-        let _created: Vec<Self> = DB
+        let _created: Option<Self> = DB
             .create("warns")
-            .content(self)
+            .content(*self)
             .await?;
 
         println!("Created warns: {:?}", self.warns);
@@ -147,14 +150,17 @@ impl Warns {
     pub async fn add_warn(&self) -> SurrealResult<()> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
         let sql_query = "UPDATE warns SET warns = $warns WHERE user_id = $user_id";
-        let _updated: Vec<Self> = DB
+        let warns = self.warns;
+        let user_id = self.user_id;
+
+        let _updated: Option<Self> = DB
             .query(sql_query)
-            .bind(("warns", &self.warns))
-            .bind(("user_id", &self.user_id))
+            .bind(("warns", warns))
+            .bind(("user_id", user_id))
             .await?
             .take(0)?;
 
-        println!("Updated warns: {:?}", self.warns);
+        println!("Updated warns: {warns:?}");
 
         Ok(())
     }
@@ -163,14 +169,18 @@ impl Warns {
         self.warns = 0;
         DB.use_ns("discord-namespace").use_db("discord").await?;
         let sql_query = "UPDATE warns SET warns = $warns WHERE user_id = $user_id";
-        let _updated: Vec<Self> = DB
+        
+        let warns = self.warns;
+        let user_id = self.user_id;
+        
+        let _updated: Option<Self> = DB
             .query(sql_query)
-            .bind(("warns", &self.warns))
-            .bind(("user_id", &self.user_id))
+            .bind(("warns", warns))
+            .bind(("user_id", user_id))
             .await?
             .take(0)?;
 
-        println!("Updated warns: {:?}", self.warns);
+        println!("Updated warns: {warns:?}");
 
         Ok(())
     }
@@ -215,5 +225,6 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         rust(),
         ask(),
         dumb(),
+        cat_shh(),
     ]
 }

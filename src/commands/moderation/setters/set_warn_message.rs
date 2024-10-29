@@ -14,6 +14,7 @@ pub async fn set_warn_message(
     ctx: Context<'_>,
     #[description = "The message to set as the warn message"] warn_message: String,
 ) -> CommandResult {
+    ctx.defer().await?;
     DB.use_ns("discord-namespace").use_db("discord").await?;
     let guild_id = ctx.guild_id().unwrap();
     let existing_data = GuildData::verify_data(guild_id).await?;

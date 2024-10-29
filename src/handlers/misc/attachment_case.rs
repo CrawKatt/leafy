@@ -16,7 +16,7 @@ pub async fn attachment_handler(new_message: &Message) -> CommandResult {
                 );
 
                 // Guardar el enlace del archivo de audio en la base de datos
-                let _created: Vec<MessageData> = DB.create("audio").content(data).await?;
+                let _created: Option<MessageData> = DB.create("audio").content(data).await?;
                 println!("Audio file saved to database");
             }
         }

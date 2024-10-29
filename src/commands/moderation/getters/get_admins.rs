@@ -16,6 +16,7 @@ use crate::utils::debug::IntoUnwrapResult;
 pub async fn get_admins(
     ctx: Context<'_>,
 ) -> CommandResult {
+    ctx.defer().await?;
     let guild_id = ctx.guild_id().unwrap();
     
     let sql_query = "SELECT * FROM guild_config WHERE guild_id = $guild_id";

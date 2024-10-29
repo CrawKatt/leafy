@@ -15,6 +15,7 @@ use crate::utils::debug::IntoUnwrapResult;
 pub async fn get_timeout_timer(
     ctx: Context<'_>,
 ) -> Result<(), Error> {
+    ctx.defer().await?;
     DB.use_ns("discord-namespace").use_db("discord").await?;
 
     let guild_id = ctx.guild_id().into_result()?;

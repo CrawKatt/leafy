@@ -83,13 +83,13 @@ pub async fn handler(ctx: &serenity::Context, new_message: &Message) -> CommandR
     // Si bien hay un método para comprobar si se menciona @everyone o @here, este método devuelve
     // `false` en servidores donde @everyone y @here están deshabilitados
     if message_content.contains("@everyone") || message_content.contains("@here") {
-        let _created: Vec<MessageData> = DB.create("messages").content(&data).await?;
+        let _created: Option<MessageData> = DB.create("messages").content(data.clone()).await?;
         handle_everyone(admin_role_id, &mut member, ctx, time, new_message).await?;
 
         return Ok(())
     }
 
-    let _created: Vec<MessageData> = DB.create("messages").content(&data).await?;
+    let _created: Option<MessageData> = DB.create("messages").content(data.clone()).await?;
 
     Ok(())
 }

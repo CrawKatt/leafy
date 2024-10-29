@@ -21,9 +21,9 @@ impl ForbiddenException {
         }
     }
 
-    pub async fn save_to_db(&self) -> SurrealResult<()> {
+    pub async fn save_to_db(self) -> SurrealResult<()> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
-        let _created: Vec<Self> = DB
+        let _created: Option<Self> = DB
             .create("forbidden_exception")
             .content(self)
             .await?;
@@ -34,9 +34,14 @@ impl ForbiddenException {
     pub async fn verify_data(&self) -> SurrealResult<Option<Self>> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
         let sql_query = "SELECT * FROM forbidden_exception WHERE guild_id = $guild_id AND user_id = $user_id";
+        
+        let guild_id = self.guild_id;
+        let user_id = self.user_id;
+
         let existing_data: Option<Self> = DB
             .query(sql_query)
-            .bind(self)
+            .bind(("guild_id", guild_id))
+            .bind(("user_id", user_id))
             .await?
             .take(0)?;
 
@@ -49,10 +54,17 @@ impl ForbiddenException {
             println!("No is_active value found {}", Location::caller());
             return Ok(())
         };
+        
+        let new_state = !is_active;
 
         let sql_query = "UPDATE forbidden_exception SET is_active = $is_active WHERE guild_id = $guild_id AND user_id = $user_id";
-        DB.query(sql_query).bind(&*self).await?;
-        self.is_active = Some(!is_active);
+        DB.query(sql_query)
+            .bind(("is_active", new_state))
+            .bind(("guild_id", self.guild_id))
+            .bind(("user_id", self.user_id))
+            .await?;
+        
+        self.is_active = Some(new_state);
 
         Ok(())
     }
@@ -100,8 +112,9 @@ pub async fn set_forbidden_exception(
     #[description = "The user id to set as a forbidden exception"] user: Option<UserId>,
     #[description = "The state to set for the forbidden exception"] state: bool
 ) -> CommandResult {
+    ctx.defer().await?;
     let guild_id = ctx.guild_id().unwrap(); // SAFETY: Al estar el parámetro guild_only, la función solo se ejecutará en un servidor
-    let user_id = user.unwrap_or(ctx.author().id);
+    let user_id = user.unwrap_or_else(|| ctx.author().id);
 
     if user_id != ctx.author().id {
         let member = guild_id.member(ctx.serenity_context(), ctx.author().id).await?;

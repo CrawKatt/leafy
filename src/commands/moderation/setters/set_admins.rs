@@ -20,6 +20,7 @@ pub async fn set_admins(
     #[description = "El rol para establecer un administrador secundario (opcional)"]
     role_2: Option<Role>,
 ) -> CommandResult {
+    ctx.defer().await?;
     DB.use_ns("discord-namespace").use_db("discord").await?;
 
     let guild_name = ctx.guild().into_result()?.name.clone();
@@ -53,10 +54,13 @@ pub async fn set_admins(
         .role(&role_id)
         .role_2(&role_2_id);
 
-    data.update_field_in_db("admins.role_id", &role_id, &guild_id.to_string()).await?;
-    data.update_field_in_db("admins.role_2_id", &role_2_id, &guild_id.to_string()).await?;
+    data.update_field_in_db("admins.role", &role_id, &guild_id.to_string()).await?;
+    data.update_field_in_db("admins.role_2", &role_2_id, &guild_id.to_string()).await?;
 
-    ctx.say(format!("Admin roles set to: **{}** and **{}**", role.name, role_2.into_result()?.name)).await?;
+    let role = role.name;
+    let role_2 = role_2.as_ref().map_or("None", |role| &*role.name);
+
+    ctx.say(format!("Admin roles set to: **{role}** and **{role_2}**")).await?;
 
     Ok(())
 }

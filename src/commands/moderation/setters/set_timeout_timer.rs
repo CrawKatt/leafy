@@ -17,6 +17,7 @@ pub async fn set_timeout_timer(
     #[autocomplete = "args_set_timeout_timer"]
     #[description = "The time to set as the time out timer"] set_time: String,
 ) -> CommandResult {
+    ctx.defer().await?;
     DB.use_ns("discord-namespace").use_db("discord").await?;
     let guild_id = ctx.guild_id().unwrap();
     let time_in_seconds = match set_time.as_str() {

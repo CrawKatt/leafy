@@ -17,6 +17,7 @@ pub async fn set_forbidden_role(
     #[description = "The role to set as the forbidden role"]
     forbidden_role: Role,
 ) -> CommandResult {
+    ctx.defer().await?;
     DB.use_ns("discord-namespace").use_db("discord").await?;
     let guild_id = ctx.guild_id().unwrap();
     let role_id = forbidden_role.id.to_string();
