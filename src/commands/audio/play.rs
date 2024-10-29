@@ -59,7 +59,6 @@ pub async fn play(
     let message = ctx.say("Descargando...").await?;
 
     // Descargar el archivo de audio con yt-dlp
-    let cookies_path = "~/cookies.txt";
     let output_path = format!("/tmp/{}.mp3", uuid::Uuid::new_v4());
     let json_path = format!("{output_path}.info.json");
     let limit_rate = "500K";
@@ -74,11 +73,32 @@ pub async fn play(
         .arg(limit_rate)
         .arg("-o")
         .arg(&output_path)
-        .arg("--cookies")
-        .arg(cookies_path)
+        .arg("--proxy")
+        .arg("socks5://127.0.0.1:9050")
         .arg(&query)
-        .status()
-        .expect("No se pudo ejecutar yt-dlp");
+        .status();
+
+    let Ok(status) = status else {
+        ctx.say("Error al ejecutar el comando yt-dlp, intentando reiniciar el servicio de Tor...").await?;
+
+        // Reiniciar el servicio de Tor
+        let restart_status = Command::new("sudo")
+            .arg("service")
+            .arg("tor")
+            .arg("restart")
+            .status();
+
+        match restart_status {
+            Ok(restart) if restart.success() => {
+                ctx.say("Servicio de Tor reiniciado con éxito. Intenta de nuevo.").await?;
+            },
+            _ => {
+                ctx.say("Error al reiniciar el servicio de Tor. Intenta más tarde.").await?;
+                return Ok(()); 
+            } 
+        }
+        return Ok(());
+    };
 
     if !status.success() {
         ctx.say("Error al descargar el audio").await?;
