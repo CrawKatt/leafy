@@ -46,10 +46,7 @@ pub async fn play(
 
     let author_name = ctx.author_member().await.into_result()?.distinct();
     let author_face = ctx.author_member().await.into_result()?.face();
-
-    let manager = songbird::get(ctx.serenity_context())
-        .await
-        .into_result()?;
+    let manager = songbird::get(ctx.serenity_context()).await.into_result()?;
 
     let Some(handler_lock) = manager.get(guild_id) else {
         ctx.say("No estás en un canal de voz").await?;
@@ -57,54 +54,14 @@ pub async fn play(
     };
 
     let message = ctx.say("Descargando...").await?;
-
-    // Descargar el archivo de audio con yt-dlp
     let output_path = format!("/tmp/{}.mp3", uuid::Uuid::new_v4());
     let json_path = format!("{output_path}.info.json");
     let limit_rate = "500K";
 
-    let status = Command::new("yt-dlp")
-        .arg("-x")
-        .arg("--audio-format")
-        .arg("mp3")
-        .arg("--add-metadata")
-        .arg("--write-info-json")
-        .arg("--limit-rate")
-        .arg(limit_rate)
-        .arg("-o")
-        .arg(&output_path)
-        .arg("--proxy")
-        .arg("socks5://127.0.0.1:9050")
-        .arg(&query)
-        .status();
+    // Intentar descargar el audio, reiniciando Tor si falla
+    try_download_with_retry(&ctx, &query, &output_path, limit_rate).await?;
 
-    let Ok(status) = status else {
-        ctx.say("Error al ejecutar el comando yt-dlp, intentando reiniciar el servicio de Tor...").await?;
-
-        // Reiniciar el servicio de Tor
-        let restart_status = Command::new("sudo")
-            .arg("service")
-            .arg("tor")
-            .arg("restart")
-            .status();
-
-        match restart_status {
-            Ok(restart) if restart.success() => {
-                ctx.say("Servicio de Tor reiniciado con éxito. Intenta de nuevo.").await?;
-            },
-            _ => {
-                ctx.say("Error al reiniciar el servicio de Tor. Intenta más tarde.").await?;
-                return Ok(()); 
-            } 
-        }
-        return Ok(());
-    };
-
-    if !status.success() {
-        ctx.say("Error al descargar el audio").await?;
-        return Ok(())
-    }
-
+    // Si la descarga y reproducción son exitosas, continuar con la configuración de Songbird
     let mut handler = handler_lock.lock().await;
     let source = input::File::new(output_path.clone());
     let track_handle = handler.enqueue_input(source.into()).await;
@@ -115,8 +72,60 @@ pub async fn play(
 
     build_embed(&ctx, &json_path, &author_name, &author_face).await?;
     message.delete(ctx).await?;
-    
+
     drop(handler);
 
+    Ok(())
+}
+
+/// Ejecuta el comando yt-dlp para descargar audio y devuelve su estado.
+fn download_audio(query: &str, output_path: &str, limit_rate: &str) -> std::io::Result<std::process::ExitStatus> {
+    Command::new("yt-dlp")
+        .arg("-x")
+        .arg("--audio-format")
+        .arg("mp3")
+        .arg("--add-metadata")
+        .arg("--write-info-json")
+        .arg("--limit-rate")
+        .arg(limit_rate)
+        .arg("-o")
+        .arg(output_path)
+        .arg("--proxy")
+        .arg("socks5://127.0.0.1:9050")
+        .arg(query)
+        .status()
+}
+
+/// Reinicia el servicio de Tor para permitir otra descarga.
+async fn restart_tor_service(ctx: &Context<'_>) -> CommandResult {
+    ctx.say("Error en la descarga. Reintentando...").await?;
+    let restart_status = Command::new("sudo")
+        .arg("service")
+        .arg("tor")
+        .arg("restart")
+        .status();
+
+    if let Ok(status) = restart_status {
+        if status.success() {
+            ctx.say("Reintentando la descarga...").await?;
+            return Ok(());
+        }
+    }
+    ctx.say("Error al reintentar la descarga").await?;
+    Err("Failed to restart Tor service".into())
+}
+
+/// Intenta descargar el audio y reinicia Tor en caso de fallo.
+async fn try_download_with_retry(ctx: &Context<'_>, query: &str, output_path: &str, limit_rate: &str) -> CommandResult {
+    let status = download_audio(query, output_path, limit_rate)?;
+
+    if !status.success() {
+        restart_tor_service(ctx).await?;
+        let retry_status = download_audio(query, output_path, limit_rate)?;
+        if !retry_status.success() {
+            ctx.say("Error al descargar el audio 403").await?;
+            return Err("Download failed after Tor restart".into());
+        }
+    }
     Ok(())
 }
