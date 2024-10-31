@@ -4,3 +4,6 @@
 [submodule "assets/rust-examples"]
 	path = assets/rust-examples
 	url = https://github.com/CrawKatt/rust-examples.git
+[submodule "songbird"]
+    path = songbird
+    url = https://github.com/CrawKatt/songbird.git
