@@ -42,6 +42,7 @@ use crate::commands::moderation::setters::set_welcome_channel::set_welcome_chann
 use crate::commands::moderation::setters::set_welcome_message::set_welcome_message;
 use crate::commands::info::ping::ping;
 use crate::commands::lessons::rust::rust;
+use crate::commands::translate::translate;
 use crate::DB;
 
 pub mod autocomplete;
@@ -224,5 +225,6 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         ask(),
         dumb(),
         cat_shh(),
+        translate(),
     ]
 }

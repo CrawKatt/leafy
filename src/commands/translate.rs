@@ -7,15 +7,26 @@ use serenity::all::{ButtonStyle, CreateButton};
 use serenity::builder::CreateActionRow;
 use crate::utils::debug::IntoUnwrapResult;
 
+const SYSTEM_PROMPT: &str =
+    "Eres un traductor multilingüe que convierte texto de un idioma a otro. Responde únicamente\
+    con la traducción exacta del texto proporcionado, utilizando el alfabeto nativo del idioma de salida.\
+    No uses transliteraciones (como romanji en japonés) ni caracteres que no sean propios del idioma de salida.\
+    La respuesta debe ser limpia, sin paréntesis, notas, ni comentarios adicionales. Ejemplo:\
+    Texto de entrada: 'Hola, ¿cómo estás?'\
+    Traducción esperada (japonés): 'こんにちは、お元気ですか？'\
+    Traducción incorrecta: 'Konnichiwa, ogenki desu ka?'";
+
 #[poise::command(
     prefix_command,
     slash_command,
     guild_only,
     category = "Info",
+    aliases("tr"),
     guild_cooldown = 15,
 )]
-pub async fn ask(
+pub async fn translate(
     ctx: Context<'_>,
+    lang: String,
     #[description = "Texto a enviar al modelo de IA"]
     #[rest]
     prompt: String
@@ -30,13 +41,13 @@ pub async fn ask(
         model,
         vec![
             chat_completion::ChatCompletionMessage {
-                role: chat_completion::MessageRole::user,
-                content: chat_completion::Content::Text(prompt),
+                role: chat_completion::MessageRole::system,
+                content: chat_completion::Content::Text(format!("{SYSTEM_PROMPT}. Idioma de salida: {lang}")),
                 name: None,
             },
             chat_completion::ChatCompletionMessage {
-                role: chat_completion::MessageRole::system,
-                content: chat_completion::Content::Text(String::from("Te llamas Leafy. Nunca superes los 2000 carácteres en tus respuestas.")),
+                role: chat_completion::MessageRole::user,
+                content: chat_completion::Content::Text(prompt),
                 name: None,
             }
         ],
