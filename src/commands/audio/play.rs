@@ -1,30 +1,10 @@
-use crate::handlers::error::handler;
-use crate::utils::debug::IntoUnwrapResult;
+use serenity::all::{CreateEmbed, CreateEmbedAuthor, CreateMessage};
+use songbird::input::YoutubeDl;
+use crate::{HttpKey, location};
+use crate::commands::audio::queue::AuxMetadataKey;
 use crate::utils::{CommandResult, Context};
-use poise::async_trait;
-use songbird::{input, Event, EventContext, EventHandler, TrackEvent};
-use std::fs;
-use std::path::Path;
-use std::process::Command;
-use crate::utils::metadata::build_embed;
-
-struct FileCleaner {
-    paths: Vec<String>,
-}
-
-#[async_trait]
-impl EventHandler for FileCleaner {
-    async fn act(&self, _: &EventContext<'_>) -> Option<Event> {
-        for path in &self.paths {
-            if Path::new(path).exists() {
-                fs::remove_file(path).unwrap_or_else(|why| {
-                    println!("No se pudo eliminar el archivo: {why}");
-                });
-            }
-        }
-        None
-    }
-}
+use crate::utils::debug::{IntoUnwrapResult, UnwrapLog};
+use crate::handlers::error::handler;
 
 #[poise::command(
     prefix_command,
@@ -40,92 +20,81 @@ pub async fn play(
     #[rest]
     query: String
 ) -> CommandResult {
+    let do_search = !query.starts_with("http");
     let guild = ctx.guild().into_result()?.clone();
     let guild_id = guild.id;
     super::try_join(ctx, guild).await?;
 
-    let author_name = ctx.author_member().await.into_result()?.distinct();
-    let author_face = ctx.author_member().await.into_result()?.face();
-    let manager = songbird::get(ctx.serenity_context()).await.into_result()?;
+    let author_name = ctx.author_member()
+        .await
+        .into_result()?
+        .distinct();
+
+    let author_face = ctx.author_member()
+        .await
+        .into_result()?
+        .face();
+
+    let http_client = {
+        let data = ctx.serenity_context().data.read().await;
+        data.get::<HttpKey>()
+            .cloned()
+            .unwrap_log(location!())?
+    };
+
+    let manager = songbird::get(ctx.serenity_context())
+        .await
+        .into_result()?;
 
     let Some(handler_lock) = manager.get(guild_id) else {
         ctx.say("No estás en un canal de voz").await?;
         return Ok(())
     };
 
-    let message = ctx.say("Descargando...").await?;
-    let output_path = format!("/tmp/{}.mp3", uuid::Uuid::new_v4());
-    let json_path = format!("{output_path}.info.json");
-    let limit_rate = "500K";
+    let message = ctx.say("Buscando...").await?;
 
-    // Intentar descargar el audio, reiniciando Tor si falla
-    try_download_with_retry(&ctx, &query, &output_path, limit_rate).await?;
-
-    // Si la descarga y reproducción son exitosas, continuar con la configuración de Songbird
+    // Necesario para bypassear el baneo de YouTube a Bots
+    // (No utilizar cookies de cuentas de Google personales)
     let mut handler = handler_lock.lock().await;
-    let source = input::File::new(output_path.clone());
-    let track_handle = handler.enqueue_input(source.into()).await;
-    track_handle.add_event(
-        Event::Track(TrackEvent::End),
-        FileCleaner { paths: vec![output_path.clone(), json_path.clone()] },
-    )?;
+    let source = if do_search {
+        YoutubeDl::new_search(http_client, query)
+    } else {
+        YoutubeDl::new(http_client, query)
+    };
 
-    build_embed(&ctx, &json_path, &author_name, &author_face).await?;
+    let mut src: songbird::input::Input = source.into();
+
+    // Obtener la metadata auxiliar de la pista, como el título y la miniatura
+    let aux_metadata = src.aux_metadata().await?;
+    let title = aux_metadata.title.clone().into_result()?;
+    let thumbnail = aux_metadata.thumbnail.clone().into_result()?;
+
+    // Insertar la pista en la cola de reproducción
+    let track = handler.enqueue_input(src).await;
+
+    // Insertar la metadata en el TypeMap, para poder acceder
+    // a la metadata de la cola de reproducción
+    let mut map = track.typemap().write().await;
+    map.entry::<AuxMetadataKey>().or_insert(aux_metadata);
+
+    let song_name = if handler.queue().is_empty() { format!("Reproduciendo {title}") } else { format!("{title} Añadido a la cola") };
+
     message.delete(ctx).await?;
+    let desc = format!("**Solicitado por:** {author_name}");
+    let embed = CreateEmbed::new()
+        .title(song_name)
+        .author(CreateEmbedAuthor::new(author_name)
+            .icon_url(author_face))
+        .description(desc)
+        .thumbnail(thumbnail)
+        .color(0x00ff_0000);
 
+    let builder = CreateMessage::new().embed(embed);
+    ctx.channel_id().send_message(ctx.http(), builder).await?;
+
+    // Liberar el bloqueo del manejador y del map para evitar fugas de memoria
     drop(handler);
+    drop(map);
 
-    Ok(())
-}
-
-/// Ejecuta el comando yt-dlp para descargar audio y devuelve su estado.
-fn download_audio(query: &str, output_path: &str, limit_rate: &str) -> std::io::Result<std::process::ExitStatus> {
-    Command::new("yt-dlp")
-        .arg("-x")
-        .arg("--audio-format")
-        .arg("mp3")
-        .arg("--add-metadata")
-        .arg("--write-info-json")
-        .arg("--limit-rate")
-        .arg(limit_rate)
-        .arg("-o")
-        .arg(output_path)
-        .arg("--proxy")
-        .arg("socks5://127.0.0.1:9050")
-        .arg(query)
-        .status()
-}
-
-/// Reinicia el servicio de Tor para permitir otra descarga.
-async fn restart_tor_service(ctx: &Context<'_>) -> CommandResult {
-    ctx.say("Error en la descarga. Reintentando...").await?;
-    let restart_status = Command::new("sudo")
-        .arg("service")
-        .arg("tor")
-        .arg("restart")
-        .status();
-
-    if let Ok(status) = restart_status {
-        if status.success() {
-            ctx.say("Reintentando la descarga...").await?;
-            return Ok(());
-        }
-    }
-    ctx.say("Error al reintentar la descarga").await?;
-    Err("Failed to restart Tor service".into())
-}
-
-/// Intenta descargar el audio y reinicia Tor en caso de fallo.
-async fn try_download_with_retry(ctx: &Context<'_>, query: &str, output_path: &str, limit_rate: &str) -> CommandResult {
-    let status = download_audio(query, output_path, limit_rate)?;
-
-    if !status.success() {
-        restart_tor_service(ctx).await?;
-        let retry_status = download_audio(query, output_path, limit_rate)?;
-        if !retry_status.success() {
-            ctx.say("Error al descargar el audio 403").await?;
-            return Err("Download failed after Tor restart".into());
-        }
-    }
     Ok(())
 }
