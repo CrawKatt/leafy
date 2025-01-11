@@ -150,6 +150,7 @@ async fn create_database() -> UnwrapResult<()> {
     DB.query("DEFINE FIELD messages ON guild_config FLEXIBLE TYPE option<object>;").await?;
     DB.query("DEFINE FIELD time_out ON guild_config FLEXIBLE TYPE option<object>;").await?;
     DB.query("DEFINE INDEX guild_id ON TABLE guild_config COLUMNS guild_id UNIQUE;").await?;
+    DB.query("DEFINE INDEX message_id ON TABLE messages COLUMNS message_id UNIQUE;").await?;
 
     Ok(())
 }
