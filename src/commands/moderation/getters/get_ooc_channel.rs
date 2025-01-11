@@ -13,12 +13,9 @@ use crate::utils::{CommandResult, Context};
 pub async fn get_ooc_channel(ctx: Context<'_>) -> CommandResult {
     ctx.defer().await?;
     let guild_id = ctx.guild_id().unwrap();
-    let sql_query = "SELECT * FROM guild_config WHERE guild_id = $guild_id";
     let existing_data: Option<GuildData> = DB
-        .query(sql_query)
-        .bind(("guild_id", guild_id))
-        .await?
-        .take(0)?;
+        .select(("guild_config", guild_id.to_string()))
+        .await?;
 
     let Some(existing_data) = existing_data else {
         ctx.say("No hay un canal de OOC establecido").await?;

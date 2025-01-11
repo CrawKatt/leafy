@@ -2,7 +2,7 @@ use serenity::all::Role;
 
 use crate::DB;
 use crate::utils::{CommandResult, Context};
-use crate::utils::config::{Forbidden, GuildData};
+use crate::utils::config::{Forbidden, GuildData, DatabaseOperations};
 
 #[poise::command(
     prefix_command,
@@ -23,17 +23,18 @@ pub async fn set_forbidden_role(
     let role_id = forbidden_role.id.to_string();
     let existing_data = GuildData::verify_data(guild_id).await?;
     if existing_data.is_none() {
-        let data = GuildData::default()
-            .guild_id(guild_id)
-            .forbidden(Forbidden::default()
-                .role(role_id)
-            );
-        data.save_to_db().await?;
+        let data = GuildData::builder()
+            .forbidden(Forbidden::builder()
+                .role(role_id.clone())
+                .build()
+            )
+            .build();
+        data.save_to_db(guild_id).await?;
         ctx.say(format!("Set forbidden role to: **{}**", forbidden_role.name)).await?;
 
         return Ok(())
     };
-    let data = Forbidden::default().role(&role_id);
+    let data = Forbidden::builder().role(role_id.clone()).build();
     
     // NOTA: Se debe utilizar el nombre del objeto junto con el campo a actualizar
     // Ejemplo: `forbidden.role_id`

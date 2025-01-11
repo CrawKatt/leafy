@@ -2,7 +2,7 @@ use serenity::all::Channel;
 
 use crate::DB;
 use crate::utils::{CommandResult, Context};
-use crate::utils::config::{Channels, GuildData};
+use crate::utils::config::{Channels, GuildData, DatabaseOperations};
 
 #[poise::command(
     prefix_command,
@@ -25,19 +25,21 @@ pub async fn set_ooc_channel(
 
     let existing_data = GuildData::verify_data(guild_id).await?;
     if existing_data.is_none() {
-        let data = GuildData::default()
-            .guild_id(guild_id)
-            .channels(Channels::default()
+        let data = GuildData::builder()
+            .channels(Channels::builder()
                 .ooc(&channel_id)
-            );
-        data.save_to_db().await?;
+                .build()
+            )
+            .build();
+        data.save_to_db(guild_id).await?;
         ctx.say(format!("OOC channel set to: <#{channel_id}>")).await?; // Bug: Resolver
 
         return Ok(())
     }
 
-    let data = Channels::default()
-        .logs(&channel_id);
+    let data = Channels::builder()
+        .logs(&channel_id)
+        .build();
 
     data.update_field_in_db("channels.ooc", &channel_id, &guild_id.to_string()).await?;
     ctx.say(format!("Canal de Fuera de Contexto establecido en: <#{channel_id}>")).await.unwrap();

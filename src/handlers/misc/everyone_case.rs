@@ -5,7 +5,7 @@ use crate::handlers::misc::exceptions::check_admin_exception;
 
 /// Silencia al autor del mensaje y elimina el mensaje
 pub async fn handle_everyone(
-    admin_role_id: Option<String>,
+    admin_role_id: Option<&Vec<String>>,
     member: &mut Member,
     ctx: &serenity::Context,
     time_out_timer: i64,

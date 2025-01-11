@@ -42,7 +42,7 @@ pub async fn handler(ctx: &serenity::Context, new_message: &Message) -> CommandR
         .unwrap_log(location!())?
         .admins
         .role;
-    
+
     let time = GuildData::verify_data(guild_id).await?
         .into_result()?
         .time_out
@@ -54,25 +54,24 @@ pub async fn handler(ctx: &serenity::Context, new_message: &Message) -> CommandR
     if let Err(why) = attachment_handler(new_message).await {
         println!("Error handling attachment: {why:?} {}", Location::caller());
     }
-    
+
     // Si el mensaje no tiene contenido, es probable que sea un sticker o una imágen
     // En este caso, es mejor salir de la función en lugar de guardar en los logs
     if message_content.is_empty() {
         return Ok(())
     }
 
-    let data = MessageData::new(
-        new_message.id,
-        &message_content,
-        new_message.author.id,
-        new_message.channel_id,
-        new_message.guild_id,
-    );
+    let data = MessageData::builder()
+        .message_id(new_message.id)
+        .message_content(message_content.to_string())
+        .author_id(new_message.author.id)
+        .channel_id(new_message.channel_id)
+        .build();
 
     // Extraer el link del mensaje si existe
     if extract_link(&message_content).is_some() {
         let channel_id = new_message.channel_id;
-        spam_checker(&message_content, channel_id, &admin_role_id, ctx, time, new_message, guild_id).await?;
+        spam_checker(&message_content, channel_id, admin_role_id.as_ref(), ctx, time, new_message, guild_id).await?;
     }
 
     if user_id.is_some() {
@@ -83,13 +82,20 @@ pub async fn handler(ctx: &serenity::Context, new_message: &Message) -> CommandR
     // Si bien hay un método para comprobar si se menciona @everyone o @here, este método devuelve
     // `false` en servidores donde @everyone y @here están deshabilitados
     if message_content.contains("@everyone") || message_content.contains("@here") {
-        let _created: Option<MessageData> = DB.create("messages").content(data.clone()).await?;
-        handle_everyone(admin_role_id, &mut member, ctx, time, new_message).await?;
+        let _created: Option<MessageData> = DB
+            .create(("messages", new_message.id.to_string()))
+            .content(data)
+            .await?;
+
+        handle_everyone(admin_role_id.as_ref(), &mut member, ctx, time, new_message).await?;
 
         return Ok(())
     }
 
-    let _created: Option<MessageData> = DB.create("messages").content(data.clone()).await?;
+    let _created: Option<MessageData> = DB
+        .create(("messages", new_message.id.to_string()))
+        .content(data)
+        .await?;
 
     Ok(())
 }
@@ -108,7 +114,6 @@ async fn handle_user_id(
     data: &MessageData,
     user_id: Option<UserId>
 ) -> CommandResult {
-    
     let forbidden_user_id = GuildData::verify_data(guild_id).await?
         .into_result()?
         .forbidden
@@ -127,11 +132,12 @@ async fn handle_user_id(
         .role
         .into_result()?
         .parse::<RoleId>()?;
-    
+
     let has_role = user_id
         .into_result()?
         .to_user(&ctx.http).await?
-        .has_role(&ctx.http, guild_id, forbidden_role_id).await?;
+        .has_role(&ctx.http, guild_id, forbidden_role_id)
+        .await?;
 
     if has_role { handle_forbidden_role(ctx, new_message, guild_id).await? };
 

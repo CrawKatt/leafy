@@ -1,17 +1,16 @@
 use std::collections::HashMap;
 use std::panic::Location;
 
-use poise::serenity_prelude as serenity;
-use serenity::all::{GuildId, Message, UserId};
-
-use crate::{DB, log_handle};
 use crate::commands::moderation::setters::set_forbidden_exception::ForbiddenException;
-use crate::utils::{CommandResult, MessageData, Warns};
 use crate::handlers::misc::exceptions::check_admin_exception;
 use crate::handlers::misc::warns::handle_warn_system;
 use crate::utils::config::GuildData;
 use crate::utils::debug::IntoUnwrapResult;
 use crate::utils::embeds::send_warn_embed;
+use crate::utils::{CommandResult, MessageData, Warns};
+use crate::{log_handle, DB};
+use poise::serenity_prelude as serenity;
+use serenity::all::{GuildId, Message, UserId};
 
 pub async fn handle_forbidden_user(
     ctx: &serenity::Context,
@@ -69,11 +68,6 @@ pub async fn handle_forbidden_user(
         .into_result()?
         .admins
         .role;
-    
-    let admin_role_id_2 = GuildData::verify_data(guild_id).await?
-        .into_result()?
-        .admins
-        .role_2;
 
     // Salir de la función si no hay un admin establecido
     if admin_role_id.is_none() {
@@ -81,10 +75,9 @@ pub async fn handle_forbidden_user(
         return Ok(())
     }
 
-    let admin_exception = check_admin_exception(admin_role_id, &member, ctx);
-    let admin_exception_2 = check_admin_exception(admin_role_id_2, &member, ctx);
+    let admin_exception = check_admin_exception(admin_role_id.as_ref(), &member, ctx);
 
-    if admin_exception || admin_exception_2 {
+    if admin_exception {
         println!("Admin exception : {}", Location::caller());
         return Ok(())
     }
@@ -92,18 +85,31 @@ pub async fn handle_forbidden_user(
     let mut warns = Warns::new(author_user_id);
     let existing_warns = warns.get_warns().await?;
     warns_counter(&mut warns, existing_warns).await?;
+
     let channel_id = new_message.channel_id;
     let warnings = warns.warns;
     send_warn_embed(ctx, warnings, "./assets/sugerencia.png", channel_id, &warn_message).await?;
+
     let message_map = HashMap::new();
     let http = ctx.http.clone();
     if warns.warns >= 3 {
-        handle_warn_system(&mut member, new_message, message_map, &http, warns, time_out_timer, time_out_message).await?;
+        handle_warn_system(
+            &mut member,
+            new_message,
+            message_map,
+            &http,
+            warns,
+            time_out_timer,
+            time_out_message
+        ).await?;
     }
-    
-    DB.query("DEFINE INDEX message_id ON TABLE messages COLUMNS message_id UNIQUE").await?;
-    let _created: Option<MessageData> = DB.create("messages").content(data.clone()).await?;
-    http.delete_message(new_message.channel_id, new_message.id, None).await?;
+
+    let _created: Option<MessageData> = DB
+        .create(("messages", new_message.id.to_string()))
+        .content(data.clone())
+        .await?;
+
+    http.delete_message(new_message.channel_id, new_message.id, Some("Mensaje eliminado por mencionar a Meica o a un usuario de Rol Chikistrikis")).await?;
 
     Ok(())
 }
@@ -146,7 +152,7 @@ pub async fn handle_forbidden_role(
             format!("{} Has sido silenciado por mencionar a un usuario cuyo rol está prohibido de mencionar", member.distinct())
         });
 
-    let admin_exception = check_admin_exception(admin_role_id, &member, ctx);
+    let admin_exception = check_admin_exception(admin_role_id.as_ref(), &member, ctx);
     if admin_exception {
         println!("Admin exception : {}", Location::caller());
         return Ok(())

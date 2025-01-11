@@ -2,7 +2,7 @@ use serenity::all::User;
 
 use crate::DB;
 use crate::utils::{CommandResult, Context};
-use crate::utils::config::{Forbidden, GuildData};
+use crate::utils::config::{Forbidden, GuildData, DatabaseOperations};
 
 #[poise::command(
     prefix_command,
@@ -24,18 +24,22 @@ pub async fn set_forbidden_user(
 
     let existing_data = GuildData::verify_data(guild_id).await?;
     if existing_data.is_none() {
-        let data = GuildData::default()
-            .guild_id(guild_id)
-            .forbidden(Forbidden::default()
-                .user(user_id)
-            );
+        let data = GuildData::builder()
+            .forbidden(Forbidden::builder()
+                .user(&user_id)
+                .build()
+            )
+            .build();
 
-        data.save_to_db().await?;
+        data.save_to_db(guild_id).await?;
         ctx.say(format!("Se ha prohibido mencionar a: **{}**", forbidden_user.name)).await?;
         return Ok(())
     }
 
-    let data = Forbidden::default().user(&user_id);
+    let data = Forbidden::builder()
+        .user(&user_id)
+        .build();
+
     data.update_field_in_db("forbidden.user", &user_id, &guild_id.to_string()).await?;
     ctx.say(format!("Se ha prohibido mencionar a: **{}**", forbidden_user.name)).await?;
 

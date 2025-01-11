@@ -2,7 +2,7 @@ use serenity::all::Channel;
 
 use crate::DB;
 use crate::utils::{CommandResult, Context};
-use crate::utils::config::{Channels, GuildData};
+use crate::utils::config::{Channels, GuildData, DatabaseOperations};
 
 #[poise::command(
     prefix_command,
@@ -25,20 +25,21 @@ pub async fn set_welcome_channel(
     let existing_data = GuildData::verify_data(guild_id).await?;
 
     if existing_data.is_none() {
-        let data = GuildData::default()
-            .guild_id(guild_id)
-            .channels(Channels::default()
+        let data = GuildData::builder()
+            .channels(Channels::builder()
                 .welcome(&channel_id)
-            );
-
-        data.save_to_db().await?;
+                .build()
+            )
+            .build();
+        data.save_to_db(guild_id).await?;
         ctx.say(format!("Welcome channel set to: <#{channel_id}>")).await?;
 
         return Ok(())
     }
 
-    let data = Channels::default()
-        .welcome(&channel_id);
+    let data = Channels::builder()
+        .welcome(&channel_id)
+        .build();
 
     data.update_field_in_db("channels.welcome", &channel_id, &guild_id.to_string()).await?;
     ctx.say(format!("Canal de bienvenida establecido en <#{channel_id}>")).await?;

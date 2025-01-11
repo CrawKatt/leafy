@@ -4,7 +4,7 @@ use serenity::FullEvent;
 use crate::{DB, debug};
 use crate::handlers::{interactions, typing_start, welcome};
 use crate::handlers::messages::{deleted, edited, sent};
-use crate::handlers::misc::reaction_add;
+use crate::handlers::misc::{reaction_add, reaction_remove};
 use crate::utils::{CommandResult, Data, Error};
 
 /// # Esta función maneja los eventos de Discord
@@ -15,7 +15,8 @@ use crate::utils::{CommandResult, Data, Error};
 /// - `MessageDelete`: Maneja los mensajes eliminados en un servidor
 /// - `MessageUpdate`: Maneja los mensajes editados en un servidor
 /// - `GuildMemberAddition`: Maneja la llegada de un nuevo miembro a un servidor
-/// - `ReactionAdd`: Maneja las reacciones a los mensajes
+/// - `ReactionAdd`: Maneja las reacciones añadidas a los mensajes
+/// - `ReactionRemove`: Maneja la eliminación de reacciones a los mensajes
 pub async fn event_handler(
     ctx: &serenity::Context,
     event: &FullEvent,
@@ -29,6 +30,7 @@ pub async fn event_handler(
         FullEvent::MessageUpdate { event, .. } => edited::handler(ctx, event).await?,
         FullEvent::GuildMemberAddition { new_member} => welcome::handler(ctx, new_member).await?,
         FullEvent::ReactionAdd { add_reaction } => reaction_add::handler(ctx, add_reaction).await?,
+        FullEvent::ReactionRemove { removed_reaction } => reaction_remove::handler(ctx, removed_reaction).await?,
         FullEvent::TypingStart { event } => typing_start::handler(event).await?,
         FullEvent::InteractionCreate { interaction } => interactions::handler(ctx, interaction, &framework).await?,
 
@@ -36,11 +38,6 @@ pub async fn event_handler(
         serenity::FullEvent::PresenceUpdate { .. } => {
             // todo: implement presence update handler
             //println!("Event Presence updated: {:?}", new_data.user);
-        }
-
-        serenity::FullEvent::ReactionRemove { .. } => {
-            // todo: implement reaction remove handler
-            //println!("Event Reaction Remove: {:?}", remove_reaction);
         }
         */
 
