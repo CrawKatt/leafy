@@ -40,7 +40,7 @@ pub async fn set_admins(
                 .build()
             )
             .build();
-        
+
         data.save_to_db(guild_id).await?;
         ctx.say(format!("Config data created for {guild_name}, admin roles set to: **{}**", role.name)).await?;
         return Ok(());
@@ -50,7 +50,7 @@ pub async fn set_admins(
     let data = Admin::builder()
         .role(admin_roles.clone())
         .build();
-    data.update_admins("admins.roles", admin_roles, &guild_id.to_string()).await?;
+    data.update_field_in_db("admins/role", admin_roles, &guild_id.to_string()).await?;
 
     let role_name = &role.name;
     let role_2_name = role_2.as_ref().map_or("None", |role| &*role.name);

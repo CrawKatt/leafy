@@ -40,7 +40,7 @@ pub async fn set_forbidden_user(
         .user(&user_id)
         .build();
 
-    data.update_field_in_db("forbidden.user", &user_id, &guild_id.to_string()).await?;
+    data.update_field_in_db("forbidden/user", &user_id, &guild_id.to_string()).await?;
     ctx.say(format!("Se ha prohibido mencionar a: **{}**", forbidden_user.name)).await?;
 
     Ok(())

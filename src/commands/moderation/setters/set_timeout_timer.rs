@@ -46,7 +46,7 @@ pub async fn set_timeout_timer(
         .time(time_in_seconds)
         .build();
 
-    data.update_field_in_db("time_out.time", time_in_seconds, &guild_id.to_string()).await?;
+    data.update_field_in_db("time_out/time", time_in_seconds, &guild_id.to_string()).await?;
 
     let time_out_timer = &*GuildData::verify_data(guild_id).await?
         .into_result()?

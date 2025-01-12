@@ -34,7 +34,7 @@ pub async fn set_time_out_message(
         .time_out(&time_out_message)
         .build();
 
-    data.update_field_in_db("messages.time_out", &time_out_message, &guild_id.to_string()).await?;
+    data.update_field_in_db("messages/time_out", &time_out_message, &guild_id.to_string()).await?;
     ctx.say(format!("Time out message actualizado: {time_out_message}")).await?;
 
     Ok(())

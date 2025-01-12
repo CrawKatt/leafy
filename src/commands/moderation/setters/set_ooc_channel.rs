@@ -41,7 +41,7 @@ pub async fn set_ooc_channel(
         .logs(&channel_id)
         .build();
 
-    data.update_field_in_db("channels.ooc", &channel_id, &guild_id.to_string()).await?;
+    data.update_field_in_db("channels/ooc", &channel_id, &guild_id.to_string()).await?;
     ctx.say(format!("Canal de Fuera de Contexto establecido en: <#{channel_id}>")).await.unwrap();
 
     Ok(())

@@ -36,7 +36,7 @@ pub async fn set_welcome_message(
         .welcome(&message)
         .build();
 
-    data.update_field_in_db("messages.welcome", &message, &guild_id.to_string()).await?;
+    data.update_field_in_db("messages/welcome", &message, &guild_id.to_string()).await?;
     ctx.say(format!("El mensaje de bienvenida ha sido actualizado a: {message}")).await?;
 
     Ok(())

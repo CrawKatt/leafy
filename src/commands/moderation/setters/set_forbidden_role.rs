@@ -39,7 +39,7 @@ pub async fn set_forbidden_role(
     // NOTA: Se debe utilizar el nombre del objeto junto con el campo a actualizar
     // Ejemplo: `forbidden.role_id`
     // Actualizar usando `role_id` creará un nuevo campo en la base de datos fuera del objeto
-    data.update_field_in_db("forbidden.role", &role_id, &guild_id.to_string()).await?;
+    data.update_field_in_db("forbidden/role", &role_id, &guild_id.to_string()).await?;
     ctx.say(format!("Set forbidden role to: **{}**", forbidden_role.name)).await?;
 
     Ok(())

@@ -42,7 +42,7 @@ pub async fn set_exception_channel(
         .exceptions(&channel_id)
         .build();
 
-    data.update_field_in_db("channels.exceptions", &channel_id, &guild_id.to_string()).await?;
+    data.update_field_in_db("channels/exceptions", &channel_id, &guild_id.to_string()).await?;
     ctx.say(format!("Exception channel establecido: <#{channel_id}>")).await?;
 
     Ok(())

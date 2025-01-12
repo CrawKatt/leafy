@@ -209,28 +209,15 @@ pub struct Messages {
 }
 
 pub trait DatabaseOperations: Serialize + DeserializeOwned + Clone + Default + Send + Sync {
-    async fn update_field_in_db(&self, field_name: &str, new_value: &str, guild_id: &str) -> UnwrapResult<()> {
+    async fn update_field_in_db<T>(&self, field_name: &str, new_value: T, guild_id: &str) -> UnwrapResult<()> 
+    where
+        T: Serialize,
+    {
         DB.use_ns("discord-namespace").use_db("discord").await?;
-        let sql_query = &*format!("UPDATE guild_config SET {field_name} = $value WHERE guild_id = $guild_id");
         let _updated: Option<Self> = DB
-            .query(sql_query)
-            .bind(("value", new_value.to_string()))
-            .bind(("guild_id", guild_id.to_string()))
-            .await?
-            .take(0)?;
-
-        Ok(())
-    }
-
-    async fn update_admins(&self, field_name: &str, new_value: Vec<String>, guild_id: &str) -> UnwrapResult<()> {
-        DB.use_ns("discord-namespace").use_db("discord").await?;
-        let sql_query = &*format!("UPDATE guild_config SET {field_name} = $value WHERE guild_id = $guild_id");
-        let _updated: Option<Self> = DB
-            .query(sql_query)
-            .bind(("value", new_value))
-            .bind(("guild_id", guild_id.to_string()))
-            .await?
-            .take(0)?;
+            .update(("guild_config", guild_id))
+            .patch(PatchOp::replace(&format!("/{field_name}"), new_value))
+            .await?;
 
         Ok(())
     }

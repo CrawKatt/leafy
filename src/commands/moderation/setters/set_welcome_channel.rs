@@ -41,7 +41,7 @@ pub async fn set_welcome_channel(
         .welcome(&channel_id)
         .build();
 
-    data.update_field_in_db("channels.welcome", &channel_id, &guild_id.to_string()).await?;
+    data.update_field_in_db("channels/welcome", &channel_id, &guild_id.to_string()).await?;
     ctx.say(format!("Canal de bienvenida establecido en <#{channel_id}>")).await?;
 
     Ok(())

@@ -42,7 +42,7 @@ pub async fn set_log_channel(
         .logs(channel_id.clone())
         .build();
 
-    data.update_field_in_db("channels.logs", &channel_id, &guild_id.to_string()).await?;
+    data.update_field_in_db("channels/logs", &channel_id, &guild_id.to_string()).await?;
     ctx.say(format!("Log channel establecido: <#{channel_id}>")).await?;
 
     Ok(())
