@@ -3,7 +3,7 @@ use poise::Command;
 use serde::{Deserialize, Serialize};
 use serenity::all::{ChannelId, GuildId, MessageId, UserId};
 use std::collections::HashMap;
-use surrealdb::Result as SurrealResult;
+use surrealdb::{RecordId, Result as SurrealResult};
 
 use crate::commands::ai::ask;
 use crate::commands::audio::join::join;
@@ -65,9 +65,9 @@ pub type Context<'a> = poise::Context<'a, Data, Error>;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Builder)]
 pub struct MessageData {
-    pub message_id: MessageId,
     pub message_content: String,
     pub author_id: UserId,
+    pub id: Option<RecordId>,
     pub channel_id: ChannelId,
     pub guild_id: Option<GuildId>,
 }

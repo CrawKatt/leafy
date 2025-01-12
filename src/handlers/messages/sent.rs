@@ -62,7 +62,6 @@ pub async fn handler(ctx: &serenity::Context, new_message: &Message) -> CommandR
     }
 
     let data = MessageData::builder()
-        .message_id(new_message.id)
         .message_content(message_content.to_string())
         .author_id(new_message.author.id)
         .channel_id(new_message.channel_id)

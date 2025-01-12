@@ -1,16 +1,16 @@
 use poise::serenity_prelude as serenity;
-use serenity::all::{ChannelId, MessageUpdateEvent, RoleId, UserId};
+use serenity::all::{ChannelId, MessageId, MessageUpdateEvent, RoleId, UserId};
 
 use crate::{debug, location, match_handle};
 use crate::utils::CommandResult;
 use crate::handlers::misc::forbidden_mentions::{handle_forbidden_role, handle_forbidden_user};
 use crate::utils::MessageData;
-use crate::utils::config::GuildData;
+use crate::utils::config::{Getter, GuildData};
 use crate::utils::debug::{IntoUnwrapResult, UnwrapLog};
 use crate::utils::embeds::edit_message_embed;
 
 pub async fn handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> CommandResult {
-    if event.author.as_ref().map_or(false, |author| author.bot) { return Ok(()) }
+    if event.author.as_ref().is_some_and(|author| author.bot) { return Ok(()) }
     let message_id = event.id;
     let guild_id = event.guild_id.unwrap_log(location!())?; // SAFETY: El GuildId siempre está disponible
     let old_message = MessageData::get_message_data(&message_id).await?;
@@ -64,11 +64,13 @@ pub async fn handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> Com
 
     match_handle!(
         contains_forbidden_user, {
-            let message = ctx.http.get_message(database_message.channel_id, database_message.message_id).await?;
+            let database_message_id = database_message.clone().id.into_result()?.to_id().parse::<MessageId>()?;
+            let message = ctx.http.get_message(database_message.channel_id, database_message_id).await?;
             handle_forbidden_user(ctx, &message, guild_id, &database_message, forbidden_user_id).await?;
         },
         contains_forbidden_role, {
-            let message = ctx.http.get_message(database_message.channel_id, database_message.message_id).await?;
+            let database_message_id = database_message.clone().id.into_result()?.to_id().parse::<MessageId>()?;
+            let message = ctx.http.get_message(database_message.channel_id, database_message_id).await?;
             handle_forbidden_role(ctx, &message, guild_id).await?;
         }
     );
