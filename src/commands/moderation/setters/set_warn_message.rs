@@ -1,6 +1,6 @@
 use crate::DB;
 use crate::utils::{CommandResult, Context};
-use crate::utils::config::{GuildData, Messages};
+use crate::utils::config::{GuildData, Messages, DatabaseOperations};
 
 #[poise::command(
     prefix_command,
@@ -20,22 +20,23 @@ pub async fn set_warn_message(
     let existing_data = GuildData::verify_data(guild_id).await?;
 
     if existing_data.is_none() {
-        let data = GuildData::default()
-            .guild_id(guild_id)
-            .messages(Messages::default()
+        let data = GuildData::builder()
+            .messages(Messages::builder()
                 .warn(&warn_message)
-            );
-
-        data.save_to_db().await?;
+                .build()
+            )
+            .build();
+        data.save_to_db(guild_id).await?;
         ctx.say(format!("El mensaje de advertencia ha sido establecido a: {warn_message}")).await?;
         
         return Ok(())
     }
 
-    let data = Messages::default()
-        .warn(&warn_message);
+    let data = Messages::builder()
+        .warn(&warn_message)
+        .build();
 
-    data.update_field_in_db("messages.warn", &warn_message, &guild_id.to_string()).await?;
+    data.update_field_in_db("messages/warn", &warn_message, &guild_id.to_string()).await?;
     ctx.say(format!("El mensaje de advertencia ha sido establecido a: {warn_message}")).await?;
 
     Ok(())

@@ -18,12 +18,9 @@ pub async fn get_forbidden_user(
     ctx.defer().await?;
     DB.use_ns("discord-namespace").use_db("discord").await?;
     let guild_id = ctx.guild_id().unwrap();
-    let sql_query = "SELECT * FROM guild_config WHERE guild_id = $guild_id";
     let database_info: Option<GuildData> = DB
-        .query(sql_query)
-        .bind(("guild_id", guild_id)) // pasar el valor
-        .await?
-        .take(0)?;
+        .select(("guild_config", guild_id.to_string()))
+        .await?;
     
     let Some(forbidden_user_id) = database_info else {
         ctx.say("No se ha establecido un usuario prohíbido de mencionar").await?;

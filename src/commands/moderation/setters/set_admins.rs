@@ -2,7 +2,7 @@ use serenity::all::Role;
 
 use crate::DB;
 use crate::utils::{CommandResult, Context};
-use crate::utils::config::{Admin, GuildData};
+use crate::utils::config::{Admin, DatabaseOperations, GuildData};
 use crate::utils::debug::IntoUnwrapResult;
 
 #[poise::command(
@@ -27,40 +27,34 @@ pub async fn set_admins(
     let guild_id = ctx.guild_id().into_result()?;
     let role_id = role.id.to_string();
     let role_2_id = role_2.as_ref().map(|role| role.id.to_string());
-    let existing_data = GuildData::verify_data(guild_id).await?;
-    
-    if existing_data.is_none() {
-        let data = GuildData::default()
-            .guild_id(guild_id)
-            .admins(Admin::default()
-                .role(&role_id)
-            );
-        data.save_to_db().await?;
-        ctx.say(format!("Config data created for {guild_name} stablished admin to: {}", role.name)).await?;
-        
-        return Ok(())
+    let mut admin_roles = vec![role_id.clone()];
+    if let Some(role_2_id) = &role_2_id {
+        admin_roles.push(role_2_id.clone());
     }
 
-    let Some(role_2_id) = role_2_id else {
-        let data = Admin::default()
-            .role(&role_id);
-        data.update_field_in_db("admins.role_id", &role_id, &guild_id.to_string()).await?;
-        ctx.say(format!("Admin role set to: **{role_id}**")).await?;
+    let existing_data = GuildData::verify_data(guild_id).await?;
+    if existing_data.is_none() {
+        let data = GuildData::builder()
+            .admins(Admin::builder()
+                .role(admin_roles.clone())
+                .build()
+            )
+            .build();
 
-        return Ok(())
-    };
+        data.save_to_db(guild_id).await?;
+        ctx.say(format!("Config data created for {guild_name}, admin roles set to: **{}**", role.name)).await?;
+        return Ok(());
+    }
 
-    let data = Admin::default()
-        .role(&role_id)
-        .role_2(&role_2_id);
+    // Actualizar la configuración existente
+    let data = Admin::builder()
+        .role(admin_roles.clone())
+        .build();
+    data.update_field_in_db("admins/role", admin_roles, &guild_id.to_string()).await?;
 
-    data.update_field_in_db("admins.role", &role_id, &guild_id.to_string()).await?;
-    data.update_field_in_db("admins.role_2", &role_2_id, &guild_id.to_string()).await?;
-
-    let role = role.name;
-    let role_2 = role_2.as_ref().map_or("None", |role| &*role.name);
-
-    ctx.say(format!("Admin roles set to: **{role}** and **{role_2}**")).await?;
+    let role_name = &role.name;
+    let role_2_name = role_2.as_ref().map_or("None", |role| &*role.name);
+    ctx.say(format!("Admin roles set to: **{role_name}** and **{role_2_name}**")).await?;
 
     Ok(())
 }

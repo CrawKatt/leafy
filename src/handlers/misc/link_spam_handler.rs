@@ -1,6 +1,6 @@
 use std::sync::{Arc, LazyLock};
 use std::time::Instant;
-
+use bon::Builder;
 use poise::serenity_prelude as serenity;
 use regex::Regex;
 use serenity::all::{ChannelId, CreateEmbedAuthor, CreateMessage, GetMessages, GuildId, Message, UserId};
@@ -19,65 +19,12 @@ use crate::utils::debug::IntoUnwrapResult;
 /// - Almacena el contenido del mensaje
 /// - Almacena los IDs de los canales
 /// - Almacena el tiempo del último mensaje
-#[derive(Debug)]
+#[derive(Debug, Builder)]
 struct MessageTracker {
     author_id: UserId,
     message_content: Arc<String>,
     channel_ids: Vec<ChannelId>,
     last_message_time: Instant,
-}
-
-/// Implementación de la estructura de rastreador de mensajes
-/// 
-/// - Implementa un método para crear un rastreador de mensajes por defecto
-/// - Implementa un método para modificar el ID del autor del mensaje
-/// - Implementa un método para modificar el contenido del mensaje
-/// - Implementa un método para modificar los IDs de los canales
-/// - Se sigue el patrón de diseño Builder
-impl MessageTracker {
-    /// # Default implementado manualmente
-    /// 
-    /// - Es necesario implementar `Default` manualmente
-    ///     ya que no puede establecer un valor por defecto para `Instant::now()`
-    pub fn default() -> Self {
-        Self {
-            author_id: UserId::default(),
-            message_content: Arc::new(String::default()),
-            channel_ids: Vec::new(),
-            last_message_time: Instant::now(),
-        }
-    }
-
-    /// # Modifica el ID del autor del mensaje
-    /// 
-    /// - Modifica el ID del autor del mensaje
-    ///     El patrón de diseño Builder consiste en mutar `self` y devolver `Self`
-    ///     con el campo modificado por el valor proporcionado como argumento 
-    /// - Devuelve la estructura de rastreador de mensajes
-    const fn author_id(mut self, author_id: UserId) -> Self {
-        self.author_id = author_id;
-        self
-    }
-
-    /// # Modifica el contenido del mensaje
-    ///
-    /// El patrón de diseño Builder consiste en mutar `self` y devolver `Self`
-    ///     con el campo modificado por el valor proporcionado como argumento 
-    /// - Devuelve la estructura de rastreador de mensajes
-    fn message_content(mut self, message_content: Arc<String>) -> Self {
-        self.message_content = message_content;
-        self
-    }
-
-    /// # Modifica los IDs de los canales
-    ///
-    /// El patrón de diseño Builder consiste en mutar `self` y devolver `Self`
-    ///     con el campo modificado por el valor proporcionado como argumento
-    /// - Devuelve la estructura de rastreador de mensajes
-    fn channel_ids(mut self, channel_ids: Vec<ChannelId>) -> Self {
-        self.channel_ids = channel_ids;
-        self
-    }
 }
 
 /// # Rastreador de mensajes
@@ -108,7 +55,7 @@ pub fn extract_link(text: &str) -> Option<String> {
 pub async fn spam_checker(
     message_content: &Arc<String>,
     channel_id: ChannelId,
-    admin_role_id: &Option<String>,
+    admin_role_id: Option<&Vec<String>>,
     ctx: &serenity::Context,
     time: i64,
     new_message: &Message,
@@ -147,10 +94,12 @@ pub async fn spam_checker(
         message
     } else {
         // Si el mensaje no existe, crea un nuevo rastreador de mensajes y añádelo a la lista
-        let message = MessageTracker::default()
+        let message = MessageTracker::builder()
             .author_id(author_id)
             .message_content(message_content.clone())
-            .channel_ids(vec![channel_id]);
+            .channel_ids(vec![channel_id])
+            .last_message_time(Instant::now())
+            .build();
 
         message_tracker.push(message);
         message_tracker.last_mut().into_result()?

@@ -40,6 +40,11 @@ pub async fn play(
     #[rest]
     query: String
 ) -> CommandResult {
+    if !query.starts_with("http") || query.starts_with("https://youtube") {
+        ctx.say("Debes proporcionar una URL válida y no debe ser de YouTube").await?;
+        return Ok(())
+    }
+
     let guild = ctx.guild().into_result()?.clone();
     let guild_id = guild.id;
     super::try_join(ctx, guild).await?;
@@ -73,34 +78,10 @@ pub async fn play(
         .arg(limit_rate)
         .arg("-o")
         .arg(&output_path)
-        .arg("--proxy")
-        .arg("socks5://127.0.0.1:9050")
         .arg(&query)
         .status();
 
-    let Ok(status) = status else {
-        ctx.say("Error al ejecutar el comando yt-dlp, intentando reiniciar el servicio de Tor...").await?;
-
-        // Reiniciar el servicio de Tor
-        let restart_status = Command::new("sudo")
-            .arg("service")
-            .arg("tor")
-            .arg("restart")
-            .status();
-
-        match restart_status {
-            Ok(restart) if restart.success() => {
-                ctx.say("Servicio de Tor reiniciado con éxito. Intenta de nuevo.").await?;
-            },
-            _ => {
-                ctx.say("Error al reiniciar el servicio de Tor. Intenta más tarde.").await?;
-                return Ok(());
-            }
-        }
-        return Ok(());
-    };
-
-    if !status.success() {
+    if status.is_err() {
         ctx.say("Error al descargar el audio").await?;
         return Ok(())
     }

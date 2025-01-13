@@ -19,12 +19,9 @@ pub async fn get_welcome_channel(
     DB.use_ns("discord-namespace").use_db("discord").await?;
 
     let guild_id = ctx.guild_id().into_result()?;
-    let sql_query = "SELECT * FROM guild_config WHERE guild_id = $guild_id";
     let existing_data: Option<GuildData> = DB
-        .query(sql_query)
-        .bind(("guild_id", guild_id))
-        .await?
-        .take(0)?;
+        .select(("guild_config", guild_id.to_string()))
+        .await?;
 
     if existing_data.is_none() {
         poise::say_reply(ctx, "No se ha establecido un canal de bienvenida").await?;

@@ -8,12 +8,13 @@ edition = "2021"
 [dependencies]
 # Necesario para que songbird pueda reproducir archivos de audio
 symphonia = { version = "0.5.4", features = ["aac", "mp3", "isomp4", "alac"] }
-poise = { git = "https://github.com/serenity-rs/poise.git", branch = "current" }
+poise = "0.6.1"
 tokio = "1.28.1"
 serenity = "0.12.0"
-songbird = { version = "0.4.1", features = ["builtin-queue"] }
+songbird = { version = "0.4.6", features = ["builtin-queue"] }
 serde = "1.0.164"
 serde_json = "1.0.128"
+bon = "3.0.2"
 reqwest = "0.11.22"
 env_logger = "0.10.0"
 dotenvy = "0.15.7"

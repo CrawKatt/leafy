@@ -6,3 +6,4 @@ pub mod attachment_case;
 pub mod link_spam_handler;
 pub mod reaction_add;
 pub mod buttons;
+pub mod reaction_remove;

@@ -7,16 +7,18 @@ pub async fn attachment_handler(new_message: &Message) -> CommandResult {
         for attachment in new_message.attachments.clone() {
             if attachment.content_type.unwrap_or_default().starts_with("audio") {
                 let audio_url = &attachment.url;
-                let data = MessageData::new(
-                    new_message.id,
-                    audio_url,
-                    new_message.author.id,
-                    new_message.channel_id,
-                    new_message.guild_id,
-                );
+                let data = MessageData::builder()
+                    .message_content(audio_url.to_owned())
+                    .author_id(new_message.author.id)
+                    .channel_id(new_message.channel_id)
+                    .build();
 
                 // Guardar el enlace del archivo de audio en la base de datos
-                let _created: Option<MessageData> = DB.create("audio").content(data).await?;
+                let _created: Option<MessageData> = DB
+                    .create(("audio", new_message.id.to_string()))
+                    .content(data)
+                    .await?;
+
                 println!("Audio file saved to database");
             }
         }

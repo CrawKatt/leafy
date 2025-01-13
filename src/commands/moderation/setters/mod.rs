@@ -10,3 +10,5 @@ pub mod set_welcome_channel;
 pub mod set_welcome_message;
 pub mod set_ooc_channel;
 pub mod set_exception_channel;
+pub mod set_autorole_id;
+pub mod set_autorole_message;

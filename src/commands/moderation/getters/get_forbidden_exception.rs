@@ -1,7 +1,7 @@
 use serenity::all::UserId;
 use crate::commands::moderation::setters::set_forbidden_exception::ForbiddenException;
 use crate::utils::{CommandResult, Context};
-use crate::utils::debug::UnwrapLog;
+use crate::utils::debug::{IntoUnwrapResult, UnwrapLog};
 use crate::{DB, location};
 
 /// Obtiene el estado de excepción de un usuario si es que tiene uno.
@@ -18,9 +18,11 @@ pub async fn get_forbidden_exception(
 ) -> CommandResult {
     ctx.defer().await?; // Necesario para que el Bot no devuelva un error de interacción si tarda mucho en responder
     let guild_id = ctx.guild_id().unwrap();
+    let guild = guild_id.to_guild_cached(&ctx).into_result()?.clone();
+    let channel = ctx.guild_channel().await.into_result()?;
 
     let author = guild_id.member(&ctx.serenity_context().http, ctx.author().id).await?;
-    let author_permissions = author.permissions(&ctx.serenity_context().cache)?;
+    let author_permissions = guild.user_permissions_in(&channel, &author);
     // si el autor del comando no tiene permisos de moderador, obtener el estado de la excepción del usuario que ejecutó el comando
     if !author_permissions.manage_guild() {
         ctx.say("No tienes permisos para comprobar el estado de excepción de otros usuarios").await?;

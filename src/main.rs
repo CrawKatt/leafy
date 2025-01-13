@@ -140,16 +140,13 @@ fn clean_database_loop() {
 /// # Crear la tabla de la Base de Datos si no existe
 /// - La tabla de configuración de los servidores es `SCHEMAFULL`
 /// - Los campos son flexibles y se pueden añadir o eliminar
-/// - Se crea un índice único para el campo `guild_id` dado que el `guild_id` debe ser único para cada servidor
 async fn create_database() -> UnwrapResult<()> {
     DB.query("DEFINE TABLE guild_config SCHEMAFULL PERMISSIONS FOR select, create, update, delete WHERE true;").await?;
-    DB.query("DEFINE FIELD guild_id ON guild_config TYPE string;").await?;
     DB.query("DEFINE FIELD admins ON guild_config FLEXIBLE TYPE option<object>;").await?;
     DB.query("DEFINE FIELD channels ON guild_config FLEXIBLE TYPE option<object>;").await?;
     DB.query("DEFINE FIELD forbidden ON guild_config FLEXIBLE TYPE option<object>;").await?;
     DB.query("DEFINE FIELD messages ON guild_config FLEXIBLE TYPE option<object>;").await?;
     DB.query("DEFINE FIELD time_out ON guild_config FLEXIBLE TYPE option<object>;").await?;
-    DB.query("DEFINE INDEX guild_id ON TABLE guild_config COLUMNS guild_id UNIQUE;").await?;
 
     Ok(())
 }
