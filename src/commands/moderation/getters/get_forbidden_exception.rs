@@ -3,6 +3,7 @@ use crate::commands::moderation::setters::set_forbidden_exception::ForbiddenExce
 use crate::utils::{CommandResult, Context};
 use crate::utils::debug::{IntoUnwrapResult, UnwrapLog};
 use crate::{DB, location};
+use crate::utils::config::Getter;
 
 /// Obtiene el estado de excepción de un usuario si es que tiene uno.
 #[poise::command(
@@ -29,7 +30,12 @@ pub async fn get_forbidden_exception(
         return Ok(())
     }
 
-    let user = user.map_or_else(|| ctx.author().id, |user| user);
+    let user_id = user.map_or_else(|| ctx.author().id, |user| user);
+    let record_id = format!("{guild_id}_{user_id}");
+    let existing_data : Option<ForbiddenException> = DB
+        .select(("forbidden_exception", record_id))
+        .await?;
+    /*
     let sql_query = "SELECT * FROM forbidden_exception WHERE guild_id = $guild_id AND user_id = $user_id";
     let existing_data : Option<ForbiddenException> = DB
         .query(sql_query)
@@ -37,13 +43,16 @@ pub async fn get_forbidden_exception(
         .bind(("user_id", user))
         .await?
         .take(0)?;
+    */
 
     let existing_data = existing_data.unwrap_log(location!())?;
-    let forbidden_user = existing_data.user_id;
+    let forbidden_user = existing_data.id.unwrap().to_id();
+    let parts: Vec<&str> = forbidden_user.split('_').collect();
     let is_active = existing_data.is_active.unwrap_log(location!())?;
+    let forbidden_user_id = parts[1].parse::<UserId>()?;
 
     let status = if is_active { "Activa" } else { "Inactiva" };
-    let user = forbidden_user.to_user(ctx.http()).await?;
+    let user = forbidden_user_id.to_user(ctx.http()).await?;
 
     if !is_active {
         ctx.say(format!("La excepción para el usuario **{}** está: **{}** ", user.name, status)).await?;

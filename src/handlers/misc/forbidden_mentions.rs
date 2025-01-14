@@ -24,7 +24,7 @@ pub async fn handle_forbidden_user(
         return Ok(())
     }
 
-    let forbidden_user_exception = ForbiddenException::have_exception(forbidden_user_id).await?;
+    let forbidden_user_exception = ForbiddenException::have_exception(guild_id, forbidden_user_id).await?;
     if let Some(forbidden_user_exception) = forbidden_user_exception {
         if forbidden_user_exception {
             println!("El usuario ha solicitado una excepción : {}", Location::caller());

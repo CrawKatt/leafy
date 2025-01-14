@@ -1,49 +1,43 @@
-use std::panic::Location;
+use crate::utils::debug::{IntoUnwrapResult, UnwrapResult};
+use crate::utils::{CommandResult, Context};
+use crate::DB;
+
 use bon::Builder;
 use serde::{Deserialize, Serialize};
 use serenity::all::{GuildId, Permissions, UserId};
+use std::panic::Location;
+use surrealdb::opt::PatchOp;
 use surrealdb::{RecordId, Result as SurrealResult};
-use crate::DB;
-use crate::utils::{CommandResult, Context};
-use crate::utils::config::Getter;
-use crate::utils::debug::{IntoUnwrapResult, UnwrapResult};
 
 #[derive(Serialize, Deserialize, Clone, Default, Debug, Builder)]
 pub struct ForbiddenException {
-    pub user_id: UserId,
-    pub id: Option<RecordId>,
     pub is_active: Option<bool>,
+    pub id: Option<RecordId>
 }
 
 impl ForbiddenException {
-    pub async fn save_to_db(self, guild_id: GuildId) -> SurrealResult<()> {
+    pub async fn save_to_db(self, guild_id: GuildId, user_id: UserId) -> SurrealResult<()> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
+        let record_id = format!("{guild_id}_{user_id}");
         let _created: Option<Self> = DB
-            .create(("forbidden_exception", guild_id.to_string()))
+            .create(("forbidden_exception", record_id))
             .content(self)
             .await?;
 
         Ok(())
     }
 
-    pub async fn verify_data(&self) -> UnwrapResult<Option<Self>> {
+    pub async fn verify_data(&self, guild_id: GuildId, user_id: UserId) -> UnwrapResult<Option<Self>> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
-        let sql_query = "SELECT * FROM forbidden_exception WHERE guild_id = $guild_id AND user_id = $user_id";
-
-        let guild_id = self.to_owned().id.into_result()?.to_id();
-        let user_id = self.user_id;
-
-        let existing_data: Option<Self> = DB
-            .query(sql_query)
-            .bind(("guild_id", guild_id))
-            .bind(("user_id", user_id))
-            .await?
-            .take(0)?;
+        let record_id = format!("{guild_id}_{user_id}");
+        let existing_data = DB
+            .select(("forbidden_exception", record_id))
+            .await?;
 
         Ok(existing_data)
     }
 
-    pub async fn switch(&mut self) -> UnwrapResult<()> {
+    pub async fn switch(&mut self, guild_id: GuildId, user_id: UserId) -> UnwrapResult<()> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
         let Some(is_active) = self.is_active else {
             println!("No is_active value found {}", Location::caller());
@@ -51,12 +45,11 @@ impl ForbiddenException {
         };
 
         let new_state = !is_active;
-
-        let sql_query = "UPDATE forbidden_exception SET is_active = $is_active WHERE guild_id = $guild_id AND user_id = $user_id";
-        DB.query(sql_query)
-            .bind(("is_active", new_state))
-            .bind(("guild_id", self.to_owned().id.into_result()?.to_id()))
-            .bind(("user_id", self.user_id))
+        let record_id = format!("{guild_id}_{user_id}");
+        
+        let _updated: Option<Self> = DB
+            .update(("forbidden_exception", record_id))
+            .patch(PatchOp::replace("/is_active", is_active))
             .await?;
 
         self.is_active = Some(new_state);
@@ -66,23 +59,23 @@ impl ForbiddenException {
 
     pub async fn manual_switch(user_id: UserId, guild_id: GuildId, state: bool) -> SurrealResult<()> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
-        let sql_query = "UPDATE forbidden_exception SET is_active = $state WHERE guild_id = $guild_id AND user_id = $user_id";
-        DB.query(sql_query)
-            .bind(("state", state))
-            .bind(("guild_id", guild_id))
-            .bind(("user_id", user_id)).await?;
+        let record_id = format!("{guild_id}_{user_id}");
+        let _updated: Option<Self> = DB
+            .update(("forbidden_exception", record_id))
+            .patch(PatchOp::replace("/is_active", state))
+            .await?;
 
         Ok(())
     }
 
-    pub async fn have_exception(user_id: UserId) -> SurrealResult<Option<bool>> {
+    pub async fn have_exception(guild_id: GuildId, user_id: UserId) -> SurrealResult<Option<bool>> {
         DB.use_ns("discord-namespace").use_db("discord").await?;
+        let record_id = format!("{guild_id}_{user_id}");
         let existing_data: Option<Self> = DB
-            .select(("forbidden_exception", user_id.to_string()))
+            .select(("forbidden_exception", record_id))
             .await?;
 
         let is_active = existing_data.map(|data| data.is_active);
-
         if let Some(is_active) = is_active {
             return Ok(is_active)
         }
@@ -120,19 +113,18 @@ pub async fn set_forbidden_exception(
     }
 
     let mut data = ForbiddenException::builder()
-        .user_id(user_id)
         .is_active(state)
         .build();
 
-    let existing_data = data.verify_data().await?;
+    let existing_data = data.verify_data(guild_id, user_id).await?;
     let user = user_id.to_user(ctx.http()).await?;
     let username = user.name;
 
     if existing_data.is_none() {
-        data.save_to_db(guild_id).await?;
+        data.save_to_db(guild_id, user_id).await?;
         poise::say_reply(ctx, format!("User {username} has been set as a forbidden exception")).await?;
     } else {
-        data.switch().await?;
+        data.switch(guild_id, user_id).await?;
         poise::say_reply(ctx, format!("El usuario {username} ya ha solicitado una excepción. Actualizando")).await?;
     }
 
