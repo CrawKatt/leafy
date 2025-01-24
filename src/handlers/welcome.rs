@@ -7,7 +7,7 @@ use poise::serenity_prelude as serenity;
 use plantita_welcomes::create_welcome::combine_images;
 use serenity::all::{ChannelId, Context, CreateAttachment, GuildId, Member, RoleId, User};
 use crate::{location, DB};
-use crate::handlers::goodbye::SanctionRoles;
+use crate::handlers::goodbye::SanctionedUsers;
 use crate::utils::CommandResult;
 use crate::utils::config::GuildData;
 use crate::utils::debug::{IntoUnwrapResult, UnwrapErrors, UnwrapLog};
@@ -34,7 +34,7 @@ pub async fn handler(
 async fn has_sanction_roles(ctx: &Context, new_member: &Member, guild_id: GuildId) -> CommandResult {
     let user_id = new_member.user.id;
 
-    let existing_data: Option<SanctionRoles> = DB
+    let existing_data: Option<SanctionedUsers> = DB
         .select(("sanctioned_users", user_id.to_string()))
         .await?;
 
