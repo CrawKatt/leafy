@@ -1,3 +1,4 @@
+/*
 use poise::serenity_prelude as serenity;
 use regex::Regex;
 use serenity::all::{Reaction, RoleId};
@@ -41,3 +42,4 @@ pub async fn autorole_remove(ctx: &serenity::Context, add_reaction: &Reaction) -
 
     Ok(())
 }
+*/

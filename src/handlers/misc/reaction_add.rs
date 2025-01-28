@@ -1,18 +1,18 @@
 use poise::serenity_prelude as serenity;
-use regex::Regex;
-use serenity::all::{ChannelId, Message, Reaction, ReactionType, RoleId};
+use serenity::all::{ChannelId, Message, Reaction, ReactionType};
 
 use crate::utils::CommandResult;
 use crate::utils::config::GuildData;
 use crate::utils::debug::{IntoUnwrapResult, UnwrapResult};
-use crate::utils::config::AutoRole;
 
 pub async fn handler(ctx: &serenity::Context, add_reaction: &Reaction) -> CommandResult {
-    autorole(ctx, add_reaction).await?;
+    //autorole(ctx, add_reaction).await?;
     vote_react(ctx, add_reaction).await?;
     Ok(())
 }
 
+/*
+// TOOD: Función en StandBy por el momento
 pub async fn autorole(ctx: &serenity::Context, add_reaction: &Reaction) -> CommandResult {
     if add_reaction.user(&ctx.http).await?.bot { return Ok(()) }
     let guild_id = add_reaction.guild_id.ok_or("error")?;
@@ -44,6 +44,7 @@ pub async fn autorole(ctx: &serenity::Context, add_reaction: &Reaction) -> Comma
 
     Ok(())
 }
+*/
 
 /// # Esta función maneja las reacciones con un sistema de votación
 ///

@@ -5,16 +5,16 @@ use reqwest::get;
 use image::DynamicImage;
 use poise::serenity_prelude as serenity;
 use plantita_welcomes::create_welcome::combine_images;
-use serenity::all::{ChannelId, CreateAttachment, User};
-use crate::location;
-
+use serenity::all::{ChannelId, Context, CreateAttachment, GuildId, Member, RoleId, User};
+use crate::{location, DB};
+use crate::handlers::goodbye::SanctionedUsers;
 use crate::utils::CommandResult;
 use crate::utils::config::GuildData;
 use crate::utils::debug::{IntoUnwrapResult, UnwrapErrors, UnwrapLog};
 
 pub async fn handler(
-    ctx: &serenity::Context,
-    new_member: &serenity::Member,
+    ctx: &Context,
+    new_member: &Member,
 ) -> CommandResult {
     let guild_id = new_member.guild_id;
     let user = &new_member.user;
@@ -25,6 +25,32 @@ pub async fn handler(
         .into_result()?
         .parse::<ChannelId>()?;
 
+    welcome(ctx, user, channel_id, guild_id).await?;
+    has_sanction_roles(ctx, new_member, guild_id).await?;
+
+    Ok(())
+}
+
+async fn has_sanction_roles(ctx: &Context, new_member: &Member, guild_id: GuildId) -> CommandResult {
+    let user_id = new_member.user.id;
+
+    let existing_data: Option<SanctionedUsers> = DB
+        .select(("sanctioned_users", user_id.to_string()))
+        .await?;
+
+    if let Some(data) = existing_data {
+        let member = guild_id.member(ctx, user_id).await?;
+
+        for role_id_str in data.roles {
+            let role_id = role_id_str.parse::<RoleId>()?;
+            member.add_role(ctx, role_id).await?;
+        }
+    }
+
+    Ok(())
+}
+
+async fn welcome(ctx: &Context, user: &User, channel_id: ChannelId, guild_id: GuildId) -> CommandResult {
     let welcome_message = GuildData::verify_data(guild_id).await?
         .unwrap_log(location!())?
         .messages

@@ -1,7 +1,8 @@
 pub mod error;
 pub mod misc;
-pub mod welcome;
-pub mod messages;
 pub mod events;
-pub mod typing_start;
-pub mod interactions;
+mod welcome;
+mod messages;
+mod typing_start;
+mod interactions;
+mod goodbye;
