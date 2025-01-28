@@ -1,57 +1,91 @@
-use std::sync::{Arc, LazyLock};
-use std::time::Instant;
-use bon::Builder;
-use poise::serenity_prelude as serenity;
-use regex::Regex;
-use serenity::all::{ChannelId, CreateEmbedAuthor, CreateMessage, GetMessages, GuildId, Message, UserId};
-use serenity::builder::CreateEmbed;
-use tokio::sync::Mutex;
-use tokio::time::{Duration, sleep};
-
-use crate::utils::CommandResult;
-use crate::handlers::misc::everyone_case::handle_everyone;
 use crate::utils::config::GuildData;
 use crate::utils::debug::IntoUnwrapResult;
+use crate::utils::CommandResult;
+use crate::DB;
+use chrono::{DateTime, Utc};
+use poise::serenity_prelude as serenity;
+use regex::Regex;
+use serde::{Deserialize, Serialize};
+use serenity::all::{ChannelId, CreateEmbedAuthor, CreateMessage, GetMessages, GuildId, Message, UserId};
+use serenity::builder::CreateEmbed;
+use std::sync::Arc;
+use bon::Builder;
+use surrealdb::Result as SurrealResult;
+
+use crate::handlers::misc::everyone_case::handle_everyone;
 
 /// # Estructura de rastreador de mensajes
-/// 
-/// - Almacena el ID del autor del mensaje
-/// - Almacena el contenido del mensaje
-/// - Almacena los IDs de los canales
-/// - Almacena el tiempo del último mensaje
-#[derive(Debug, Builder)]
+/// Representa cada mensaje rastreado, con autor, contenido, canales y tiempo.
+#[derive(Debug, Serialize, Deserialize, Clone, Builder)]
 struct MessageTracker {
     author_id: UserId,
     message_content: Arc<String>,
     channel_ids: Vec<ChannelId>,
-    last_message_time: Instant,
+    last_message_time: DateTime<Utc>,
 }
 
-/// # Rastreador de mensajes
-/// 
-/// - Almacena un vector de rastreadores de mensajes
-/// - Se utiliza un `LazyLock` para evitar problemas de concurrencia
-/// - Se utiliza un Mutex para evitar problemas de concurrencia
-/// - Se utiliza un vector para almacenar los rastreadores de mensajes
-/// - Se utiliza static para almacenar el rastreador de 
-///     mensajes de forma global y evitar la pérdida de datos
-static MESSAGE_TRACKER: LazyLock<Mutex<Vec<MessageTracker>>> = LazyLock::new(|| {
-    Mutex::new(Vec::new())
-});
+impl MessageTracker {
+    /// Inserta un nuevo message tracker en la base de datos.
+    async fn insert(&self) -> SurrealResult<()> {
+        let _created: Option<Self> = DB
+            .create("message_tracker")
+            .content(self.clone())
+            .await?;
+
+        Ok(())
+    }
+
+    /// Recupera el tracker de mensajes de un autor por ID.
+    /// - Si el último mensaje en la Base de Datos es 5 segundos más antiguo que
+    ///   el mensaje recibido, se borra el tracker para limpiar 
+    /// - Se usa `.take(1)` para tomar el resultado de la query `SELECT`
+    async fn get_by_author(author_id: UserId) -> SurrealResult<Vec<Self>> {
+        let threshold = Utc::now() - chrono::Duration::seconds(5);
+
+        let sql_query = "
+            DELETE FROM message_tracker WHERE last_message_time < $threshold;
+            SELECT * FROM message_tracker WHERE author_id = $author_id;
+        ";
+
+        let trackers = DB.query(sql_query)
+            .bind(("threshold", threshold.to_rfc3339()))
+            .bind(("author_id", author_id.to_string()))
+            .await?
+            .take(1)?;
+
+        Ok(trackers)
+    }
+
+    /// Actualiza el message tracker en la base de datos.
+    async fn update(self) -> SurrealResult<()> {
+        let sql_query = "UPDATE message_tracker SET channel_ids = $channel_ids, last_message_time = $last_message_time WHERE author_id = $author_id AND message_content = $message_content";
+        DB.query(sql_query)
+            .bind(("channel_ids", self.channel_ids))
+            .bind(("last_message_time", self.last_message_time.to_rfc3339()))
+            .bind(("author_id", self.author_id.to_string()))
+            .bind(("message_content", self.message_content)).await?;
+
+        Ok(())
+    }
+
+    /// Elimina el message tracker de un autor por ID.
+    async fn delete_by_author(author_id: UserId) -> SurrealResult<()> {
+        let sql_query = "DELETE FROM message_tracker WHERE author_id = $author_id";
+        DB.query(sql_query)
+            .bind(("author_id", author_id.to_string()))
+            .await?;
+        Ok(())
+    }
+}
 
 /// # Esta función extrae un enlace de un mensaje
 ///
-/// - Si el mensaje contiene un enlace, devuelve el enlace
+/// - Si el mensaje contiene un enlace, devuelve el enlace.
 pub fn extract_link(text: &str) -> Option<String> {
-    Regex::new(r"(https?://\S+)").map_or(None, |url_re| url_re.find(text).map(|m| m.as_str().to_string()))
+    Regex::new(r"(https?://\S+)").ok()?.find(text).map(|m| m.as_str().to_string())
 }
 
-/// # Esta función comprueba si un mensaje es spam
-///
-/// - Si el mensaje se repite en el mismo canal, borra el vector
-/// - Si el mensaje no existe, crea un nuevo rastreador de mensajes y añádelo a la lista
-/// - Si el siguiente mensaje no coincide con el mensaje anterior, borra el vector
-/// - Si se detecta spam, se envía un mensaje al canal de registro, se borran los mensajes de spam y se limpia el vector
+/// # Verifica si un mensaje es spam.
 pub async fn spam_checker(
     message_content: &Arc<String>,
     channel_id: ChannelId,
@@ -59,82 +93,56 @@ pub async fn spam_checker(
     ctx: &serenity::Context,
     time: i64,
     new_message: &Message,
-    guild_id: GuildId
+    guild_id: GuildId,
 ) -> CommandResult {
     let author_id = new_message.author.id;
-    let mut member = guild_id.member(&ctx.http, new_message.author.id).await?;
-    let mut message_tracker = MESSAGE_TRACKER.lock().await;
-
-    if let Some(last_message) = message_tracker
-        .iter()
-        .last()
-    {
-        if last_message.author_id == author_id && last_message.message_content != *message_content {
-            message_tracker.clear();
-        }
-    }
-
-    let message = if let Some(message) = message_tracker
-        .iter_mut()
-        .find(|m| m.author_id == author_id && m.message_content == *message_content)
-    {
-        // Inicializa el tiempo del último mensaje
-        message.last_message_time = Instant::now();
-
-        // Si el mensaje existe y el canal no está en la lista de canales, añade el canal a la lista de canales
-        if message.channel_ids.contains(&channel_id) {
-            // Si el mensaje se repite en el mismo canal, borra el vector
-            // Debug: println!("Message repeated in the same channel, clearing the vector");
-            message_tracker.clear();
-
-            return Ok(());
-        }
-        message.channel_ids.push(channel_id);
-
-        message
-    } else {
-        // Si el mensaje no existe, crea un nuevo rastreador de mensajes y añádelo a la lista
-        let message = MessageTracker::builder()
+    let mut trackers = MessageTracker::get_by_author(author_id).await?;
+    let existing_tracker = trackers.iter_mut().find(|tracker| tracker.message_content == *message_content);
+    let Some(tracker) = existing_tracker else {
+        let new_tracker = MessageTracker::builder()
             .author_id(author_id)
             .message_content(message_content.clone())
             .channel_ids(vec![channel_id])
-            .last_message_time(Instant::now())
+            .last_message_time(Utc::now())
             .build();
 
-        message_tracker.push(message);
-        message_tracker.last_mut().into_result()?
+        new_tracker.insert().await?;
+        trackers.push(new_tracker);
+
+        return Ok(())
     };
 
-    if message.channel_ids.len() >= 3 {
-        handle_everyone(admin_role_id.to_owned(), &mut member, ctx, time, new_message).await?;
-        delete_spam_messages(message, ctx, author_id, message_content.clone(), guild_id).await?;
-
-        // Limpia completamente el rastreador de mensajes para reiniciar el rastreo de mensajes
-        message_tracker.retain(|m| m.author_id != author_id);
+    tracker.last_message_time = Utc::now();
+    if !tracker.channel_ids.contains(&channel_id) {
+        tracker.channel_ids.push(channel_id);
     }
-    // Debug: println!("Tracker: {message_tracker:#?}");
+    tracker.clone()
+        .update()
+        .await?;
 
-    drop(message_tracker);
+    if trackers.iter().any(|t| t.channel_ids.len() >= 3) {
+        let mut member = guild_id.member(&ctx.http, author_id).await?;
+        handle_everyone(admin_role_id, &mut member, ctx, time, new_message).await?;
+        delete_spam_messages(trackers.last().unwrap(), ctx, author_id, message_content.clone(), guild_id).await?;
+
+        MessageTracker::delete_by_author(author_id).await?;
+    }
 
     Ok(())
 }
 
-/// # Esta función borra los mensajes de spam
-/// 
-/// - Borra cada mensaje individualmente en donde 
-///     el autor del mensaje y el contenido del mensaje coinciden
+/// Borra los mensajes de spam.
 async fn delete_spam_messages(
     message: &MessageTracker,
     ctx: &serenity::Context,
     author_id: UserId,
     message_content: Arc<String>,
-    guild_id: GuildId
+    guild_id: GuildId,
 ) -> CommandResult {
-    // Borra cada mensaje individualmente
     for channel_id in &message.channel_ids {
         let channel = channel_id.to_channel(ctx).await?;
         let serenity::Channel::Guild(channel) = channel else {
-            return Ok(())
+            continue;
         };
 
         let messages = channel.messages(&ctx.http, GetMessages::new()).await?;
@@ -146,25 +154,16 @@ async fn delete_spam_messages(
     }
 
     create_embed(ctx, guild_id, author_id, &message_content).await?;
-
     Ok(())
 }
 
-/// # Esta función crea un `Embed` para enviar un mensaje al canal de Logs
-/// 
-/// El Log contiene
-/// - El nombre del autor del mensaje
-/// - La URL de la imagen del autor del mensaje
-/// - El contenido del mensaje
-/// - El color del mensaje
-/// - Los canales donde se enviaron los mensajes de spam
+/// Crea un `Embed` para registrar la detección de spam.
 async fn create_embed(
     ctx: &serenity::Context,
     guild_id: GuildId,
     author_id: UserId,
     message_content: &str,
 ) -> CommandResult {
-
     let log_channel = GuildData::verify_data(guild_id).await?
         .into_result()?
         .channels
@@ -173,34 +172,12 @@ async fn create_embed(
         .parse::<ChannelId>()?;
 
     let author_user = author_id.to_user(&ctx.http).await?;
-    let author_member = guild_id.member(&ctx.http, author_id).await?;
-    let username = author_member.distinct();
     let embed = CreateEmbed::default()
         .title("⚠️ Spam detectado")
-        .author(CreateEmbedAuthor::new(username)
-            .icon_url(author_user.face()))
-        .description(format!("El usuario <@{author_id}> Es sospechoso de enviar spam en el servidor.\nMensaje: {message_content}"))
-        .color(0x00ff_0000);
-    let builder = CreateMessage::default().embed(embed);
+        .author(CreateEmbedAuthor::new(&author_user.name).icon_url(author_user.face()))
+        .description(format!("El usuario <@{author_id}> fue detectado enviando spam.\nMensaje: {message_content}"))
+        .color(0x00FF_0000);
 
-    log_channel.send_message(&ctx.http, builder).await?;
-
+    log_channel.send_message(&ctx.http, CreateMessage::default().embed(embed)).await?;
     Ok(())
-}
-
-/// # Esta función limpia el rastreador de mensajes
-/// 
-/// - Limpia el rastreador de mensajes si el tiempo del último mensaje es mayor a 5 segundos
-/// - Se utiliza un bucle para limpiar el rastreador de mensajes cada segundo
-pub fn message_tracker_cleaner() {
-    tokio::spawn(async {
-        loop {
-            sleep(Duration::from_secs(1)).await;
-
-            let mut message_tracker = MESSAGE_TRACKER.lock().await;
-            if !message_tracker.is_empty() {
-                message_tracker.retain(|m| m.last_message_time.elapsed() < Duration::from_secs(5));
-            }
-        }
-    });
 }

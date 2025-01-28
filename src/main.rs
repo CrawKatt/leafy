@@ -14,7 +14,6 @@ use reqwest::Client as HttpClient;
 
 use handlers::error::handler;
 use handlers::events::event_handler;
-use handlers::misc::link_spam_handler::message_tracker_cleaner;
 use utils::Data;
 use utils::debug::UnwrapResult;
 use utils::load_commands;
@@ -52,9 +51,6 @@ async fn main() -> UnwrapResult<()> {
 
     // Borrar mensajes de la Base de Datos cada 24 horas
     clean_database_loop();
-
-    // Limpiar el Tracker de mensajes de spam cada 5 segundos
-    message_tracker_cleaner();
 
     let token = dotenvy::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN");
     let intents = serenity::GatewayIntents::all() | serenity::GatewayIntents::MESSAGE_CONTENT;
