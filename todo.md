@@ -9,6 +9,14 @@
   crearla con el valor establecido y el resto de los valores por defecto
 - [ ] Enviar un sticker de "que dijiste @muteado"
 - [x] Crear un sistema de reacciones para borrar un ooc si se reacciona con un emoji 10 veces
+- [ ] Crear un sistema de autoroles
+  - [ ] Crear la Dashboard Web para el sistema de autoroles
+  - [x] Reestructurar la Base de Datos para adaptarla a la Dashboard
+    - [x] Cambiar los `admin_roles` por un array
+- [ ] Actualizar el sistema de música del Bot para que funcione con la API de SoundCloud
+- [x] Crear una función que reaplique los roles de sanción si el usuario sale y vuelve a entrar al servidor
+  - [x] Actualizar el registro de SurrealDB en caso de que ya exista uno para dicho usuario
+- [x] Migrar el sistema anti-spam a la Base de Datos
 
 ---
 
