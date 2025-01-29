@@ -1,6 +1,6 @@
 use crate::utils::debug::IntoUnwrapResult;
 use crate::utils::CommandResult;
-use crate::DB;
+use crate::{debug, DB};
 use bon::Builder;
 use poise::serenity_prelude as serenity;
 use serde::{Deserialize, Serialize};
@@ -47,7 +47,7 @@ pub async fn handler(
 
     // Si el usuario no tiene roles de sanción, no almacenamos nada
     if user_sanction_roles.is_empty() {
-        println!("No tiene roles de sanción");
+        debug!("No tiene roles de sanción");
         return Ok(());
     }
 
