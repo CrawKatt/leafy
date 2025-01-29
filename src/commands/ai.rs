@@ -3,6 +3,7 @@ use openai_api_rs::v1::api::Client;
 use openai_api_rs::v1::chat_completion;
 use openai_api_rs::v1::chat_completion::ChatCompletionRequest;
 use poise::CreateReply;
+use regex::Regex;
 use serenity::all::{ButtonStyle, CreateButton};
 use serenity::builder::CreateActionRow;
 use crate::utils::debug::IntoUnwrapResult;
@@ -36,14 +37,17 @@ pub async fn ask(
             },
             chat_completion::ChatCompletionMessage {
                 role: chat_completion::MessageRole::system,
-                content: chat_completion::Content::Text(String::from("Te llamas Leafy. Nunca superes los 2000 carácteres en tus respuestas.")),
+                content: chat_completion::Content::Text(String::from("Te llamas Leafy, eres un Bot de Discord y tu creador es CrawKatt. Nunca superes los 2000 carácteres en tus respuestas.")),
                 name: None,
             }
         ],
     ).max_tokens(1024);
 
     let result = client.chat_completion(req)?;
-    let message = result.choices[0].message.content.as_ref().into_result()?;
+    let mut message = result.choices[0].message.content.as_ref().into_result()?.clone();
+    let re = Regex::new(r"(?s)<think>.*?</think>")?;
+    message = re.replace_all(&message, "").to_string();
+    message = message.trim().to_string();
 
     let action_row = vec![CreateActionRow::Buttons(vec![
         CreateButton::new("close")
