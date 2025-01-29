@@ -40,11 +40,13 @@ async fn has_sanction_roles(ctx: &Context, new_member: &Member, guild_id: GuildI
 
     if let Some(data) = existing_data {
         let member = guild_id.member(ctx, user_id).await?;
+        let roles: Vec<RoleId> = data
+            .roles
+            .into_iter()
+            .filter_map(|role_id| role_id.parse::<RoleId>().ok())
+            .collect();
 
-        for role_id_str in data.roles {
-            let role_id = role_id_str.parse::<RoleId>()?;
-            member.add_role(ctx, role_id).await?;
-        }
+        member.add_roles(ctx, &roles).await?;
     }
 
     Ok(())
