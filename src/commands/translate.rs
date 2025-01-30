@@ -6,7 +6,6 @@ use poise::CreateReply;
 use regex::Regex;
 use serenity::all::{ButtonStyle, CreateButton};
 use serenity::builder::CreateActionRow;
-use crate::utils::debug::IntoUnwrapResult;
 
 const SYSTEM_PROMPT: &str =
     "Eres un traductor multilingüe que convierte texto de un idioma a otro. Responde únicamente\
@@ -54,11 +53,21 @@ pub async fn translate(
         ],
     ).max_tokens(1024);
 
-    let result = client.chat_completion(req)?;
-    let mut message = result.choices[0].message.content.as_ref().into_result()?.clone();
+    let Ok(result) = client.chat_completion(req) else {
+        let reply = CreateReply::default().content("Ocurrió un error al obtener la traducción por IA");
+        loading.edit(ctx, reply).await?;
+        return Ok(())
+    };
+
+    let message = result.choices.first().and_then(|char| char.message.content.as_ref());
+    let Some(mut message) = message.map(std::string::ToString::to_string) else {
+        let reply = CreateReply::default().content("Ocurrió un error al obtener la traducción por IA");
+        loading.edit(ctx, reply).await?;
+        return Ok(())
+    };
+
     let re = Regex::new(r"(?s)<think>.*?</think>")?;
-    message = re.replace_all(&message, "").to_string();
-    message = message.trim().to_string();
+    message = re.replace_all(&message, "").trim().to_string();
 
     let action_row = vec![CreateActionRow::Buttons(vec![
         CreateButton::new("close")
