@@ -6,7 +6,6 @@ use poise::CreateReply;
 use regex::Regex;
 use serenity::all::{ButtonStyle, CreateButton};
 use serenity::builder::CreateActionRow;
-use crate::utils::debug::IntoUnwrapResult;
 
 #[poise::command(
     prefix_command,
