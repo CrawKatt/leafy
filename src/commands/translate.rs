@@ -59,8 +59,13 @@ pub async fn translate(
         return Ok(())
     };
 
-    let message = result.choices.first().and_then(|char| char.message.content.as_ref());
-    let Some(mut message) = message.map(std::string::ToString::to_string) else {
+    let message = result
+        .choices
+        .into_iter()
+        .next()
+        .and_then(|char| char.message.content);
+
+    let Some(mut message) = message else {
         let reply = CreateReply::default().content("Ocurrió un error al obtener la traducción por IA");
         loading.edit(ctx, reply).await?;
         return Ok(())
