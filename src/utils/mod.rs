@@ -52,7 +52,6 @@ pub mod autocomplete;
 pub mod config;
 pub mod debug;
 pub mod embeds;
-pub mod metadata;
 
 #[allow(dead_code)]
 pub struct Data {
