@@ -8,7 +8,7 @@ use crate::utils::config::GuildData;
 use crate::utils::debug::IntoUnwrapResult;
 use crate::utils::embeds::send_warn_embed;
 use crate::utils::{CommandResult, MessageData, Warns};
-use crate::{log_handle, DB};
+use crate::{debug, log_handle, DB};
 use poise::serenity_prelude as serenity;
 use serenity::all::{GuildId, Message, UserId};
 
@@ -27,13 +27,13 @@ pub async fn handle_forbidden_user(
     let forbidden_user_exception = ForbiddenException::have_exception(guild_id, forbidden_user_id).await?;
     if let Some(forbidden_user_exception) = forbidden_user_exception {
         if forbidden_user_exception {
-            println!("El usuario ha solicitado una excepción : {}", Location::caller());
+            debug!("El usuario ha solicitado una excepción : {}", Location::caller());
             return Ok(())
         }
     }
 
     if !new_message.mentions_user_id(forbidden_user_id) {
-        println!("No se ha mencionado al usuario prohibido : {}", Location::caller());
+        debug!("No se ha mencionado al usuario prohibido : {}", Location::caller());
         return Ok(())
     }
 
@@ -44,7 +44,7 @@ pub async fn handle_forbidden_user(
         .time
         .into_result()?
         .parse::<i64>()?;
-    
+
     let warn_message = GuildData::verify_data(guild_id).await?
         .into_result()?
         .messages
@@ -53,7 +53,7 @@ pub async fn handle_forbidden_user(
             log_handle!("No se ha establecido un mensaje de advertencia: `sent_message.rs` {}", Location::caller());
             "Por favor no hagas @ a este usuario. Si estás respondiendo un mensaje, considera responder al mensaje sin usar @".to_string()
         });
-    
+
     let warn_message = format!("{} {warn_message}", member.distinct());
     let time_out_message = GuildData::verify_data(guild_id).await?
         .into_result()?
@@ -63,7 +63,7 @@ pub async fn handle_forbidden_user(
             log_handle!("No se ha establecido un mensaje de silencio: {}", Location::caller());
             "Has sido silenciado por mencionar a un usuario cuyo rol está prohibido de mencionar".to_string()
         });
-    
+
     let admin_role_id = GuildData::verify_data(guild_id).await?
         .into_result()?
         .admins
@@ -78,7 +78,7 @@ pub async fn handle_forbidden_user(
     let admin_exception = check_admin_exception(admin_role_id.as_ref(), &member, ctx);
 
     if admin_exception {
-        println!("Admin exception : {}", Location::caller());
+        debug!("Admin exception : {}", Location::caller());
         return Ok(())
     }
 
@@ -125,7 +125,7 @@ pub async fn handle_forbidden_role(
         .into_result()?
         .admins
         .role;
-    
+
     let time_out_timer = GuildData::verify_data(guild_id).await?
         .into_result()?
         .time_out
@@ -154,7 +154,7 @@ pub async fn handle_forbidden_role(
 
     let admin_exception = check_admin_exception(admin_role_id.as_ref(), &member, ctx);
     if admin_exception {
-        println!("Admin exception : {}", Location::caller());
+        debug!("Admin exception : {}", Location::caller());
         return Ok(())
     }
 
@@ -164,13 +164,13 @@ pub async fn handle_forbidden_role(
     let channel_id = new_message.channel_id;
     send_warn_embed(ctx, warns.warns, "./assets/sugerencia.png", channel_id, &warn_message).await?;
     let message_map = HashMap::new();
-    let http = ctx.http.clone();
+    let http = &ctx.http;
     let mut member = guild_id.member(&ctx.http, author_user_id).await?;
 
     if warns.warns >= 3 {
-        handle_warn_system(&mut member, new_message, message_map, &http, warns, time_out_timer, time_out_message).await?;
+        handle_warn_system(&mut member, new_message, message_map, http, warns, time_out_timer, time_out_message).await?;
     }
-    
+
     http.delete_message(new_message.channel_id, new_message.id, None).await?;
 
     Ok(())
