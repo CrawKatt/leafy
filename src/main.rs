@@ -11,13 +11,14 @@ use surrealdb::Surreal;
 use tokio::time::Instant;
 use tokio::time::sleep_until;
 use reqwest::Client as HttpClient;
-
+use tokio::sync::Mutex;
 use handlers::error::handler;
 use handlers::events::event_handler;
 use utils::Data;
 use utils::debug::UnwrapResult;
 use utils::load_commands;
 use utils::MessageData;
+use crate::commands::audio::AudioState;
 
 pub static DB: LazyLock<Surreal<SurrealClient>> = LazyLock::new(Surreal::init);
 
@@ -45,7 +46,7 @@ async fn main() -> UnwrapResult<()> {
         username: "root",
         password: &database_password,
     }).await.expect("Could not sign in");
-    
+
     // Crear la Base de Datos si no existe
     create_database().await?;
 
@@ -78,11 +79,13 @@ async fn main() -> UnwrapResult<()> {
                     ctx,
                     &framework.options().commands
                 ).await?;
-                
+
                 let command_descriptions = commands::info::help::get_command_categories(&framework.options().commands);
-                
+                let voice_chat_state = Arc::new(Mutex::new(AudioState::Idle));
+
                 Ok(Data {
-                    command_descriptions
+                    command_descriptions,
+                    voice_chat_state
                 })
             })
         })

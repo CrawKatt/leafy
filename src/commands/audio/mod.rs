@@ -1,4 +1,6 @@
+use std::sync::Arc;
 use serenity::all::{ChannelId, GetMessages, Guild, GuildId};
+use tokio::sync::Mutex;
 use crate::location;
 use crate::utils::{CommandResult, Context};
 use crate::utils::debug::{IntoUnwrapResult, UnwrapLog, UnwrapResult};
@@ -11,6 +13,25 @@ pub mod resume;
 pub mod queue;
 pub mod skip;
 pub mod stop;
+pub mod tts;
+
+#[derive(PartialEq, Eq, Debug)]
+pub enum AudioState {
+    Music,
+    Tts,
+    Idle
+}
+
+impl AudioState {
+    pub const fn update_state(&mut self, new_state: Self) {
+        *self = new_state;
+    }
+}
+
+pub async fn set_audio_state(state: Arc<Mutex<AudioState>>, new_state: AudioState) {
+    let mut current_state = state.lock().await;
+    *current_state = new_state;
+}
 
 pub async fn try_join(ctx: Context<'_>, guild: Guild) -> CommandResult {
     let channel_id = guild
