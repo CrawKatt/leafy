@@ -3,9 +3,11 @@ use poise::Command;
 use serde::{Deserialize, Serialize};
 use serenity::all::{ChannelId, GuildId, MessageId, UserId};
 use std::collections::HashMap;
+use std::sync::Arc;
 use surrealdb::{RecordId, Result as SurrealResult};
-
+use tokio::sync::Mutex;
 use crate::commands::ai::ask;
+use crate::commands::audio::AudioState;
 use crate::commands::audio::join::join;
 use crate::commands::audio::leave::leave;
 use crate::commands::audio::pause::pause;
@@ -14,6 +16,7 @@ use crate::commands::audio::queue::queue;
 use crate::commands::audio::resume::resume;
 use crate::commands::audio::skip::skip;
 use crate::commands::audio::stop::stop;
+use crate::commands::audio::tts::tts;
 use crate::commands::fun::cat::cat_shh;
 use crate::commands::fun::generate_dumb::dumb;
 use crate::commands::fun::generate_furry::furry;
@@ -54,8 +57,10 @@ pub mod debug;
 pub mod embeds;
 
 #[allow(dead_code)]
+#[derive(Debug)]
 pub struct Data {
-    pub command_descriptions: HashMap<&'static str, String>
+    pub command_descriptions: HashMap<&'static str, String>,
+    pub voice_chat_state: Arc<Mutex<AudioState>>,
 }
 
 pub type CommandResult = Result<(), Error>;
@@ -211,5 +216,6 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         dumb(),
         cat_shh(),
         translate(),
+        tts(),
     ]
 }

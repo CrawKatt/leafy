@@ -1,11 +1,32 @@
+use std::sync::Arc;
+use poise::async_trait;
 use crate::handlers::error::handler;
 use crate::utils::debug::{IntoUnwrapResult, UnwrapLog};
 use crate::utils::{CommandResult, Context};
-use songbird::input;
+use songbird::{input, Event, EventContext, EventHandler, TrackEvent};
 use serenity::all::{CreateEmbed, CreateEmbedAuthor, CreateMessage};
 use songbird::input::YoutubeDl;
+use tokio::sync::Mutex;
 use crate::{location, HttpKey};
+use crate::commands::audio::{set_audio_state, AudioState};
 use crate::commands::audio::queue::AuxMetadataKey;
+
+struct MusicStateUpdater {
+    audio_state: Arc<Mutex<AudioState>>,
+    handler: Arc<Mutex<songbird::Call>>,
+}
+
+#[async_trait]
+impl EventHandler for MusicStateUpdater {
+    async fn act(&self, _: &EventContext<'_>) -> Option<Event> {
+        let handler = self.handler.lock().await;
+        if handler.queue().is_empty() {
+            set_audio_state(self.audio_state.clone(), AudioState::Idle).await;
+        }
+        drop(handler);
+        None
+    }
+}
 
 #[poise::command(
     prefix_command,
@@ -21,6 +42,14 @@ pub async fn play(
     #[rest]
     query: String
 ) -> CommandResult {
+    {
+        let audio_state = ctx.data().voice_chat_state.lock().await;
+        if *audio_state == AudioState::Tts {
+            ctx.say("❌ No puedes reproducir música mientras el modo TTS está activo").await?;
+            return Ok(())
+        }
+    }
+
     let do_search = !query.starts_with("http");
 
     let guild = ctx.guild().into_result()?.clone();
@@ -45,6 +74,11 @@ pub async fn play(
         ctx.say("No estás en un canal de voz").await?;
         return Ok(())
     };
+
+    {
+        let mut audio_state = ctx.data().voice_chat_state.lock().await;
+        audio_state.update_state(AudioState::Music);
+    }
 
     let message = ctx.say("Buscando...").await?;
 
@@ -83,6 +117,14 @@ pub async fn play(
 
     let builder = CreateMessage::new().embed(embed);
     ctx.channel_id().send_message(ctx.http(), builder).await?;
+    
+    track.add_event(
+        Event::Track(TrackEvent::End),
+        MusicStateUpdater {
+            audio_state: ctx.data().voice_chat_state.clone(),
+            handler: handler_lock.clone(),
+        }
+    )?;
 
     drop(handler);
     drop(map);
