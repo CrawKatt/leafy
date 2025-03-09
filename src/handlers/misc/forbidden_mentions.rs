@@ -7,8 +7,8 @@ use crate::handlers::misc::warns::handle_warn_system;
 use crate::utils::config::GuildData;
 use crate::utils::debug::IntoUnwrapResult;
 use crate::utils::embeds::send_warn_embed;
-use crate::utils::{CommandResult, MessageData, Warns};
-use crate::{debug, log_handle, DB};
+use crate::utils::{CommandResult, Warns};
+use crate::{debug, log_handle};
 use poise::serenity_prelude as serenity;
 use serenity::all::{GuildId, Message, UserId};
 
@@ -16,7 +16,6 @@ pub async fn handle_forbidden_user(
     ctx: &serenity::Context,
     new_message: &Message,
     guild_id: GuildId,
-    data: &MessageData,
     forbidden_user_id: UserId
 ) -> CommandResult {
     let author_user_id = new_message.author.id;
@@ -103,11 +102,6 @@ pub async fn handle_forbidden_user(
             time_out_message
         ).await?;
     }
-
-    let _created: Option<MessageData> = DB
-        .create(("messages", new_message.id.to_string()))
-        .content(data.clone())
-        .await?;
 
     http.delete_message(new_message.channel_id, new_message.id, Some("Mensaje eliminado por mencionar a Meica o a un usuario de Rol Chikistrikis")).await?;
 

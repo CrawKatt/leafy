@@ -66,7 +66,7 @@ pub async fn handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> Com
         contains_forbidden_user, {
             let database_message_id = database_message.clone().id.into_result()?.to_id().parse::<MessageId>()?;
             let message = ctx.http.get_message(database_message.channel_id, database_message_id).await?;
-            handle_forbidden_user(ctx, &message, guild_id, &database_message, forbidden_user_id).await?;
+            handle_forbidden_user(ctx, &message, guild_id, forbidden_user_id).await?;
         },
         contains_forbidden_role, {
             let database_message_id = database_message.clone().id.into_result()?.to_id().parse::<MessageId>()?;
