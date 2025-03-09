@@ -1,7 +1,8 @@
+use crate::utils::debug::{UnwrapErrors, UnwrapResult};
 use crate::utils::{CommandResult, Context};
 use openai_api_rs::v1::api::Client;
 use openai_api_rs::v1::chat_completion;
-use openai_api_rs::v1::chat_completion::ChatCompletionRequest;
+use openai_api_rs::v1::chat_completion::{ChatCompletionRequest, ChatCompletionResponse};
 use poise::CreateReply;
 use regex::Regex;
 use serenity::all::{ButtonStyle, CreateButton};
@@ -32,9 +33,33 @@ pub async fn translate(
     prompt: String
 ) -> CommandResult {
     let loading = ctx.say("Cargando...").await?;
-    let url = dotenvy::var("OPENAI_API_BASE")?;
-    let api_key = dotenvy::var("OPENAI_API_KEY")?;
-    let model = dotenvy::var("AI_MODEL")?;
+    let message = create_ai_message(prompt, lang).await;
+    let Ok(msg) = message else {
+        let reply = CreateReply::default().content("Ocurrió un error al obtener la traducción por IA");
+        loading.edit(ctx, reply).await?;
+        return Ok(())
+    };
+
+    let action_row = vec![CreateActionRow::Buttons(vec![
+        CreateButton::new("close")
+            .style(ButtonStyle::Danger)
+            .label("Cerrar")
+        ])
+    ];
+
+    let reply = CreateReply::default()
+        .content(msg)
+        .components(action_row);
+
+    loading.edit(ctx, reply).await?;
+
+    Ok(())
+}
+
+fn create_request(prompt: String, lang: &str) -> UnwrapResult<ChatCompletionResponse> {
+    let url = dotenvy::var("OPENAI_API_BASE").expect("OPENAI_API_BASE not found");
+    let api_key = dotenvy::var("OPENAI_API_KEY").expect("OPENAI_API_KEY not found");
+    let model = dotenvy::var("AI_MODEL").expect("AI_MODEL not found");
     let client = Client::new_with_endpoint(url, api_key);
 
     let req = ChatCompletionRequest::new(
@@ -53,39 +78,23 @@ pub async fn translate(
         ],
     ).max_tokens(1024);
 
-    let Ok(result) = client.chat_completion(req) else {
-        let reply = CreateReply::default().content("Ocurrió un error al obtener la traducción por IA");
-        loading.edit(ctx, reply).await?;
-        return Ok(())
-    };
+    client.chat_completion(req).map_err(|_| UnwrapErrors::NoneError)
+}
 
-    let message = result
+pub async fn create_ai_message(prompt: String, lang: String) -> UnwrapResult<String> {
+    let response = create_request(prompt, &lang)?;
+    let message = response
         .choices
         .into_iter()
         .next()
         .and_then(|char| char.message.content);
 
     let Some(mut message) = message else {
-        let reply = CreateReply::default().content("Ocurrió un error al obtener la traducción por IA");
-        loading.edit(ctx, reply).await?;
-        return Ok(())
+        return Err(UnwrapErrors::NoneError)
     };
 
     let re = Regex::new(r"(?s)<think>.*?</think>")?;
     message = re.replace_all(&message, "").trim().to_string();
 
-    let action_row = vec![CreateActionRow::Buttons(vec![
-        CreateButton::new("close")
-            .style(ButtonStyle::Danger)
-            .label("Cerrar")
-        ])
-    ];
-
-    let reply = CreateReply::default()
-        .content(message)
-        .components(action_row);
-
-    loading.edit(ctx, reply).await?;
-
-    Ok(())
+    Ok(message)
 }
