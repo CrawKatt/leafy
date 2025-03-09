@@ -16,6 +16,7 @@ use crate::commands::audio::queue::queue;
 use crate::commands::audio::resume::resume;
 use crate::commands::audio::skip::skip;
 use crate::commands::audio::stop::stop;
+use crate::commands::audio::translate_tts::translate_tts;
 use crate::commands::audio::tts::tts;
 use crate::commands::fun::cat::cat_shh;
 use crate::commands::fun::generate_dumb::dumb;
@@ -217,5 +218,6 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         cat_shh(),
         translate(),
         tts(),
+        translate_tts(),
     ]
 }

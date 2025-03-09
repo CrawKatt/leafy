@@ -14,6 +14,7 @@ pub mod queue;
 pub mod skip;
 pub mod stop;
 pub mod tts;
+pub mod translate_tts;
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum AudioState {
@@ -27,6 +28,11 @@ impl AudioState {
         *self = new_state;
     }
 }
+
+pub async fn is_music_state(ctx: Context<'_>) -> bool {
+    let audio_state = ctx.data().voice_chat_state.lock().await;
+    *audio_state == AudioState::Music
+} 
 
 pub async fn set_audio_state(state: Arc<Mutex<AudioState>>, new_state: AudioState) {
     let mut current_state = state.lock().await;
