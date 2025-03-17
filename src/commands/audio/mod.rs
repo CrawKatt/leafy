@@ -7,14 +7,8 @@ use crate::utils::debug::{IntoUnwrapResult, UnwrapLog, UnwrapResult};
 
 pub mod join;
 pub mod leave;
-pub mod play;
-pub mod pause;
-pub mod resume;
-pub mod queue;
-pub mod skip;
-pub mod stop;
+pub mod music;
 pub mod tts;
-pub mod translate_tts;
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum AudioState {

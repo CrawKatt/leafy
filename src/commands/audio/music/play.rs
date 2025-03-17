@@ -8,8 +8,9 @@ use serenity::all::{CreateEmbed, CreateEmbedAuthor, CreateMessage};
 use songbird::input::YoutubeDl;
 use tokio::sync::Mutex;
 use crate::{location, HttpKey};
+use crate::commands::audio;
 use crate::commands::audio::{set_audio_state, AudioState};
-use crate::commands::audio::queue::AuxMetadataKey;
+use crate::commands::audio::music::queue::AuxMetadataKey;
 
 struct MusicStateUpdater {
     audio_state: Arc<Mutex<AudioState>>,
@@ -54,7 +55,7 @@ pub async fn play(
 
     let guild = ctx.guild().into_result()?.clone();
     let guild_id = guild.id;
-    super::try_join(ctx, guild).await?;
+    audio::try_join(ctx, guild).await?;
 
     let http_client = {
         let data = ctx.serenity_context().data.read().await;

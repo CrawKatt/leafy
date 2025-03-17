@@ -1,30 +1,15 @@
-use crate::commands::audio::{is_music_state, set_audio_state, AudioState};
+use crate::commands::audio::{is_music_state, AudioState};
 use crate::handlers::error::handler;
 use crate::utils::debug::IntoUnwrapResult;
 use crate::utils::{CommandResult, Context};
 use elevenlabs_rs::utils::save;
 use elevenlabs_rs::{ElevenLabsClient, Model, TextToSpeech, TextToSpeechBody};
-use poise::async_trait;
-use songbird::{input, Event, EventContext, EventHandler, TrackEvent};
-use std::sync::Arc;
-use tokio::sync::Mutex;
+use songbird::{input, Event, TrackEvent};
+use crate::commands::audio;
+use crate::commands::audio::tts::tts_command::TtsStateUpdater;
+use crate::commands::translate::create_ai_message;
 
-pub struct TtsStateUpdater {
-    pub audio_state: Arc<Mutex<AudioState>>,
-}
-
-#[async_trait]
-impl EventHandler for TtsStateUpdater {
-    async fn act(&self, ctx: &EventContext<'_>) -> Option<Event> {
-        if let EventContext::Track(track_list) = ctx {
-            if track_list.len() == 1 {
-                set_audio_state(self.audio_state.clone(), AudioState::Idle).await;
-            }
-        }
-        None
-    }
-}
-
+/// Traduce el texto de entrada al idioma deseado en el Voice Chat mediante TTS
 #[poise::command(
     prefix_command,
     slash_command,
@@ -33,8 +18,9 @@ impl EventHandler for TtsStateUpdater {
     user_cooldown = 10,
     category = "Audio",
 )]
-pub async fn tts(
+pub async fn translate_tts(
     ctx: Context<'_>,
+    lang: String,
     #[rest]
     text: String,
 ) -> CommandResult {
@@ -45,11 +31,12 @@ pub async fn tts(
         }
     }
 
+    let message = create_ai_message(text, lang).await?;
     let guild = ctx.guild().into_result()?.clone();
     let guild_id = guild.id;
     let author = ctx.author_member().await.into_result()?;
     let author_name = author.distinct();
-    super::try_join(ctx, guild).await?;
+    audio::try_join(ctx, guild).await?;
 
     let manager = songbird::get(ctx.serenity_context())
         .await
@@ -63,12 +50,12 @@ pub async fn tts(
     let mut handler = handler_lock.lock().await;
 
     let client = ElevenLabsClient::default()?;
-    let body = TextToSpeechBody::new(&format!("Usuario {author_name}: {text}"), Model::ElevenMultilingualV2);
+    let body = TextToSpeechBody::new(&format!("Usuario {author_name}: {message}"), Model::ElevenMultilingualV2);
     let endpoint = TextToSpeech::new("bIQlQ61Q7WgbyZAL7IWj", body);
     let speech = client.hit(endpoint).await?;
     save("result.mp3", speech)?;
 
-    let source = input::File::new("result.mp3");
+    let source = input::File::new("../../../../result.mp3");
     let track = handler.play_input(source.into());
 
     {
