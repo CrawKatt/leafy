@@ -46,6 +46,8 @@ use crate::commands::moderation::setters::set_log_channel::set_log_channel;
 use crate::commands::moderation::setters::set_ooc_channel::set_ooc_channel;
 use crate::commands::moderation::setters::set_timeout_message::set_time_out_message;
 use crate::commands::moderation::setters::set_timeout_timer::set_timeout_timer;
+use crate::commands::moderation::setters::set_twitter_channel::set_twitter_channel;
+use crate::commands::moderation::setters::set_twitter_user::set_twitter_user;
 use crate::commands::moderation::setters::set_warn_message::set_warn_message;
 use crate::commands::moderation::setters::set_welcome_channel::set_welcome_channel;
 use crate::commands::moderation::setters::set_welcome_message::set_welcome_message;
@@ -191,6 +193,8 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         set_exception_channel(),
         set_autorole(),
         set_autorole_message(),
+        set_twitter_user(),
+        set_twitter_channel(),
         get_admins(),
         get_log_channel(),
         get_ooc_channel(),

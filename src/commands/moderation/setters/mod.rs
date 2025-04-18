@@ -12,3 +12,5 @@ pub mod set_ooc_channel;
 pub mod set_exception_channel;
 pub mod set_autorole_id;
 pub mod set_autorole_message;
+pub mod set_twitter_user;
+pub mod set_twitter_channel;
