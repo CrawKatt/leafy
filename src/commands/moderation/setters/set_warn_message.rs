@@ -1,6 +1,7 @@
-use crate::DB;
+use crate::utils::config::{GuildData, Messages};
 use crate::utils::{CommandResult, Context};
-use crate::utils::config::{GuildData, Messages, DatabaseOperations};
+use crate::DB;
+use surrealdb::opt::PatchOp;
 
 #[poise::command(
     prefix_command,
@@ -32,11 +33,11 @@ pub async fn set_warn_message(
         return Ok(())
     }
 
-    let data = Messages::builder()
-        .warn(&warn_message)
-        .build();
+    let _update: Option<GuildData> = DB
+        .update(("guild_config", &guild_id.to_string()))
+        .patch(PatchOp::replace("messages/warn", &warn_message))
+        .await?;
 
-    data.update_field_in_db("messages/warn", &warn_message, &guild_id.to_string()).await?;
     ctx.say(format!("El mensaje de advertencia ha sido establecido a: {warn_message}")).await?;
 
     Ok(())

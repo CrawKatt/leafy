@@ -1,5 +1,7 @@
+use crate::utils::config::{GuildData, Messages};
 use crate::utils::{CommandResult, Context};
-use crate::utils::config::{GuildData, Messages, DatabaseOperations};
+use crate::DB;
+use surrealdb::opt::PatchOp;
 
 #[poise::command(
     prefix_command,
@@ -30,11 +32,11 @@ pub async fn set_time_out_message(
         return Ok(())
     }
 
-    let data = Messages::builder()
-        .time_out(&time_out_message)
-        .build();
+    let _update: Option<GuildData> = DB
+        .update(("guild_config", &guild_id.to_string()))
+        .patch(PatchOp::replace("messages/time_out", &time_out_message))
+        .await?;
 
-    data.update_field_in_db("messages/time_out", &time_out_message, &guild_id.to_string()).await?;
     ctx.say(format!("Time out message actualizado: {time_out_message}")).await?;
 
     Ok(())
