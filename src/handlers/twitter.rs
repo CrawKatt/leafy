@@ -55,9 +55,11 @@ pub async fn twitter_monitor(http: &Http) -> CommandResult {
                     .map_or_else(|| {
                         format!("https://vxtwitter.com/{}/status/{}", twitter_user.trim_start_matches('@'), current_tweet_id)
                     }, |url| url.replace("twitter.com", "vxtwitter.com"));
+                
+                let twitter_message = config.messages.twitter.clone().unwrap_or_else(|| format!("Nuevo Tweet de {}: {tweet_url}", twitter_user.trim_matches('@')));
 
                 let channel: ChannelId = channel_id.parse()?;
-                channel.say(http, format!("Nuevo Tweet de {}: {tweet_url}", twitter_user.trim_matches('@'))).await?;
+                channel.say(http, twitter_message).await?;
             }
         }
     }

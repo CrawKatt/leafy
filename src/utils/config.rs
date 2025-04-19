@@ -207,7 +207,8 @@ pub struct Channels {
 pub struct Messages {
     pub welcome: Option<String>,
     pub time_out: Option<String>,
-    pub warn: Option<String>
+    pub warn: Option<String>,
+    pub twitter: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, Builder)]
