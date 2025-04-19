@@ -1,10 +1,10 @@
 use crate::utils::debug::IntoUnwrapResult;
 use crate::utils::CommandResult;
-use crate::{debug, DB};
+use crate::{debug, location, DB};
 use bon::Builder;
 use poise::serenity_prelude as serenity;
 use serde::{Deserialize, Serialize};
-use serenity::all::Member;
+use serenity::all::{GuildId, Member, User};
 use surrealdb::opt::PatchOp;
 
 #[derive(Serialize, Deserialize, Debug, Builder)]
@@ -20,19 +20,29 @@ pub struct SanctionedUsers {
 }
 
 pub async fn handler(
-    user: &serenity::User,
-    guild_id: &serenity::GuildId,
+    user: &User,
+    guild_id: &GuildId,
     member_data_old: Option<&Member>,
 ) -> CommandResult {
+    command_result(user, guild_id, member_data_old).await?;
+
+    Ok(())
+}
+
+async fn command_result(user: &User, guild_id: &GuildId, member_data_old: Option<&Member>) -> CommandResult {
     // Recuperar los roles de sanción configurados para el servidor
     let config: Option<SanctionRoles> = DB
         .select(("sanction_roles", guild_id.to_string()))
         .await?;
 
     // Si no hay roles de sanción configurados, no hacemos nada
-    let sanction_roles = config
-        .into_result()?
-        .roles;
+    let Some(data) = config else {
+        debug!("No se han encontrado los roles de sanción o no están configurados {}", location!());
+        return Ok(())
+    };
+
+    // Obtener los roles de sanción
+    let sanction_roles = data.roles;
 
     // Obtener la data en caché del miembro que salió del servidor
     let member = member_data_old.into_result()?;

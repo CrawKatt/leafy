@@ -1,7 +1,7 @@
 use poise::serenity_prelude as serenity;
 use serenity::all::{ChannelId, MessageId, MessageUpdateEvent, RoleId, UserId};
 
-use crate::{debug, location, match_handle};
+use crate::{debug, location};
 use crate::utils::CommandResult;
 use crate::handlers::misc::forbidden_mentions::{handle_forbidden_role, handle_forbidden_user};
 use crate::utils::MessageData;
@@ -32,11 +32,9 @@ pub async fn handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> Com
         .parse::<ChannelId>()?;
 
     let message_content = format!("\n**Antes:** \n> {old_content}\n**Después:** \n> {new_content}");
-
     let mention = event.mentions.as_ref().into_result()?;
-    let first = mention.first();
 
-    let Some(user) = first else {
+    let Some(user) = mention.first() else {
         edit_message_embed(ctx, guild_id, log_channel, &database_message.channel_id, database_message.author_id, &message_content).await?;
         return Ok(())
     };
@@ -61,32 +59,22 @@ pub async fn handler(ctx: &serenity::Context, event: &MessageUpdateEvent) -> Com
 
     let contains_forbidden_user = new_content.contains(&format!("<@{forbidden_user_id}>"));
     let contains_forbidden_role = mentioned_user_roles.iter().any(|role| role.id == forbidden_role_id);
+    
+    if contains_forbidden_user {
+        let database_message_id = database_message.clone().id.into_result()?.to_id().parse::<MessageId>()?;
+        let message = ctx.http.get_message(database_message.channel_id, database_message_id).await?;
+        handle_forbidden_user(ctx, &message, guild_id, forbidden_user_id).await?;
 
-    match_handle!(
-        contains_forbidden_user, {
-            let database_message_id = database_message.clone().id.into_result()?.to_id().parse::<MessageId>()?;
-            let message = ctx.http.get_message(database_message.channel_id, database_message_id).await?;
-            handle_forbidden_user(ctx, &message, guild_id, forbidden_user_id).await?;
-        },
-        contains_forbidden_role, {
-            let database_message_id = database_message.clone().id.into_result()?.to_id().parse::<MessageId>()?;
-            let message = ctx.http.get_message(database_message.channel_id, database_message_id).await?;
-            handle_forbidden_role(ctx, &message, guild_id).await?;
-        }
-    );
+        return Ok(())
+    } else if contains_forbidden_role {
+        let database_message_id = database_message.clone().id.into_result()?.to_id().parse::<MessageId>()?;
+        let message = ctx.http.get_message(database_message.channel_id, database_message_id).await?;
+        handle_forbidden_role(ctx, &message, guild_id).await?;
+
+        return Ok(())
+    }
 
     edit_message_embed(ctx, guild_id,log_channel, &database_message.channel_id, database_message.author_id, &message_content).await?;
 
     Ok(())
-}
-
-#[macro_export]
-macro_rules! match_handle {
-    ($cond1:expr, $block1:block, $cond2:expr, $block2:block) => {
-        if $cond1 {
-            $block1
-        } else if $cond2 {
-            $block2
-        }
-    };
 }

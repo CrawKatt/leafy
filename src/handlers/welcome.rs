@@ -5,7 +5,7 @@ use image::DynamicImage;
 use poise::serenity_prelude as serenity;
 use plantita_welcomes::create_welcome::combine_images;
 use serenity::all::{ChannelId, Context, CreateAttachment, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateMessage, GuildId, Member, Mentionable, RoleId, User};
-use crate::{location, DB};
+use crate::{debug, location, DB};
 use crate::handlers::goodbye::SanctionedUsers;
 use crate::utils::CommandResult;
 use crate::utils::config::GuildData;
@@ -37,44 +37,48 @@ async fn has_sanction_roles(ctx: &Context, new_member: &Member, guild_id: GuildI
         .select(("sanctioned_users", user_id.to_string()))
         .await?;
 
-    if let Some(data) = existing_data {
-        let member = guild_id.member(ctx, user_id).await?;
-        let roles: Vec<RoleId> = data
-            .roles
-            .into_iter()
-            .filter_map(|role_id| role_id.parse::<RoleId>().ok())
-            .collect();
-        let roles_mentions = roles
-            .iter()
-            .map(|role| role.mention().to_string())
-            .collect::<Vec<String>>()
-            .join(", ");
+    let Some(data) = existing_data else {
+        debug!("No se ha configurado el sistema de usuarios sancionados {}", location!());
+        return Ok(())
+    };
 
-        member.add_roles(ctx, &roles).await?;
+    let member = guild_id.member(ctx, user_id).await?;
+    let roles: Vec<RoleId> = data
+        .roles
+        .into_iter()
+        .filter_map(|role_id| role_id.parse::<RoleId>().ok())
+        .collect();
 
-        let log_channel = GuildData::verify_data(guild_id).await?
-            .into_result()?
-            .channels
-            .logs
-            .into_result()?
-            .parse::<ChannelId>()?;
+    let roles_mentions = roles
+        .iter()
+        .map(|role| role.mention().to_string())
+        .collect::<Vec<String>>()
+        .join(", ");
 
-        let member_mention = member.mention();
-        let member_joined_at = member.joined_at.into_result()?;
+    member.add_roles(ctx, &roles).await?;
 
-        let description = format!("Usuario detectado: {member_mention} \nRoles asignados previamente {roles_mentions}");
-        let footer = CreateEmbedFooter::new("Fecha de reingreso:");
-        let embed = CreateEmbed::default()
-            .title("⚠️ Un usuario sancionado ha salido y regresado al servidor")
-            .author(CreateEmbedAuthor::new(member.display_name())
-                .icon_url(member.face()))
-            .description(description)
-            .color(0x00FF_0000)
-            .footer(footer)
-            .timestamp(member_joined_at);
+    let log_channel = GuildData::verify_data(guild_id).await?
+        .into_result()?
+        .channels
+        .logs
+        .into_result()?
+        .parse::<ChannelId>()?;
 
-        log_channel.send_message(&ctx.http, CreateMessage::default().embed(embed)).await?;
-    }
+    let member_mention = member.mention();
+    let member_joined_at = member.joined_at.into_result()?;
+
+    let description = format!("Usuario detectado: {member_mention} \nRoles asignados previamente {roles_mentions}");
+    let footer = CreateEmbedFooter::new("Fecha de reingreso:");
+    let embed = CreateEmbed::default()
+        .title("⚠️ Un usuario sancionado ha salido y regresado al servidor")
+        .author(CreateEmbedAuthor::new(member.display_name())
+            .icon_url(member.face()))
+        .description(description)
+        .color(0x00FF_0000)
+        .footer(footer)
+        .timestamp(member_joined_at);
+
+    log_channel.send_message(&ctx.http, CreateMessage::default().embed(embed)).await?;
 
     Ok(())
 }
@@ -94,10 +98,8 @@ async fn welcome(ctx: &Context, user: &User, channel_id: ChannelId, guild_id: Gu
     let http = &ctx.http;
     let attachment = CreateAttachment::path(&file).await?;
 
-    // En el attachment se puede pasar un archivo de imagen para la bienvenida
     http.send_message(channel_id, vec![attachment], &message_map).await?;
 
-    // Borrar la imágen generada después de usarla
     remove_file(file)?;
 
     Ok(())

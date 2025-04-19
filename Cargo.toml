@@ -27,6 +27,8 @@ regex = "1.10.2"
 openai-api-rs = "4.1.0"
 uuid = { version = "1.10.0", features = ["v4"] }
 elevenlabs_rs = "0.3.2"
+anyhow = "1.0.95"
+agent-twitter-client = "0.1.2"
 plantita_welcomes = { git = "https://github.com/CrawKatt/plantita_welcomes.git", features = ["create_phrases", "create_welcome"] }
 plantita_audio = { git = "https://github.com/CrawKatt/plantita_audio.git" }
 plantita_macros = { git = "https://github.com/CrawKatt/plantita_macros.git" }

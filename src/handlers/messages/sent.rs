@@ -11,7 +11,7 @@ use crate::utils::config::GuildData;
 use crate::utils::debug::IntoUnwrapResult;
 use crate::utils::CommandResult;
 use crate::utils::MessageData;
-use crate::DB;
+use crate::{debug, location, DB};
 
 pub async fn handler(ctx: &Context, new_message: &Message) -> CommandResult {
     let processor = MessageProcessor::new();
@@ -95,7 +95,13 @@ async fn forbidden_mention(ctx: &Context, message: &Message) -> CommandResult {
     let guild_id = message.guild_id.unwrap();
     let data = GuildData::verify_data(guild_id).await?.into_result()?;
 
-    let forbidden_user_id = data.forbidden.user.into_result()?.parse::<UserId>()?;
+    let user_id_obtained = data.forbidden.user;
+    let Some(user_id) = user_id_obtained else {
+        debug!("El User ID del usuario prohíbido de mencionar no se ha encontrado o no está configurado {}", location!());
+        return Ok(())
+    };
+
+    let forbidden_user_id: UserId = user_id.parse()?;
     if message.mentions_user_id(forbidden_user_id) {
         handle_forbidden_user(ctx, message, guild_id, forbidden_user_id).await?;
         return Ok(());
@@ -104,7 +110,13 @@ async fn forbidden_mention(ctx: &Context, message: &Message) -> CommandResult {
     let user_id = message.mentions.first().map(|user| user.id);
     let Some(user_id) = user_id else { return Ok(()) }; // si no hay mención salir de la función
 
-    let forbidden_role_id = data.forbidden.role.into_result()?.parse::<RoleId>()?;
+    let role_id_obtained = data.forbidden.role;
+    let Some(role_id) = role_id_obtained else {
+        debug!("El Role Id del Rol prohíbido de mencionar no se ha encontrado o no está configurado {}", location!());
+        return Ok(())
+    };
+    
+    let forbidden_role_id: RoleId = role_id.parse()?;
     let has_role = user_id
         .to_user(&ctx.http).await?
         .has_role(&ctx.http, guild_id, forbidden_role_id)

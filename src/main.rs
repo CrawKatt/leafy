@@ -19,6 +19,7 @@ use utils::debug::UnwrapResult;
 use utils::load_commands;
 use utils::MessageData;
 use crate::commands::audio::AudioState;
+use crate::handlers::twitter::twitter_monitor;
 
 pub static DB: LazyLock<Surreal<SurrealClient>> = LazyLock::new(Surreal::init);
 
@@ -96,6 +97,12 @@ async fn main() -> UnwrapResult<()> {
         .register_songbird()
         .type_map_insert::<HttpKey>(HttpClient::new())
         .await?;
+    
+    let http_client = client.http.clone();
+
+    tokio::spawn(async move {
+        let _ = twitter_monitor(&http_client).await;
+    });
 
     client.start().await?;
 

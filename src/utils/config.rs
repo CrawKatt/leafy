@@ -151,6 +151,8 @@ pub struct GuildData {
     pub channels: Channels,
     #[builder(default)]
     pub messages: Messages,
+    #[builder(default)]
+    pub twitter: Twitter,
 }
 impl GuildData {
     pub async fn save_to_db(self, guild_id: GuildId) -> SurrealResult<()> {
@@ -205,7 +207,15 @@ pub struct Channels {
 pub struct Messages {
     pub welcome: Option<String>,
     pub time_out: Option<String>,
-    pub warn: Option<String>
+    pub warn: Option<String>,
+    pub twitter: Option<String>
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default, Builder)]
+#[builder(on(String, into))]
+pub struct Twitter {
+    pub channel: Option<String>,
+    pub user: Option<String>,
 }
 
 pub trait DatabaseOperations: Serialize + DeserializeOwned + Clone + Default + Send + Sync {

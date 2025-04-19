@@ -10,14 +10,14 @@ use crate::commands::ai::ask;
 use crate::commands::audio::AudioState;
 use crate::commands::audio::join::join;
 use crate::commands::audio::leave::leave;
-use crate::commands::audio::pause::pause;
-use crate::commands::audio::play::play;
-use crate::commands::audio::queue::queue;
-use crate::commands::audio::resume::resume;
-use crate::commands::audio::skip::skip;
-use crate::commands::audio::stop::stop;
-use crate::commands::audio::translate_tts::translate_tts;
-use crate::commands::audio::tts::tts;
+use crate::commands::audio::music::pause::pause;
+use crate::commands::audio::music::play::play;
+use crate::commands::audio::music::queue::queue;
+use crate::commands::audio::music::resume::resume;
+use crate::commands::audio::music::skip::skip;
+use crate::commands::audio::music::stop::stop;
+use crate::commands::audio::tts::translate_tts::translate_tts;
+use crate::commands::audio::tts::tts_command::tts;
 use crate::commands::fun::cat::cat_shh;
 use crate::commands::fun::generate_dumb::dumb;
 use crate::commands::fun::generate_furry::furry;
@@ -46,6 +46,8 @@ use crate::commands::moderation::setters::set_log_channel::set_log_channel;
 use crate::commands::moderation::setters::set_ooc_channel::set_ooc_channel;
 use crate::commands::moderation::setters::set_timeout_message::set_time_out_message;
 use crate::commands::moderation::setters::set_timeout_timer::set_timeout_timer;
+use crate::commands::moderation::setters::set_twitter_channel::set_twitter_channel;
+use crate::commands::moderation::setters::set_twitter_user::set_twitter_user;
 use crate::commands::moderation::setters::set_warn_message::set_warn_message;
 use crate::commands::moderation::setters::set_welcome_channel::set_welcome_channel;
 use crate::commands::moderation::setters::set_welcome_message::set_welcome_message;
@@ -191,6 +193,8 @@ pub fn load_commands() -> Vec<Command<Data, Error>> {
         set_exception_channel(),
         set_autorole(),
         set_autorole_message(),
+        set_twitter_user(),
+        set_twitter_channel(),
         get_admins(),
         get_log_channel(),
         get_ooc_channel(),
