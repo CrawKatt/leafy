@@ -90,7 +90,13 @@ async fn welcome(ctx: &Context, user: &User, channel_id: ChannelId, guild_id: Gu
         .welcome
         .into_result()?;
 
-    let mut background = image::open("assets/background.png")?;
+    let background_path = GuildData::verify_data(guild_id).await?
+        .unwrap_log(location!())?
+        .messages
+        .background
+        .into_result()?;
+
+    let mut background = image::open(&background_path)?;
     let file = get_welcome_attachment(&mut background, user, 74, 74, 372).await?;
 
     let mut message_map = HashMap::new();
