@@ -9,7 +9,7 @@ pub type UnwrapResult<T> = Result<T, UnwrapErrors>;
 pub enum UnwrapErrors {
     #[error("Value was None: {0}")]
     DebugNone(String),
-    
+
     #[error("Value was None")]
     NoneError,
 
@@ -33,7 +33,10 @@ pub enum UnwrapErrors {
 
     #[error(transparent)]
     Regex(#[from] regex::Error),
-    
+
+    #[error(transparent)]
+    ApiError(#[from] openai_api_rs::v1::error::APIError),
+
     #[error(transparent)]
     StringError(#[from] std::fmt::Error),
 }

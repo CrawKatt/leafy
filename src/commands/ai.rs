@@ -6,6 +6,7 @@ use poise::CreateReply;
 use regex::Regex;
 use serenity::all::{ButtonStyle, CreateButton};
 use serenity::builder::CreateActionRow;
+use crate::utils::debug::UnwrapResult;
 
 #[poise::command(
     prefix_command,
@@ -21,9 +22,27 @@ pub async fn ask(
     prompt: String
 ) -> CommandResult {
     let loading = ctx.say("Cargando...").await?;
-    let url = dotenvy::var("OPENAI_API_BASE")?;
-    let api_key = dotenvy::var("OPENAI_API_KEY")?;
-    let model = dotenvy::var("AI_MODEL")?;
+    let result = request_ai(&prompt)?;
+
+    let action_row = vec![CreateActionRow::Buttons(vec![
+        CreateButton::new("close")
+            .style(ButtonStyle::Danger)
+            .label("Cerrar")
+    ])];
+
+    let reply = CreateReply::default()
+        .content(result)
+        .components(action_row);
+
+    loading.edit(ctx, reply).await?;
+
+    Ok(())
+}
+
+pub fn request_ai(prompt: &String) -> UnwrapResult<String> {
+    let url = dotenvy::var("OPENAI_API_BASE").expect("OPENAI_API_BASE not set");
+    let api_key = dotenvy::var("OPENAI_API_KEY").expect("OPENAI_API_KEY not set");
+    let model = dotenvy::var("AI_MODEL").expect("AI_MODEL not set");
     let client = Client::new_with_endpoint(url, api_key);
 
     let req = ChatCompletionRequest::new(
@@ -31,50 +50,31 @@ pub async fn ask(
         vec![
             chat_completion::ChatCompletionMessage {
                 role: chat_completion::MessageRole::user,
-                content: chat_completion::Content::Text(prompt),
+                content: chat_completion::Content::Text(prompt.to_string()),
                 name: None,
             },
             chat_completion::ChatCompletionMessage {
                 role: chat_completion::MessageRole::system,
-                content: chat_completion::Content::Text(String::from("Te llamas Leafy, eres un Bot de Discord y tu creador es CrawKatt. Nunca superes los 2000 carácteres en tus respuestas.")),
+                content: chat_completion::Content::Text(String::from(
+                    "Te llamas Leafy, eres un Bot de Discord y tu creador es CrawKatt. Nunca superes los 2000 carácteres en tus respuestas.",
+                )),
                 name: None,
-            }
+            },
         ],
     ).max_tokens(1024);
 
-    let Ok(result) = client.chat_completion(req) else {
-        let reply = CreateReply::default().content("Ocurrió un error al solicitar la respuesta por IA");
-        loading.edit(ctx, reply).await?;
-        return Ok(())
-    };
-
-    let message = result
+    let result = client.chat_completion(req)?;
+    let content = result
         .choices
         .into_iter()
         .next()
-        .and_then(|char| char.message.content);
+        .and_then(|choice| choice.message.content)
+        .unwrap_or_else(|| "❌ No se obtuvo respuesta.".to_string());
 
-    let Some(mut message) = message else {
-        let reply = CreateReply::default().content("Ocurrió un error al solicitar la respuesta por IA");
-        loading.edit(ctx, reply).await?;
-        return Ok(())
-    };
+    let re = Regex::new(r"(?s)<think>.*?</think>")?
+        .replace_all(&content, "")
+        .trim()
+        .to_string();
 
-    let re = Regex::new(r"(?s)<think>.*?</think>")?;
-    message = re.replace_all(&message, "").trim().to_string();
-
-    let action_row = vec![CreateActionRow::Buttons(vec![
-        CreateButton::new("close")
-            .style(ButtonStyle::Danger)
-            .label("Cerrar")
-        ])
-    ];
-
-    let reply = CreateReply::default()
-        .content(message)
-        .components(action_row);
-
-    loading.edit(ctx, reply).await?;
-
-    Ok(())
+    Ok(re)
 }

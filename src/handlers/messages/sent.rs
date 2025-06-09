@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use poise::serenity_prelude as serenity;
-use serenity::all::{Context, EmojiId, Message, ReactionType, RoleId, UserId};
+use serenity::all::{CacheHttp, Context, EditMessage, EmojiId, Message, ReactionType, RoleId, UserId};
 
 use crate::handlers::misc::attachment_case::attachment_handler;
 use crate::handlers::misc::everyone_case::handle_everyone;
@@ -12,6 +12,7 @@ use crate::utils::debug::IntoUnwrapResult;
 use crate::utils::CommandResult;
 use crate::utils::MessageData;
 use crate::{debug, location, DB};
+use crate::commands::ai::request_ai;
 
 pub async fn handler(ctx: &Context, new_message: &Message) -> CommandResult {
     let processor = MessageProcessor::new();
@@ -26,6 +27,7 @@ enum MessageState {
     Everyone,
     Spam,
     Logger,
+    BotMention,
 }
 
 impl MessageState {
@@ -36,10 +38,24 @@ impl MessageState {
             Self::Everyone => everyone_mention(ctx, message).await?,
             Self::Spam => spam(ctx, message).await?,
             Self::Logger => logger(message).await?,
+            Self::BotMention => bot_mention(ctx, message).await?,
         }
 
         Ok(())
     }
+}
+
+async fn bot_mention(ctx: &Context, message: &Message) -> CommandResult {
+    if message.mentions_me(ctx).await? {
+        let mut loading = message.channel_id.say(ctx.http(), "Cargando...").await?;
+        let content = request_ai(&message.content)?;
+        let builder = EditMessage::new()
+            .content(content);
+
+        loading.edit(ctx.http(), builder).await?;
+    }
+
+    Ok(())
 }
 
 struct MessageProcessor {
@@ -55,6 +71,7 @@ impl MessageProcessor {
                 MessageState::Everyone,
                 MessageState::Spam,
                 MessageState::Logger,
+                MessageState::BotMention,
             ],
         }
     }
