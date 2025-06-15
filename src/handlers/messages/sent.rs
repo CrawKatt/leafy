@@ -46,7 +46,8 @@ impl MessageState {
 }
 
 async fn bot_mention(ctx: &Context, message: &Message) -> CommandResult {
-    if message.mentions_me(ctx).await? {
+    let bot_id = ctx.cache.current_user().id.to_string();
+    if message.content.contains(&bot_id) {
         let mut loading = message.channel_id.say(ctx.http(), "Cargando...").await?;
         let content = request_ai(&message.content)?;
         let builder = EditMessage::new()
