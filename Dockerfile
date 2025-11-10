@@ -13,16 +13,11 @@ RUN apt-get update && \
         libopus-dev \
         ffmpeg
 
-COPY Cargo.toml Cargo.lock ./
+# Copiar todo el proyecto
+COPY . .
 
-RUN mkdir src && echo "fn main() {}" > src/main.rs
-
-RUN cargo build --release || true
-
-COPY src ./src
-
+# Compilar en release
 RUN cargo build --release
-
 
 # ============================
 # Etapa 2: Runtime
@@ -39,10 +34,8 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-# Binario
 COPY --from=builder /build/target/release/plantita_ayudante /app/plantita_ayudante
 
-# Assets
 COPY assets /app/assets
 
 RUN chmod +x /app/plantita_ayudante
