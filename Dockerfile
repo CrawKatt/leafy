@@ -5,7 +5,6 @@ FROM rust:1.86 as builder
 
 WORKDIR /build
 
-# Instalar dependencias nativas necesarias para compilar audio
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         pkg-config \
@@ -14,7 +13,6 @@ RUN apt-get update && \
         libopus-dev \
         ffmpeg
 
-# Copiar manifiestos
 COPY Cargo.toml Cargo.lock ./
 
 RUN mkdir src && echo "fn main() {}" > src/main.rs
@@ -24,6 +22,7 @@ RUN cargo build --release || true
 COPY src ./src
 
 RUN cargo build --release
+
 
 # ============================
 # Etapa 2: Runtime
@@ -40,7 +39,11 @@ RUN apt-get update && \
 
 WORKDIR /app
 
+# Binario
 COPY --from=builder /build/target/release/plantita_ayudante /app/plantita_ayudante
+
+# Assets
+COPY assets /app/assets
 
 RUN chmod +x /app/plantita_ayudante
 
