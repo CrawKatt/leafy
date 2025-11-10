@@ -5,7 +5,7 @@ use chrono::Local;
 use poise::serenity_prelude as serenity;
 use serenity::prelude::TypeMapKey;
 use songbird::SerenityInit;
-use surrealdb::engine::remote::ws::{Client as SurrealClient, Ws};
+use surrealdb::engine::remote::ws::{Client as SurrealClient, Wss};
 use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
 use tokio::time::Instant;
@@ -39,7 +39,7 @@ async fn main() -> UnwrapResult<()> {
 
     let database_url = dotenvy::var("DATABASE_URL").expect("missing SURREAL_URL");
     let database_password = dotenvy::var("DATABASE_PASSWORD").expect("missing SURREAL_PASSWORD");
-    DB.connect::<Ws>(database_url).await.unwrap_or_else(|why| {
+    DB.connect::<Wss>(database_url).await.unwrap_or_else(|why| {
         panic!("Could not connect to database: {why}");
     });
 
