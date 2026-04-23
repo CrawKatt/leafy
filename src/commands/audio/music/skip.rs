@@ -1,28 +1,24 @@
-use crate::location;
 use crate::utils::{CommandResult, Context};
-use crate::utils::debug::UnwrapLog;
+use crate::utils::debug::IntoUnwrapResult;
 
 #[poise::command(
     prefix_command,
     slash_command,
-    guild_only,
-    user_cooldown = 10,
     category = "Audio",
+    user_cooldown = 10,
+    guild_only,
 )]
 pub async fn skip(ctx: Context<'_>) -> CommandResult {
-    let songbird = songbird::get(ctx.serenity_context())
-        .await
-        .unwrap_log(location!())?;
+    let guild_id = ctx.guild_id().into_result()?;
+    let lavalink = &ctx.data().lavalink;
 
-    let Some(call) = songbird.get(ctx.guild_id().unwrap()) else {
-        ctx.say("No estás en un canal de voz").await?;
-
+    let Some(player_ctx) = lavalink.get_player_context(guild_id.get()) else {
+        ctx.say("No hay nada reproduciéndose").await?;
         return Ok(());
     };
 
-    let _ = call.lock().await.queue().skip();
-    
-    ctx.say("Se ha saltado la canción").await?;
+    player_ctx.stop_now().await?;
+    ctx.say("⏭️ Saltando canción").await?;
 
     Ok(())
 }

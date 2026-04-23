@@ -24,5 +24,8 @@ pub async fn leave(ctx: Context<'_>) -> CommandResult {
 
     manager.remove(guild_id).await?;
 
+    let lavalink = &ctx.data().lavalink;
+    let _ = lavalink.delete_player(guild_id.get()).await;
+
     Ok(())
 }

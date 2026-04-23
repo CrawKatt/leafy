@@ -1,13 +1,14 @@
+use crate::commands::audio;
+use crate::commands::audio::tts::tts_command::TtsStateUpdater;
 use crate::commands::audio::{is_music_state, AudioState};
+use crate::commands::translate::create_ai_message;
 use crate::handlers::error::handler;
 use crate::utils::debug::IntoUnwrapResult;
 use crate::utils::{CommandResult, Context};
+use elevenlabs_rs::endpoints::genai::tts::{TextToSpeech, TextToSpeechBody};
 use elevenlabs_rs::utils::save;
-use elevenlabs_rs::{ElevenLabsClient, Model, TextToSpeech, TextToSpeechBody};
+use elevenlabs_rs::{DefaultVoice, ElevenLabsClient};
 use songbird::{input, Event, TrackEvent};
-use crate::commands::audio;
-use crate::commands::audio::tts::tts_command::TtsStateUpdater;
-use crate::commands::translate::create_ai_message;
 
 /// Traduce el texto de entrada al idioma deseado en el Voice Chat mediante TTS
 #[poise::command(
@@ -49,9 +50,9 @@ pub async fn translate_tts(
 
     let mut handler = handler_lock.lock().await;
 
-    let client = ElevenLabsClient::default()?;
-    let body = TextToSpeechBody::new(&format!("Usuario {author_name}: {message}"), Model::ElevenMultilingualV2);
-    let endpoint = TextToSpeech::new("bIQlQ61Q7WgbyZAL7IWj", body);
+    let client = ElevenLabsClient::from_env()?;
+    let body = TextToSpeechBody::new(format!("Usuario {author_name}: {message}"));
+    let endpoint = TextToSpeech::new(DefaultVoice::Alice, body);
     let speech = client.hit(endpoint).await?;
     save("result.mp3", speech)?;
 

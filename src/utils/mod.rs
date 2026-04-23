@@ -6,6 +6,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use surrealdb::{RecordId, Result as SurrealResult};
 use tokio::sync::Mutex;
+use lavalink_rs::prelude::*;
+use std::fmt;
+use std::fmt::{Debug, Formatter};
 use crate::commands::ai::ask;
 use crate::commands::audio::AudioState;
 use crate::commands::audio::join::join;
@@ -61,10 +64,20 @@ pub mod debug;
 pub mod embeds;
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Clone)]
 pub struct Data {
     pub command_descriptions: HashMap<&'static str, String>,
     pub voice_chat_state: Arc<Mutex<AudioState>>,
+    pub lavalink: LavalinkClient,
+}
+
+impl Debug for Data {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Data")
+            .field("command_descriptions", &self.command_descriptions)
+            .field("voice_chat_state", &self.voice_chat_state)
+            .finish_non_exhaustive()
+    }
 }
 
 pub type CommandResult = Result<(), Error>;

@@ -37,8 +37,17 @@ pub enum UnwrapErrors {
     #[error(transparent)]
     ApiError(#[from] openai_api_rs::v1::error::APIError),
 
-    #[error(transparent)]
-    StringError(#[from] std::fmt::Error),
+    #[error("Lavalink error: {0}")]
+    Lavalink(#[from] lavalink_rs::error::LavalinkError),
+
+    #[error("Other error: {0}")]
+    Other(String),
+}
+
+impl From<songbird::error::JoinError> for UnwrapErrors {
+    fn from(err: songbird::error::JoinError) -> Self {
+        UnwrapErrors::Other(err.to_string())
+    }
 }
 
 pub trait IntoUnwrapResult<T> {

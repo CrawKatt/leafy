@@ -2,8 +2,9 @@ use crate::commands::audio::{is_music_state, set_audio_state, try_join, AudioSta
 use crate::handlers::error::handler;
 use crate::utils::debug::IntoUnwrapResult;
 use crate::utils::{CommandResult, Context};
+use elevenlabs_rs::endpoints::genai::tts::{TextToSpeech, TextToSpeechBody};
 use elevenlabs_rs::utils::save;
-use elevenlabs_rs::{ElevenLabsClient, Model, TextToSpeech, TextToSpeechBody};
+use elevenlabs_rs::{DefaultVoice, ElevenLabsClient, Model};
 use poise::async_trait;
 use songbird::{input, Event, EventContext, EventHandler, TrackEvent};
 use std::sync::Arc;
@@ -62,9 +63,9 @@ pub async fn tts(
 
     let mut handler = handler_lock.lock().await;
 
-    let client = ElevenLabsClient::default()?;
-    let body = TextToSpeechBody::new(&format!("Usuario {author_name}: {text}"), Model::ElevenMultilingualV2);
-    let endpoint = TextToSpeech::new("bIQlQ61Q7WgbyZAL7IWj", body);
+    let client = ElevenLabsClient::from_env()?;
+    let body = TextToSpeechBody::new(format!("Usuario {author_name}: {text}")).with_model_id(Model::ElevenMultilingualV2);
+    let endpoint = TextToSpeech::new(DefaultVoice::Alice, body);
     let speech = client.hit(endpoint).await?;
     save("result.mp3", speech)?;
 

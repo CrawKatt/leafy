@@ -2,6 +2,7 @@ pub mod error;
 pub mod misc;
 pub mod events;
 pub mod twitter;
+pub mod music_events;
 mod welcome;
 mod messages;
 mod typing_start;

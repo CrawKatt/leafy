@@ -1,4 +1,6 @@
 use std::sync::Arc;
+use lavalink_rs::model::player::ConnectionInfo;
+use lavalink_rs::model::ChannelId as LavalinkChannelId;
 use serenity::all::{ChannelId, GetMessages, Guild, GuildId};
 use tokio::sync::Mutex;
 use crate::location;
@@ -44,9 +46,17 @@ pub async fn try_join(ctx: Context<'_>, guild: Guild) -> CommandResult {
         .await
         .into_result()?;
 
-    let already_joined = manager.get(guild.id).is_some();
-    if !already_joined {
-        let _ = manager.join(guild.id, channel_id).await?;
+    let lavalink = &ctx.data().lavalink;
+    if lavalink.get_player_context(guild.id.get()).is_none() {
+        let (connection_info, _) = manager.join_gateway(guild.id, channel_id).await?;
+        let lava_info = ConnectionInfo {
+            session_id: connection_info.session_id,
+            token: connection_info.token,
+            endpoint: connection_info.endpoint,
+            channel_id: Some(LavalinkChannelId::from(channel_id.get())),
+        };
+
+        lavalink.create_player_context(guild.id.get(), lava_info).await?;
     }
 
     Ok(())

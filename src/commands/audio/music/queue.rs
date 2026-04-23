@@ -1,22 +1,11 @@
 use poise::CreateReply;
 use serenity::all::CreateEmbed;
-use serenity::prelude::TypeMapKey;
-use songbird::input::AuxMetadata;
-use songbird::tracks::PlayMode;
-
 use crate::handlers::misc::buttons::generate_row;
 use crate::utils::{CommandResult, Context};
 use crate::utils::debug::IntoUnwrapResult;
-
-pub struct AuxMetadataKey;
-
-impl TypeMapKey for AuxMetadataKey {
-    type Value = AuxMetadata;
-}
-
-pub fn format_metadata(AuxMetadata { title, .. }: &AuxMetadata) -> String {
-    title.as_deref().unwrap_or("unknown title").to_string()
-}
+use serenity::futures::future;
+use serenity::futures::StreamExt;
+use std::fmt::Write;
 
 #[poise::command(
     prefix_command,
@@ -27,37 +16,51 @@ pub fn format_metadata(AuxMetadata { title, .. }: &AuxMetadata) -> String {
     aliases("q"),
 )]
 pub async fn queue(ctx: Context<'_>) -> CommandResult {
-    let songbird = songbird::get(ctx.serenity_context()).await.into_result()?;
-    let guild_id = ctx.guild_id().unwrap();
-    let call = songbird.get(guild_id).into_result()?;
-    let guard = call.lock().await;
-    let queue = guard.queue();
+    let guild_id = ctx.guild_id().into_result()?;
+    let lavalink = &ctx.data().lavalink;
 
-    if queue.is_empty() {
+    let Some(player_ctx) = lavalink.get_player_context(guild_id.get()) else {
+        ctx.say("No estoy conectado a un canal de voz").await?;
+        return Ok(());
+    };
+
+    let player_data = player_ctx.get_player().await?;
+    let queue = player_ctx.get_queue();
+    
+    let max = queue.get_count().await?.min(10);
+    
+    let queue_list = queue
+        .enumerate()
+        .take_while(|(idx, _)| future::ready(*idx < max))
+        .map(|(idx, x)| {
+            format!(
+                "{}. {} - {}",
+                idx + 1,
+                x.track.info.author,
+                x.track.info.title
+            )
+        })
+        .collect::<Vec<_>>()
+        .await
+        .join("\n");
+
+    let mut description = String::new();
+    if let Some(track) = player_data.track {
+        description.push_str("**Ahora reproduciendo:**\n");
+        write!(description, "{} - {}\n\n", track.info.title, track.info.author)?;
+    }
+
+    if !queue_list.is_empty() {
+        description.push_str("**En cola:**\n");
+        description.push_str(&queue_list);
+    }
+
+    if description.is_empty() {
         ctx.say("No hay canciones en cola").await?;
         return Ok(());
     }
-
-    if queue.current().is_none() {
-        ctx.say("No se obtener la pista actual").await?;
-        return Ok(());
-    };
     
-    let current_queue = queue.current_queue();
-    
-    let mut description = String::new();
-    for (i, track) in current_queue.iter().enumerate() {
-        let map = track.typemap().read().await;
-        if let Some(metadata) = map.get::<AuxMetadataKey>() {
-            description.push_str(&format!("{} - ", i + 1));
-            description.push_str(&format_metadata(metadata));
-            description.push('\n');
-        }
-    }
-    
-    let playing_status = queue.current().into_result()?.get_info().await?.playing;
-    let is_paused = matches!(playing_status, PlayMode::Pause);
-    let buttons = generate_row(is_paused);
+    let buttons = generate_row(player_data.paused);
     let components = vec![buttons];
     
     let embed = CreateEmbed::default()
@@ -69,8 +72,6 @@ pub async fn queue(ctx: Context<'_>) -> CommandResult {
         .embed(embed)
         .components(components);
     ctx.send(builder).await?;
-
-    drop(guard);
 
     Ok(())
 }
