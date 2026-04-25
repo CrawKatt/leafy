@@ -1,43 +1,25 @@
-# ============================
 # Etapa 1: Build
-# ============================
-FROM rust:1.86 as builder
+FROM rust:1.86.0-nightly as builder
 
-WORKDIR /build
+WORKDIR /usr/src/plantita_ayudante
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        pkg-config \
-        libasound2-dev \
-        libssl-dev \
-        libopus-dev \
-        ffmpeg
+# Copia los archivos de dependencias primero para aprovechar cache
+COPY Cargo.toml Cargo.lock ./
+COPY src ./src
 
-# Copiar todo el proyecto
-COPY . .
-
-# Compilar en release
+# Compila el proyecto en modo release
 RUN cargo build --release
 
-# ============================
 # Etapa 2: Runtime
-# ============================
 FROM debian:bookworm-slim
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        ca-certificates \
-        libssl3 \
-        libopus0 \
-        ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
+# Para ejecutar binarios de Rust
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+WORKDIR /usr/local/bin
 
-COPY --from=builder /build/target/release/plantita_ayudante /app/plantita_ayudante
+# Copia el binario compilado
+COPY --from=builder /usr/src/plantita_ayudante/target/release/plantita_ayudante .
 
-COPY assets /app/assets
-
-RUN chmod +x /app/plantita_ayudante
-
-CMD ["/app/plantita_ayudante"]
+# Comando por defecto
+CMD ["./plantita_ayudante"]
